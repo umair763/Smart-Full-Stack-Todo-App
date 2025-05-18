@@ -1,9 +1,15 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import TodoListParser from '../../components/TodoListParser';
 import AddTask from '../../components/AddTask';
 import AddTaskForm from '../../components/AddTaskForm';
 import DeleteTaskForm from '../../components/DeleteTaskForm';
 import UserProfile from '../../components/UserProfile';
+import Header from '../layout/Header'; // Import Header
+
+// Use the consistent API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Dashboard() {
    const [isAddFormVisible, setIsAddFormVisible] = useState(false);
@@ -12,23 +18,28 @@ function Dashboard() {
    const [sortby, setSortBy] = useState('sortby');
    const [searchtask, setSearchTask] = useState('');
    const [isexceeded, setIFexceeded] = useState(false);
+   const [apiError, setApiError] = useState(null);
+   const [isLoading, setIsLoading] = useState(true);
 
    useEffect(() => {
       const fetchTasks = async () => {
+         setIsLoading(true);
+         setApiError(null);
+
          try {
             const token = localStorage.getItem('token');
             if (!token) {
                throw new Error('No token found, please log in.');
             }
 
-            const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/tasks', {
+            const response = await fetch(`${API_BASE_URL}/api/tasks`, {
                headers: {
                   Authorization: `Bearer ${token}`,
                },
             });
 
             if (!response.ok) {
-               throw new Error('Network response was not ok');
+               throw new Error(`Server returned ${response.status}: ${await response.text()}`);
             }
 
             const data = await response.json();
@@ -40,7 +51,10 @@ function Dashboard() {
             }
          } catch (error) {
             console.error('Error fetching tasks:', error);
+            setApiError(error.message);
             setTasks([]);
+         } finally {
+            setIsLoading(false);
          }
       };
 
@@ -58,11 +72,14 @@ function Dashboard() {
    };
 
    function handleAddNewTasks(task) {
-      fetch('https://smart-full-stack-todo-app.vercel.app/api/tasks', {
+      setApiError(null);
+      const token = localStorage.getItem('token');
+
+      fetch(`${API_BASE_URL}/api/tasks`, {
          method: 'POST',
          headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`,
          },
          body: JSON.stringify(task),
       })
@@ -72,16 +89,25 @@ function Dashboard() {
             }
             return res.json();
          })
-         .then((newTask) => setTasks([...tasks, newTask]))
-         .catch((err) => console.error('Error adding task:', err));
+         .then((newTask) => {
+            setTasks([...tasks, newTask]);
+            setIsAddFormVisible(false); // Close the form after successful addition
+         })
+         .catch((err) => {
+            console.error('Error adding task:', err);
+            setApiError('Failed to add task. Please try again.');
+         });
    }
 
    const handleDeleteTask = async (taskId) => {
+      setApiError(null);
+      const token = localStorage.getItem('token');
+
       try {
-         const response = await fetch(`https://smart-full-stack-todo-app.vercel.app/api/tasks/${taskId}`, {
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
             method: 'DELETE',
             headers: {
-               Authorization: `Bearer ${localStorage.getItem('token')}`,
+               Authorization: `Bearer ${token}`,
             },
          });
 
@@ -91,8 +117,10 @@ function Dashboard() {
          }
 
          setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
+         setIsDeleteFormVisible(false); // Close the form after successful deletion
       } catch (error) {
          console.error('Error deleting task:', error);
+         setApiError('Failed to delete task. Please try again.');
       }
    };
 
@@ -102,7 +130,7 @@ function Dashboard() {
       let [hours, minutes, ampm] = time.match(/(\d+):(\d+)\s(AM|PM)/).slice(1, 4);
 
       // Convert hours to 24-hour format
-      hours = parseInt(hours);
+      hours = Number.parseInt(hours);
       if (ampm === 'PM' && hours < 12) hours += 12;
       if (ampm === 'AM' && hours === 12) hours = 0; // Handle midnight
 
@@ -130,7 +158,7 @@ function Dashboard() {
       });
    }
 
-   let sorted = [...tasks];
+   const sorted = [...tasks];
 
    if (sortby === 'Task') {
       // Sort tasks alphabetically by task name
@@ -147,6 +175,11 @@ function Dashboard() {
 
    return (
       <div className="w-11/12 p-5 rounded-xl shadow-lg bg-gradient-to-br from-[#9406E6] to-[#00FFFF] grid grid-cols-1 md:grid-cols-[1.5fr,1fr] lg:grid-cols-[1.5fr,1fr] gap-4">
+         {/* Add Header at the top of the container */}
+         <div className="col-span-1 md:col-span-2 lg:col-span-2 mb-4">
+            <Header />
+         </div>
+
          <div className="div-1">
             <div className="text">
                <h1 className="text-4xl text-white font-extrabold mb-4">Todo App</h1>
@@ -160,7 +193,17 @@ function Dashboard() {
                setSort={setSortBy}
                setSearch={setSearchTask}
             />
-            <TodoListParser todolist={searched} setexceeded={isexceeded} settask={tasks} />
+            {apiError && (
+               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{apiError}</div>
+            )}
+
+            {isLoading ? (
+               <div className="flex justify-center items-center h-40">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+               </div>
+            ) : (
+               <TodoListParser todolist={searched} setexceeded={isexceeded} settask={tasks} />
+            )}
          </div>
 
          <div className="right-side">

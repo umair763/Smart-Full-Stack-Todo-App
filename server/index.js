@@ -9,13 +9,33 @@ const taskRoutes = require("./routes/taskRoutes");
 
 const app = express();
 
-// Middleware setup
-app.use(cors());
-app.use(express.json()); // Make sure to parse incoming JSON requests
+// Improved CORS configuration
+app.use(
+    cors({
+        origin: [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:5174", // Add the specific client port
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174", // Add the specific client port
+            "https://smart-full-stack-todo-app.vercel.app",
+            // Allow Vercel preview URLs
+            /\.vercel\.app$/,
+        ],
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true,
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
+    })
+);
+
+// Handle preflight requests explicitly
+app.options("*", cors());
 
 // Middleware for JSON
-app.use(express.json({ limit: "1gb" }));
-app.use(express.urlencoded({ limit: "1gb", extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI =
@@ -45,6 +65,11 @@ mongoose.connection.on("disconnected", () => {
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
+
+// Home route for testing
+app.get("/", (req, res) => {
+    res.json({ message: "Todo API is running" });
+});
 
 // Add a global error handler
 app.use((err, req, res, next) => {

@@ -1,7 +1,12 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import GoogleSignIn from './GoogleSignIn';
+
+// Use the consistent API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function LoginForm() {
    const [formData, setFormData] = useState({
@@ -34,7 +39,7 @@ function LoginForm() {
          if (token) {
             try {
                // Validate the token with the backend
-               const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/profile', {
+               const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
                   method: 'GET',
                   headers: {
                      'Content-Type': 'application/json',
@@ -70,7 +75,9 @@ function LoginForm() {
       }
 
       try {
-         const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/login', {
+         console.log('Attempting login for:', formData.email);
+
+         const response = await fetch(`${API_BASE_URL}/api/users/login`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -79,18 +86,34 @@ function LoginForm() {
                email: formData.email,
                password: formData.password,
             }),
+            credentials: 'include',
          });
 
-         const data = await response.json();
+         // Try to parse the response
+         let data;
+         try {
+            data = await response.json();
+         } catch (err) {
+            console.error('Error parsing login response:', err);
+            throw new Error('Unable to parse server response');
+         }
 
+         // Handle response based on status
          if (response.ok) {
-            login(data.token);
-            navigate('/dashboard');
+            console.log('Login successful');
+
+            if (data.token) {
+               login(data.token);
+               navigate('/dashboard');
+            } else {
+               setError('No token received from server');
+            }
          } else {
             setError(data.message || 'Invalid credentials');
          }
       } catch (err) {
-         setError('Server error. Please try again later.');
+         console.error('Login error:', err);
+         setError('Unable to connect to the server. Please check your network connection and try again.');
       } finally {
          setIsLoggingIn(false);
       }
