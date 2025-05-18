@@ -1,0 +1,9 @@
+{
+  "name": "smart-full-stack-todo-app",
+  "version": "1.0.0",
+  "description": "Full stack todo application with React frontend and Node backend",
+  "scripts": {
+    "build": "cd client && npm install && npm run build",
+    "start": "cd server && npm install && node index.js"
+  }
+} 
