@@ -1,0 +1,52 @@
+.
+├── client
+│   ├── node_modules
+│   ├── src
+│   │   ├── assets
+│   │   ├── app
+│   │   │     ├── pages
+│   │   │     │    ├── auth
+│   │   │     │    │     └── LoginForm.jsx
+│   │   │     │    │     └── Registeruser.jsx
+│   │   │     │    │     └──GoogleSignIn.jsx
+│   │   │     ├── layout.jsx
+│   │   │     │     └── header.jsx 
+│   │   │     │     └── footer.jsx 
+│   │   │     │     └── sidebar.jsx 
+│   │   │     │     └── Layout.jsx 
+│   │   │     ├── context
+│   │   │     │     └──AuthContext.jsx 
+│   │   │     ├── routes
+│   │   │     │     └──routes.jsx 
+│   │   │     ├── component
+│   │   │     │     └──AddTask.jsx
+│   │   │     │     └──AddTaskForm.jsx 
+│   │   │     │     └──DeleteTaskForm.jsx
+│   │   │     │     └──DisplayTodoList.jsx
+│   │   │     │     └──DisplayTodoList.jsx
+│   │   │     │     └──TodoListParser.jsx
+│   │   │     │     └──UserProfile.jsx
+│   │   └── App.jsx.js
+│   │   └── main.jsx
+│   └── .env
+│   └── package-lock.json
+│   └── package.json
+│   └── .gitignore
+│   └── vite.config.js
+├── server
+│   ├── controllers
+│   │   └── taskControllers.js
+│   │   └── userControllers.js
+│   ├── middleware
+│   │   └── auth.js
+│   ├── models
+│   │   └── taskModels.js
+│   │   └── userModels.js
+│   ├── routes
+│   │   └── taskRoutes.js
+│   └── index.js
+│   └── .env
+│   └── .gitignore
+│   └── package-lock.json
+│   └── package.json
+
