@@ -12,13 +12,38 @@ const taskRoutes = require("./routes/taskRoutes");
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io setup
+// Improved CORS configuration
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            // Allow any origin in development
+            return callback(null, true);
+        },
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true,
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
+    })
+);
+
+// Handle preflight requests explicitly
+app.options("*", cors());
+
+// Middleware for JSON
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// Setup Socket.io AFTER CORS middleware
 const io = new Server(server, {
     cors: {
         origin: "*", // In production, limit to your frontend URL
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         credentials: true,
+        allowedHeaders: ["Content-Type", "Authorization"],
     },
+    transports: ["websocket", "polling"],
+    path: "/socket.io/",
 });
 
 // Store connected users
@@ -52,28 +77,6 @@ io.on("connection", (socket) => {
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
-// Improved CORS configuration
-app.use(
-    cors({
-        origin: (origin, callback) => {
-            // Allow any origin in development
-            return callback(null, true);
-        },
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-        credentials: true,
-        preflightContinue: false,
-        optionsSuccessStatus: 204,
-    })
-);
-
-// Handle preflight requests explicitly
-app.options("*", cors());
-
-// Middleware for JSON
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp";
 
@@ -102,6 +105,15 @@ app.get("/", (req, res) => {
     res.json({ message: "Todo API is running" });
 });
 
+// Debug route for Socket.io
+app.get("/socket-check", (req, res) => {
+    res.json({
+        message: "Socket.io is running",
+        connectedClients: io.engine.clientsCount,
+        connectedUsers: [...connectedUsers.entries()].map(([userId, socketId]) => ({ userId, socketId })),
+    });
+});
+
 // Debug route to check routes
 app.get("/api/debug", (req, res) => {
     res.json({
@@ -121,6 +133,17 @@ app.get("/api/debug", (req, res) => {
                 { method: "POST", path: "/api/tasks" },
                 { method: "PUT", path: "/api/tasks/:id" },
                 { method: "DELETE", path: "/api/tasks/:id" },
+                { method: "GET", path: "/api/tasks/stats" },
+                { method: "PATCH", path: "/api/tasks/:id/status" },
+            ],
+            sockets: [
+                { event: "connection", description: "New client connected" },
+                { event: "authenticate", description: "Authenticate user with socket" },
+                { event: "disconnect", description: "Client disconnected" },
+                { event: "taskCreated", description: "Task created notification" },
+                { event: "taskUpdated", description: "Task updated notification" },
+                { event: "taskDeleted", description: "Task deleted notification" },
+                { event: "taskStatusChanged", description: "Task status changed notification" },
             ],
         },
     });
@@ -143,5 +166,5 @@ app.use((err, req, res, next) => {
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`API available at http://localhost:${PORT}/api`);
-    console.log(`Socket.io running on ws://localhost:${PORT}`);
+    console.log(`Socket.io running on ws://localhost:${PORT}/socket.io/`);
 });
