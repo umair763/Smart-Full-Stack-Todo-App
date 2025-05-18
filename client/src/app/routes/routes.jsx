@@ -1,9 +1,10 @@
-import React from 'react';
+'use client';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginForm from '../pages/auth/LoginForm';
 import RegisterUser from '../pages/auth/RegisterUser';
 import Layout from '../layout/Layout';
 import Dashboard from '../pages/Dashboard';
+import Settings from '../pages/Settings';
 import { useAuth } from '../context/AuthContext';
 
 const AppRoutes = () => {
@@ -22,6 +23,7 @@ const AppRoutes = () => {
                <Route element={<Layout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                </Route>
+               <Route path="/settings" element={<Settings />} />
                <Route path="/" element={<Navigate to="/dashboard" />} />
                <Route path="*" element={<Navigate to="/dashboard" />} />
             </>

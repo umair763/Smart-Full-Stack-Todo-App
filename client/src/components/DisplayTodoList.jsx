@@ -1,7 +1,8 @@
-import { useState } from 'react';
-// import './styles/DisplayTodoList.css';
+'use client';
 
-function DisplayTodoList({ list, isexceeded }) {
+import { useState } from 'react';
+
+function DisplayTodoList({ list, isexceeded, onEdit, onDelete }) {
    const [marked, setMarked] = useState(false);
 
    function handleMarked() {
@@ -32,13 +33,61 @@ function DisplayTodoList({ list, isexceeded }) {
                </p>
             </div>
             <p className={`${marked ? 'line-through' : ''} font-bold text-left sm:text-base lg:text-md`}>{list.time}</p>
-            <input
-               type="checkbox"
-               className="w-4 h-4 rounded-full border-2 border-indigo-600 cursor-pointer appearance-none checked:bg-[#573fff] checked:border-[#573fff] relative 
-               after:checked:content-['✓'] after:checked:absolute after:checked:top-1/2 after:checked:left-1/2 after:checked:transform after:checked:-translate-x-1/2 after:checked:-translate-y-1/2 after:checked:text-white after:checked:opacity-70
-               max-[300px]:after:checked:text-[12px] min-[301px]:max-[340px]:after:checked:text-[10px] min-[341px]:max-[600px]:after:checked:text-[16px] min-[601px]:after:checked:text-[18px]"
-               onClick={handleMarked}
-            />
+
+            <div className="flex items-center space-x-2">
+               {/* Edit Icon */}
+               <button
+                  onClick={() => onEdit(list)}
+                  className="text-blue-600 hover:text-blue-800 transition-colors"
+                  title="Edit Task"
+               >
+                  <svg
+                     xmlns="http://www.w3.org/2000/svg"
+                     className="h-5 w-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor"
+                  >
+                     <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                     />
+                  </svg>
+               </button>
+
+               {/* Delete Icon */}
+               <button
+                  onClick={() => onDelete(list._id)}
+                  className="text-red-600 hover:text-red-800 transition-colors"
+                  title="Delete Task"
+               >
+                  <svg
+                     xmlns="http://www.w3.org/2000/svg"
+                     className="h-5 w-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor"
+                  >
+                     <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                     />
+                  </svg>
+               </button>
+
+               {/* Checkbox */}
+               <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded-full border-2 border-indigo-600 cursor-pointer appearance-none checked:bg-[#573fff] checked:border-[#573fff] relative 
+                 after:checked:content-['✓'] after:checked:absolute after:checked:top-1/2 after:checked:left-1/2 after:checked:transform after:checked:-translate-x-1/2 after:checked:-translate-y-1/2 after:checked:text-white after:checked:opacity-70
+                 max-[300px]:after:checked:text-[12px] min-[301px]:max-[340px]:after:checked:text-[10px] min-[341px]:max-[600px]:after:checked:text-[16px] min-[601px]:after:checked:text-[18px]"
+                  onClick={handleMarked}
+               />
+            </div>
          </div>
       </div>
    );

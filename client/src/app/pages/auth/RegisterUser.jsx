@@ -1,6 +1,11 @@
+'use client';
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import GoogleSignIn from './GoogleSignIn';
+
+// Use the consistent API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function RegisterUser() {
    const [formData, setFormData] = useState({
@@ -46,29 +51,54 @@ function RegisterUser() {
          return;
       }
 
-      // Prepare form data
-      const submitData = new FormData();
-      submitData.append('username', formData.username);
-      submitData.append('email', formData.email);
-      submitData.append('password', formData.password);
-
       try {
-         const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/register', {
-            method: 'POST',
-            body: submitData,
+         // Prepare form data
+         const userData = {
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+         };
+
+         console.log('Submitting registration data:', {
+            username: userData.username,
+            email: userData.email,
          });
 
-         const data = await response.json();
+         const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData),
+            credentials: 'include',
+         });
 
-         if (response.ok) {
+         // Handle different status codes
+         if (response.status === 201) {
             setSuccess('Registration successful! Redirecting to login...');
             setTimeout(() => navigate('/'), 2000);
-         } else {
+            return;
+         }
+
+         // Try to parse response body
+         let data;
+         try {
+            data = await response.json();
+         } catch (err) {
+            console.error('Error parsing response:', err);
+            data = { message: 'Unable to parse server response' };
+         }
+
+         // Handle error responses
+         if (!response.ok) {
             setError(data.message || 'Registration failed. Please try again.');
+         } else {
+            setSuccess('Registration successful! Redirecting to login...');
+            setTimeout(() => navigate('/'), 2000);
          }
       } catch (err) {
-         setError('Server error. Please try again later.');
          console.error('Registration error:', err);
+         setError('Unable to connect to the server. Please check your network connection and try again.');
       } finally {
          setIsLoading(false);
       }

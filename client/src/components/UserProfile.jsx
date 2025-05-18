@@ -1,5 +1,10 @@
-import React, { useEffect, useState } from 'react';
+'use client';
+
+import { useEffect, useState } from 'react';
 import { useAuth } from '../app/context/AuthContext';
+
+// Use the consistent API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function UserProfile() {
    const [userDetails, setUserDetails] = useState({
@@ -13,7 +18,7 @@ function UserProfile() {
 
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState('');
-   const { logout } = useAuth();
+   const { logout, user } = useAuth();
 
    useEffect(() => {
       const fetchUserProfile = async () => {
@@ -23,7 +28,7 @@ function UserProfile() {
                throw new Error('No token found');
             }
 
-            const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/profile', {
+            const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
                method: 'GET',
                headers: {
                   Authorization: `Bearer ${token}`,
@@ -41,9 +46,9 @@ function UserProfile() {
                username: data.username,
                email: data.email,
                picture: data.picture,
-               gender: data.gender,
-               occupation: data.occupation,
-               organization: data.organization,
+               gender: data.gender || '',
+               occupation: data.occupation || '',
+               organization: data.organization || '',
             });
          } catch (err) {
             setError(`Error fetching user profile: ${err.message}`);
@@ -57,34 +62,6 @@ function UserProfile() {
 
    const handleLogout = () => {
       logout();
-   };
-
-   const handleDeleteAccount = async () => {
-      try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('No token found');
-         }
-
-         const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/delete-account', {
-            method: 'DELETE',
-            headers: {
-               Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
-            },
-         });
-
-         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message);
-         }
-
-         // Use the logout function from AuthContext
-         logout();
-         alert('Account deleted successfully!');
-      } catch (err) {
-         console.log(`Failed to delete account: ${err.message}`);
-      }
    };
 
    if (loading) {
@@ -103,19 +80,50 @@ function UserProfile() {
    }
 
    if (error) {
-      return <div>{error}</div>;
+      return <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>;
    }
+
+   // Function to render profile image
+   const renderProfileImage = () => {
+      if (userDetails.picture) {
+         // If it's a base64 string
+         if (userDetails.picture.startsWith('data:image')) {
+            return (
+               <img
+                  src={userDetails.picture || '/placeholder.svg'}
+                  alt="Profile"
+                  className="w-36 h-36 rounded-full object-cover"
+               />
+            );
+         }
+         // If it's a URL
+         return (
+            <img
+               src={userDetails.picture || '/placeholder.svg'}
+               alt="Profile"
+               className="w-36 h-36 rounded-full object-cover"
+               onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/placeholder.svg?height=144&width=144';
+               }}
+            />
+         );
+      }
+
+      // Default placeholder
+      return (
+         <div className="w-36 h-36 rounded-full bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-500 text-xl font-bold">
+               {userDetails.username ? userDetails.username.charAt(0).toUpperCase() : '?'}
+            </span>
+         </div>
+      );
+   };
 
    return (
       <div className="container mx-auto p-3 max-w-6xl">
          <div className="flex justify-center mb-8">
-            <div className="rounded-full bg-[#9df7f7] p-2 shadow-md">
-               {userDetails.picture ? (
-                  <img src={userDetails.picture} alt="Profile" className="w-36 h-36 rounded-full object-cover" />
-               ) : (
-                  <div className="w-36 h-36 rounded-full bg-gray-200 flex items-center justify-center">No Image</div>
-               )}
-            </div>
+            <div className="rounded-full bg-[#9df7f7] p-2 shadow-md">{renderProfileImage()}</div>
          </div>
 
          <div className="bg-[#9df7f7] p-3 rounded-xl shadow-lg">
@@ -147,12 +155,6 @@ function UserProfile() {
                   className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-full transition-colors duration-300 text-sm md:text-base"
                >
                   Logout
-               </button>
-               <button
-                  onClick={handleDeleteAccount}
-                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-full transition-colors duration-300 text-sm md:text-base"
-               >
-                  Delete Account
                </button>
             </div>
          </div>

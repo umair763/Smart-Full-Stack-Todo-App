@@ -48,9 +48,9 @@ try {
     };
 }
 
-// Google Sign-In Handler// Google Sign-In Handler
 // Google Sign-In Handler
 exports.googleSignIn = async (req, res) => {
+    console.log("Google Sign-In request received");
     try {
         const { name, email, picture } = req.body;
 
@@ -58,70 +58,46 @@ exports.googleSignIn = async (req, res) => {
             return res.status(400).json({ error: "Missing required fields (name, email)" });
         }
 
-        // Log the incoming request data for debugging
-        console.log("Google Sign-In request:", { name, email, picture: picture ? "Picture provided" : "No picture" });
+        console.log("Processing Google Sign-In for:", email);
 
+        // Find or create user
         let user = await User.findOne({ email });
 
         if (!user) {
-            console.log("Creating new user for:", email);
+            console.log("Creating new user for email:", email);
 
-            // Create new user without trying to fetch the picture
+            // Create a user with picture from Google
             user = new User({
                 username: name,
+                email: email,
+                password: await bcrypt.hash(Math.random().toString(36).substring(2) + Date.now().toString(), 10),
                 gender: "",
                 occupation: "",
                 organization: "",
-                email: email,
-                password: await bcrypt.hash("tempPassword123" + Date.now(), 10), // Add timestamp to make unique
-                picture: null, // Skip picture for now
+                picture: picture, // Store the Google profile picture URL
             });
 
             await user.save();
-
-            // If a picture URL was provided, try to fetch it in the background
-            if (picture) {
-                try {
-                    console.log("Attempting to fetch profile picture");
-                    const response = await fetch(picture);
-
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-                    }
-
-                    const imageBuffer = await response.buffer();
-                    const base64Picture = imageBuffer.toString("base64");
-
-                    // Update the user with the picture after saving
-                    await User.findByIdAndUpdate(user._id, { picture: base64Picture });
-                    console.log("Profile picture updated successfully");
-                } catch (pictureError) {
-                    console.error("Error fetching profile picture:", pictureError);
-                    // Non-blocking - we continue even if picture fetch fails
-                }
-            }
+            console.log("User created successfully with ID:", user._id);
         }
 
-        const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1d" });
-        console.log("User authenticated successfully:", user.email);
+        // Generate token
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1d" });
+        console.log("Token generated for user:", email);
 
+        // Return success response
         return res.status(200).json({
-            message: "User authenticated successfully",
-            token: jwtToken,
-            user: {
-                username: user.username,
-                email: user.email,
-                picture: user.picture,
-            },
+            message: "Google sign-in successful",
+            token,
         });
     } catch (error) {
-        console.error("Error during Google sign-in:", error);
-        return res.status(500).json({ error: `Failed to authenticate user: ${error.message}` });
+        console.error("Error in Google Sign-In:", error);
+        return res.status(500).json({ error: "Server error during Google authentication" });
     }
 };
 
 // Set file size limit to 1
-const MAX_SIZE = 1024 * 1024 * 1024 * 1024; // 1GB in bytes
+const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 const SALT_ROUNDS = 10; // Number of salt rounds for bcrypt
 
 const storage = multer.memoryStorage();
@@ -135,9 +111,10 @@ const upload = multer({
         cb(null, true);
     },
 });
+
 // User registration
 exports.registerUser = [
-    upload.single("picture"), // Handle image uploads
+    upload.single("picture"), // Optional image upload
     async (req, res) => {
         try {
             console.log("Registration request received");
@@ -160,7 +137,7 @@ exports.registerUser = [
             }
 
             try {
-                // Check if user already exists - with error handling
+                // Check if user already exists
                 const existingUser = await User.findOne({ email }).maxTimeMS(15000);
                 if (existingUser) {
                     return res.status(400).json({ message: "User already exists" });
@@ -185,17 +162,17 @@ exports.registerUser = [
             if (req.file) {
                 try {
                     // Check file size if a file was uploaded
-                    if (req.file.size > 50 * 1024 * 1024) {
-                        return res.status(400).json({ message: "Picture size exceeds 50MB." });
+                    if (req.file.size > 5 * 1024 * 1024) {
+                        return res.status(400).json({ message: "Picture size exceeds 5MB." });
                     }
-                    base64Picture = req.file.buffer.toString("base64"); // Convert buffer to base64
+                    base64Picture = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`; // Convert buffer to base64 with mime type
                 } catch (fileError) {
                     console.error("File processing error:", fileError);
                     // Continue without picture if there's an error
                 }
             }
 
-            // Create a new user object with base64-encoded image
+            // Create a new user object
             const newUser = new User({
                 username,
                 gender: gender || "",
@@ -210,10 +187,18 @@ exports.registerUser = [
             try {
                 await newUser.save();
                 console.log("User registered successfully:", email);
-                res.status(201).json({ message: "User registered successfully" });
+
+                // Generate JWT token for immediate login
+                const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, { expiresIn: "1d" });
+
+                // Return token with success message for immediate login
+                return res.status(201).json({
+                    message: "User registered successfully",
+                    token,
+                });
             } catch (saveError) {
                 console.error("Error saving user:", saveError);
-                res.status(500).json({ message: "Error creating user account. Please try again." });
+                return res.status(500).json({ message: "Error creating user account. Please try again." });
             }
         } catch (error) {
             console.error("Registration error:", error); // Log error to the console
@@ -223,7 +208,7 @@ exports.registerUser = [
                 // Generic error message
                 return res.status(500).json({ message: `Server error: ${error.message}` });
             }
-            res.status(500).json({ message: "An internal server error occurred." });
+            return res.status(500).json({ message: "An internal server error occurred." });
         }
     },
 ];
@@ -282,6 +267,61 @@ exports.profile = async (req, res) => {
         res.status(500).json({ message: "Error fetching user profile", error: error.message });
     }
 };
+
+// Update Username
+exports.updateUsername = async (req, res) => {
+    try {
+        const userId = req.user; // Get user ID from JWT
+        const { username } = req.body;
+
+        if (!username || username.trim() === "") {
+            return res.status(400).json({ message: "Username is required" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        user.username = username;
+        await user.save();
+
+        return res.status(200).json({ message: "Username updated successfully" });
+    } catch (error) {
+        console.error("Error updating username:", error);
+        res.status(500).json({ message: "Error updating username", error: error.message });
+    }
+};
+
+// Update Profile Image
+exports.updateProfileImage = [
+    upload.single("picture"),
+    async (req, res) => {
+        try {
+            const userId = req.user; // Get user ID from JWT
+
+            if (!req.file) {
+                return res.status(400).json({ message: "No image file provided" });
+            }
+
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            // Convert image to base64
+            const base64Picture = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+
+            user.picture = base64Picture;
+            await user.save();
+
+            return res.status(200).json({ message: "Profile image updated successfully" });
+        } catch (error) {
+            console.error("Error updating profile image:", error);
+            res.status(500).json({ message: "Error updating profile image", error: error.message });
+        }
+    },
+];
 
 // Delete Account Controller
 exports.deleteAcc = async (req, res) => {
