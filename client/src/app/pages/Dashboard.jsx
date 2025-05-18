@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import TodoListParser from '../component/TodoListParser';
-import AddTask from '../component/AddTask';
-import AddTaskForm from '../component/AddTaskForm';
-import DeleteTaskForm from '../component/DeleteTaskForm';
-import UserProfile from '../component/UserProfile';
+import TodoListParser from '../../components/TodoListParser';
+import AddTask from '../../components/AddTask';
+import AddTaskForm from '../../components/AddTaskForm';
+import DeleteTaskForm from '../../components/DeleteTaskForm';
+import UserProfile from '../../components/UserProfile';
 
 function Dashboard() {
    const [isAddFormVisible, setIsAddFormVisible] = useState(false);

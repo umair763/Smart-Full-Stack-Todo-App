@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../app/context/AuthContext';
 
-function UserProfile({ setlogin }) {
+function UserProfile() {
    const [userDetails, setUserDetails] = useState({
       username: '',
       email: '',
@@ -12,6 +13,7 @@ function UserProfile({ setlogin }) {
 
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState('');
+   const { logout } = useAuth();
 
    useEffect(() => {
       const fetchUserProfile = async () => {
@@ -46,7 +48,6 @@ function UserProfile({ setlogin }) {
          } catch (err) {
             setError(`Error fetching user profile: ${err.message}`);
          } finally {
-            // setLoading(false);
             setTimeout(() => setLoading(false), 1000);
          }
       };
@@ -55,9 +56,9 @@ function UserProfile({ setlogin }) {
    }, []);
 
    const handleLogout = () => {
-      localStorage.removeItem('token');
-      setlogin(false);
+      logout();
    };
+
    const handleDeleteAccount = async () => {
       try {
          const token = localStorage.getItem('token');
@@ -78,61 +79,26 @@ function UserProfile({ setlogin }) {
             throw new Error(errorData.message);
          }
 
-         // Clear local storage and logout user
-         localStorage.removeItem('token');
-         setlogin(false);
-
+         // Use the logout function from AuthContext
+         logout();
          alert('Account deleted successfully!');
       } catch (err) {
          console.log(`Failed to delete account: ${err.message}`);
       }
    };
+
    if (loading) {
       return (
-         <>
-            <div class="relative w-full h-[300px] flex items-center justify-center rounded-md overflow-hidden">
-               {/* <!-- Scan line --> */}
-               <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-white/30 to-transparent animate-scan"></div>
+         <div className="relative w-full h-[300px] flex items-center justify-center rounded-md overflow-hidden">
+            {/* Scan line */}
+            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-white/30 to-transparent animate-[scan_2s_infinite_linear]"></div>
 
-               {/* <!-- Glowing border --> */}
-               <div class="absolute top-0 left-0 w-full h-full border-2 border-transparent rounded-md animate-glow"></div>
+            {/* Glowing border */}
+            <div className="absolute top-0 left-0 w-full h-full border-2 border-transparent rounded-md animate-[glow_3s_infinite_ease-in-out]"></div>
 
-               {/* <!-- Loading text --> */}
-               <div class="relative z-10 text-white text-lg font-semibold">Fetching Profile...</div>
-            </div>
-            <style jsx>
-               {`
-                  @layer utilities {
-                     @keyframes scan {
-                        0% {
-                           transform: translateY(-100%);
-                        }
-                        100% {
-                           transform: translateY(100%);
-                        }
-                     }
-
-                     @keyframes glow {
-                        0%,
-                        100% {
-                           box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-                        }
-                        50% {
-                           box-shadow: 0 10px 10px rgb(255, 255, 255);
-                        }
-                     }
-
-                     .animate-scan {
-                        animation: scan 2s infinite linear;
-                     }
-
-                     .animate-glow {
-                        animation: glow 3s infinite ease-in-out;
-                     }
-                  }
-               `}
-            </style>
-         </>
+            {/* Loading text */}
+            <div className="relative z-10 text-white text-lg font-semibold">Fetching Profile...</div>
+         </div>
       );
    }
 
@@ -153,24 +119,24 @@ function UserProfile({ setlogin }) {
          </div>
 
          <div className="bg-[#9df7f7] p-3 rounded-xl shadow-lg">
-            <p className="font-caros-light text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
+            <p className="text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
                Name: {userDetails.username}
             </p>
-            <p className="font-caros-light text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
+            <p className="text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
                Email: {userDetails.email}
             </p>
             {userDetails.gender && (
-               <p className="font-caros-light text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
+               <p className="text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
                   Gender: {userDetails.gender}
                </p>
             )}
             {userDetails.occupation && (
-               <p className="font-caros-light text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
+               <p className="text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
                   Occupation: {userDetails.occupation}
                </p>
             )}
             {userDetails.organization && (
-               <p className="font-caros-light text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
+               <p className="text-sm md:text-base sm:text-base lg:text-md mb-2 rounded-lg text-[#1D1D1D] bg-white p-2 break-words">
                   Organization: {userDetails.organization}
                </p>
             )}
@@ -178,13 +144,13 @@ function UserProfile({ setlogin }) {
             <div className="flex flex-col md:flex-row justify-between gap-3 md:gap-6 mt-4">
                <button
                   onClick={handleLogout}
-                  className="font-caros-light bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-full transition-colors duration-300 text-sm md:text-base"
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-full transition-colors duration-300 text-sm md:text-base"
                >
                   Logout
                </button>
                <button
                   onClick={handleDeleteAccount}
-                  className="font-caros-light bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-full transition-colors duration-300 text-sm md:text-base"
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-full transition-colors duration-300 text-sm md:text-base"
                >
                   Delete Account
                </button>
