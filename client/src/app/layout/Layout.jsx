@@ -1,10 +1,12 @@
+'use client';
+
 import { Outlet } from 'react-router-dom';
 import Footer from './Footer';
 
 const Layout = () => {
    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0172af] to-[#74febd] flex flex-col">
-         {/* Remove the Header from here */}
+      <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] flex flex-col">
+         <div className="container mx-auto px-4 py-4"></div>
          <main className="flex-grow flex justify-center items-center p-4">
             <Outlet />
          </main>
