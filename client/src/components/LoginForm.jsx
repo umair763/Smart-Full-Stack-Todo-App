@@ -35,7 +35,7 @@ function LoginForm({ setlogin }) {
          if (token) {
             try {
                // Validate the token with the backend
-               const response = await fetch('http://localhost:5000/api/users/profile', {
+               const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/profile', {
                   method: 'GET',
                   headers: {
                      'Content-Type': 'application/json',
@@ -66,8 +66,7 @@ function LoginForm({ setlogin }) {
       setError('');
 
       try {
-         // const response = await fetch('http://localhost:5000/api/users/login', {
-         const response = await fetch('https://todo-app-full-stack-opal.vercel.app/api/users/login', {
+         const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/login', {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',

@@ -39,7 +39,7 @@ function Registeruser() {
       formData.append('picture', picture);
 
       try {
-         const response = await fetch('http://localhost:5000/api/users/register', {
+         const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/register', {
             method: 'POST',
             body: formData, // Send the formData
          });
