@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import './AllComponentsStyle.css';
 import DisplayTodoList from './DisplayTodoList';
 
 // Function to check if a task has exceeded its deadline
@@ -55,43 +54,19 @@ function TodoListParser({ todolist, searched }) {
    }, [displayList]); // Recalculate whenever the displayed list changes
 
    return (
-      <>
-         <div className="scrollableContainer">
-            {displayList.length > 0 ? (
-               displayList.map((list, i) => (
-                  <DisplayTodoList
-                     key={list._id || i}
-                     list={list}
-                     isexceeded={exceededStatuses[i]} // Pass the exceeded status for each task
-                  />
-               ))
-            ) : (
-               <NoTasksMessage />
-            )}
-         </div>
-         <style jsx>{`
-            .scrollableContainer {
-               max-height: 45vh; /* Set height for the container, not tasks */
-               overflow-y: auto; /* Enable scrolling for overflowing content */
-            }
-
-            .scrollableContainer::-webkit-scrollbar {
-               width: 10px;
-               margin-left: 2px;
-            }
-            .scrollableContainer::-webkit-scrollbar-thumb {
-               background: rgba(5, 103, 189, 0.782);
-               border-radius: 10px;
-            }
-            .scrollableContainer::-webkit-scrollbar-thumb:hover {
-               background: rgba(3, 90, 166, 0.782);
-            }
-            .scrollableContainer::-webkit-scrollbar-track {
-               background: rgb(133, 198, 255);
-               border-radius: 10px;
-            }
-         `}</style>
-      </>
+      <div className="max-h-[45vh] overflow-y-auto [&::-webkit-scrollbar]:w-[10px] [&::-webkit-scrollbar]:ml-[2px] [&::-webkit-scrollbar-thumb]:bg-[rgba(5,103,189,0.782)] [&::-webkit-scrollbar-thumb]:rounded-[10px] [&::-webkit-scrollbar-thumb:hover]:bg-[rgba(3,90,166,0.782)] [&::-webkit-scrollbar-track]:bg-[rgb(133,198,255)] [&::-webkit-scrollbar-track]:rounded-[10px]">
+         {displayList.length > 0 ? (
+            displayList.map((list, i) => (
+               <DisplayTodoList
+                  key={list._id || i}
+                  list={list}
+                  isexceeded={exceededStatuses[i]} // Pass the exceeded status for each task
+               />
+            ))
+         ) : (
+            <NoTasksMessage />
+         )}
+      </div>
    );
 }
 
