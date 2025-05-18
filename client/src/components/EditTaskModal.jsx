@@ -212,7 +212,7 @@ function EditTaskModal({ task, onClose, onSave }) {
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                </button>
-            </div>
+               </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
                <div>
@@ -295,7 +295,7 @@ function EditTaskModal({ task, onClose, onSave }) {
                <div className="relative">
                   <label className="block text-white text-sm font-medium mb-2">Time</label>
                   <div className="relative">
-                     <input
+                  <input
                         type="text"
                         name="time"
                         value={editedTask.time}
@@ -303,8 +303,8 @@ function EditTaskModal({ task, onClose, onSave }) {
                         onFocus={() => setShowTimePicker(true)}
                         className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white transition-all"
                         placeholder="HH:MM AM/PM"
-                        required
-                     />
+                     required
+                  />
                      <button
                         type="button"
                         onClick={() => setShowTimePicker(!showTimePicker)}
@@ -448,7 +448,7 @@ function EditTaskModal({ task, onClose, onSave }) {
                      </label>
 
                      <label className="inline-flex items-center">
-                        <input
+                  <input
                            type="radio"
                            name="color"
                            value="green"
