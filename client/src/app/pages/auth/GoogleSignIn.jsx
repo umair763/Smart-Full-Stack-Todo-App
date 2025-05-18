@@ -1,8 +1,13 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-function GoogleSignIn({ setlogin }) {
+function GoogleSignIn() {
+   const { login } = useAuth();
+   const navigate = useNavigate();
+
    const handleLoginSuccess = async (response) => {
       const { credential } = response;
 
@@ -10,16 +15,12 @@ function GoogleSignIn({ setlogin }) {
          // Decode Google token
          const decodedToken = JSON.parse(atob(credential.split('.')[1]));
 
-         // console.log('Decoded Google Token:', decodedToken);
-
          // User data (matching backend schema)
          const userData = {
-            name: decodedToken.name, // Mapping name from Google to 'username'
+            name: decodedToken.name,
             email: decodedToken.email,
             picture: decodedToken.picture,
          };
-
-         // console.log('Sending User Data:', userData);
 
          // Send user data to backend to create user and generate JWT
          const backendResponse = await axios.post(
@@ -27,14 +28,11 @@ function GoogleSignIn({ setlogin }) {
             userData
          );
 
+         // On success, set the login state to true using AuthContext
+         login(backendResponse.data.token);
 
-         // console.log('User saved successfully:', backendResponse.data);
-
-         // On success, set the login state to true
-         setlogin(true); // Ensure the app state is updated with login status
-
-         // Store the token in localStorage for future requests
-         localStorage.setItem('token', backendResponse.data.token);
+         // Navigate to dashboard
+         navigate('/dashboard');
       } catch (error) {
          console.error('Error during Google login:', error);
       }
