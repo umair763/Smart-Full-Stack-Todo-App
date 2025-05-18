@@ -202,7 +202,7 @@ function Dashboard() {
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
                </div>
             ) : (
-               <TodoListParser todolist={searched} setexceeded={isexceeded} settask={tasks} />
+               <TodoListParser todolist={searched} setexceeded={isexceeded} settask={setTasks} />
             )}
          </div>
 

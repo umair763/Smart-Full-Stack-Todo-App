@@ -66,6 +66,73 @@ exports.googleSignIn = async (req, res) => {
         if (!user) {
             console.log("Creating new user for email:", email);
 
+            // Fetch and convert Google profile picture to base64
+            let base64Picture = null;
+            if (picture) {
+                try {
+                    console.log("Fetching Google profile image:", picture);
+
+                    // Try better approach with more headers to avoid CORS issues
+                    const imageResponse = await fetch(picture, {
+                        method: "GET",
+                        headers: {
+                            Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                            "Accept-Encoding": "gzip, deflate, br",
+                            "User-Agent": "Mozilla/5.0 (compatible; ServerFetch/1.0)",
+                            "Sec-Fetch-Mode": "no-cors",
+                            "Sec-Fetch-Dest": "image",
+                            "Cache-Control": "no-cache",
+                            Pragma: "no-cache",
+                        },
+                    });
+
+                    if (imageResponse.ok) {
+                        const imageBuffer = await imageResponse.buffer();
+                        const contentType = imageResponse.headers.get("content-type") || "image/jpeg";
+                        base64Picture = `data:${contentType};base64,${imageBuffer.toString("base64")}`;
+                        console.log("Successfully converted image to base64");
+                    } else {
+                        console.error("Failed to fetch image with first approach, trying alternative method");
+
+                        // Fallback to simpler method
+                        const alternativeResponse = await new Promise((resolve, reject) => {
+                            const isHttps = picture.startsWith("https");
+                            const client = isHttps ? https : http;
+
+                            client
+                                .get(picture, (res) => {
+                                    if (res.statusCode !== 200) {
+                                        return reject(new Error(`Failed to fetch image: ${res.statusCode}`));
+                                    }
+
+                                    const chunks = [];
+                                    res.on("data", (chunk) => chunks.push(chunk));
+                                    res.on("end", () => {
+                                        const buffer = Buffer.concat(chunks);
+                                        const contentType = res.headers["content-type"] || "image/jpeg";
+                                        resolve({
+                                            buffer,
+                                            contentType,
+                                        });
+                                    });
+                                })
+                                .on("error", reject);
+                        });
+
+                        base64Picture = `data:${alternativeResponse.contentType};base64,${alternativeResponse.buffer.toString(
+                            "base64"
+                        )}`;
+                        console.log("Successfully converted image with alternative method");
+                    }
+                } catch (imgError) {
+                    console.error("Error fetching Google profile image:", imgError);
+                    // Create a default image with first letter of name
+                    const firstLetter = name.charAt(0).toUpperCase();
+                    console.log("Using default image with first letter:", firstLetter);
+                    // Continue without the image if there's an error
+                }
+            }
+
             // Create a user with picture from Google
             user = new User({
                 username: name,
@@ -74,11 +141,38 @@ exports.googleSignIn = async (req, res) => {
                 gender: "",
                 occupation: "",
                 organization: "",
-                picture: picture, // Store the Google profile picture URL
+                picture: base64Picture, // Store converted base64 image instead of URL
             });
 
             await user.save();
             console.log("User created successfully with ID:", user._id);
+        }
+        // If user exists but doesn't have a picture, and we got one from Google now
+        else if (user && !user.picture && picture) {
+            try {
+                console.log("Updating existing user with Google profile picture");
+                // Fetch and convert Google profile picture to base64
+                const imageResponse = await fetch(picture, {
+                    headers: {
+                        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                        "User-Agent": "Mozilla/5.0 (compatible; ServerFetch/1.0)",
+                    },
+                });
+
+                if (imageResponse.ok) {
+                    const imageBuffer = await imageResponse.buffer();
+                    const contentType = imageResponse.headers.get("content-type") || "image/jpeg";
+                    const base64Picture = `data:${contentType};base64,${imageBuffer.toString("base64")}`;
+
+                    // Update user with the picture
+                    user.picture = base64Picture;
+                    await user.save();
+                    console.log("Updated existing user with Google profile picture");
+                }
+            } catch (updateImgError) {
+                console.error("Error updating existing user with Google profile picture:", updateImgError);
+                // Continue without updating the image if there's an error
+            }
         }
 
         // Generate token
@@ -332,17 +426,23 @@ exports.deleteAcc = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized: User ID not found in request" });
         }
 
+        console.log("Attempting to delete user account:", userId);
+
         // Find the user
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
+        console.log("User found, deleting associated tasks...");
+
         // Delete all tasks associated with the user
-        await Task.deleteMany({ user: userId }); // Ensure it uses the `user` field
+        const deleteTasksResult = await Task.deleteMany({ user: userId });
+        console.log("Tasks deleted:", deleteTasksResult);
 
         // Delete the user
-        await User.findByIdAndDelete(userId);
+        const deleteUserResult = await User.findByIdAndDelete(userId);
+        console.log("User deleted:", deleteUserResult);
 
         return res.status(200).json({ message: "User and associated tasks deleted successfully" });
     } catch (error) {

@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App';
 import './index.css';
 import { AuthProvider } from './app/context/AuthContext';
+import { SocketProvider } from './app/context/SocketContext';
 
 // Get Google Client ID from environment variable or use the hardcoded one as fallback
 const CLIENT_ID =
@@ -14,12 +15,11 @@ createRoot(document.getElementById('root')).render(
    <React.StrictMode>
       <BrowserRouter>
          <AuthProvider>
-            <GoogleOAuthProvider
-               clientId={CLIENT_ID}
-               onScriptLoadError={(err) => console.error('Google OAuth script load error:', err)}
-            >
-               <App />
-            </GoogleOAuthProvider>
+            <SocketProvider>
+               <GoogleOAuthProvider clientId={CLIENT_ID}>
+                  <App />
+               </GoogleOAuthProvider>
+            </SocketProvider>
          </AuthProvider>
       </BrowserRouter>
    </React.StrictMode>

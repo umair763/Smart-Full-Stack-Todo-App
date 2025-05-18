@@ -5,6 +5,7 @@ import RegisterUser from '../pages/auth/RegisterUser';
 import Layout from '../layout/Layout';
 import Dashboard from '../pages/Dashboard';
 import Settings from '../pages/Settings';
+import Insights from '../pages/Insights';
 import { useAuth } from '../context/AuthContext';
 
 const AppRoutes = () => {
@@ -22,8 +23,9 @@ const AppRoutes = () => {
             <>
                <Route element={<Layout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/insights" element={<Insights />} />
                </Route>
-               <Route path="/settings" element={<Settings />} />
                <Route path="/" element={<Navigate to="/dashboard" />} />
                <Route path="*" element={<Navigate to="/dashboard" />} />
             </>
