@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import GoogleSignIn from './GoogleSignIn';
 
 function RegisterUser() {
-   const [username, setUsername] = useState('');
-   const [picture, setPicture] = useState(null);
-   const [gender, setGender] = useState('');
-   const [occupation, setOccupation] = useState('');
-   const [organization, setOrganization] = useState('');
-   const [email, setEmail] = useState('');
-   const [password, setPassword] = useState('');
+   const [formData, setFormData] = useState({
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+   });
    const [error, setError] = useState('');
    const [success, setSuccess] = useState('');
+   const [isLoading, setIsLoading] = useState(false);
    const [isPasswordVisible, setPasswordVisible] = useState(false);
    const navigate = useNavigate();
 
@@ -18,153 +19,172 @@ function RegisterUser() {
       setPasswordVisible(!isPasswordVisible);
    };
 
-   const handlePictureUpload = (e) => {
-      if (e.target.files && e.target.files[0]) {
-         setPicture(e.target.files[0]); // Set the uploaded picture file
-      }
+   const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData({
+         ...formData,
+         [name]: value,
+      });
    };
 
    const handleSubmit = async (e) => {
       e.preventDefault();
       setError('');
       setSuccess('');
+      setIsLoading(true);
 
-      // Prepare FormData for the multipart form submission
-      const formData = new FormData();
-      formData.append('username', username);
-      formData.append('gender', gender);
-      formData.append('occupation', occupation);
-      formData.append('organization', organization);
-      formData.append('email', email);
-      formData.append('password', password);
-      if (picture) {
-         formData.append('picture', picture);
+      // Basic validation
+      if (!formData.username || !formData.email || !formData.password) {
+         setError('All fields are required');
+         setIsLoading(false);
+         return;
       }
+
+      if (formData.password !== formData.confirmPassword) {
+         setError('Passwords do not match');
+         setIsLoading(false);
+         return;
+      }
+
+      // Prepare form data
+      const submitData = new FormData();
+      submitData.append('username', formData.username);
+      submitData.append('email', formData.email);
+      submitData.append('password', formData.password);
 
       try {
          const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/register', {
             method: 'POST',
-            body: formData, // Send the formData
+            body: submitData,
          });
 
          const data = await response.json();
 
          if (response.ok) {
-            setSuccess('Registration successful!');
+            setSuccess('Registration successful! Redirecting to login...');
             setTimeout(() => navigate('/'), 2000);
          } else {
-            // Provide detailed error messages based on the response
-            if (data.message) {
-               setError(data.message);
-            } else {
-               setError('Registration failed. Please check your inputs.');
-            }
+            setError(data.message || 'Registration failed. Please try again.');
          }
       } catch (err) {
-         setError('An error occurred. Please try again.');
+         setError('Server error. Please try again later.');
+         console.error('Registration error:', err);
+      } finally {
+         setIsLoading(false);
       }
    };
 
    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0172af] to-[#74febd] flex justify-center items-center p-4">
-         <div className="bg-gradient-to-br from-[#0700DE] to-[#c4faa5] p-5 rounded-xl text-gray-200 shadow-xl w-full max-w-sm md:max-w-lg lg:max-w-xl">
-            <h2 className="text-center text-xl md:text-2xl lg:text-3xl font-extrabold">Register</h2>
-            <form onSubmit={handleSubmit}>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">User name</label>
+      <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] flex justify-center items-center p-4">
+         <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
+            <h2 className="text-3xl font-bold text-center text-[#9406E6] mb-6">Create Account</h2>
+
+            {error && (
+               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>
+            )}
+
+            {success && (
+               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                  {success}
+               </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+               <div>
+                  <label htmlFor="username" className="block text-gray-700 font-medium mb-1">
+                     Username
+                  </label>
                   <input
                      type="text"
-                     value={username}
-                     onChange={(e) => setUsername(e.target.value)}
-                     required
-                     className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base"
+                     id="username"
+                     name="username"
+                     value={formData.username}
+                     onChange={handleChange}
+                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
+                     placeholder="Enter your username"
                   />
                </div>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">Gender</label>
-                  <input
-                     type="text"
-                     value={gender}
-                     onChange={(e) => setGender(e.target.value)}
-                     required
-                     className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base"
-                  />
-               </div>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">Occupation</label>
-                  <input
-                     type="text"
-                     value={occupation}
-                     onChange={(e) => setOccupation(e.target.value)}
-                     required
-                     className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base"
-                  />
-               </div>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">Organization</label>
-                  <input
-                     type="text"
-                     value={organization}
-                     onChange={(e) => setOrganization(e.target.value)}
-                     required
-                     className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base"
-                  />
-               </div>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">Email</label>
+
+               <div>
+                  <label htmlFor="email" className="block text-gray-700 font-medium mb-1">
+                     Email
+                  </label>
                   <input
                      type="email"
-                     value={email}
-                     onChange={(e) => setEmail(e.target.value)}
-                     required
-                     className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base"
+                     id="email"
+                     name="email"
+                     value={formData.email}
+                     onChange={handleChange}
+                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
+                     placeholder="Enter your email"
                   />
                </div>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">Password</label>
+
+               <div>
+                  <label htmlFor="password" className="block text-gray-700 font-medium mb-1">
+                     Password
+                  </label>
                   <div className="relative">
                      <input
                         type={isPasswordVisible ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base pr-16 w-full"
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
+                        placeholder="Enter your password"
                      />
-                     <div
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-white text-sm"
+                     <button
+                        type="button"
                         onClick={togglePasswordVisibility}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                      >
                         {isPasswordVisible ? 'Hide' : 'Show'}
-                     </div>
+                     </button>
                   </div>
                </div>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">Profile Picture</label>
+
+               <div>
+                  <label htmlFor="confirmPassword" className="block text-gray-700 font-medium mb-1">
+                     Confirm Password
+                  </label>
                   <input
-                     type="file"
-                     accept="image/*"
-                     onChange={handlePictureUpload}
-                     className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base"
+                     type={isPasswordVisible ? 'text' : 'password'}
+                     id="confirmPassword"
+                     name="confirmPassword"
+                     value={formData.confirmPassword}
+                     onChange={handleChange}
+                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
+                     placeholder="Confirm your password"
                   />
                </div>
 
-               {error && <p className="text-red-500 text-xs md:text-sm lg:text-base mb-4">{error}</p>}
-               {success && <p className="text-green-500 text-xs md:text-sm lg:text-base mb-4">{success}</p>}
-
-               <div className="flex flex-col md:flex-row gap-3 items-center justify-center">
+               <div className="flex flex-col gap-4">
                   <button
                      type="submit"
-                     className="bg-[#9406e6] text-white rounded-lg p-2 px-4 md:px-6 font-bold hover:bg-[#8306ca] transition-all duration-300 w-full md:w-auto text-sm md:text-base lg:text-lg"
+                     disabled={isLoading}
+                     className={`w-full bg-[#9406E6] text-white font-bold py-3 rounded-lg hover:bg-[#7d05c3] transition-colors ${
+                        isLoading ? 'opacity-70 cursor-not-allowed' : ''
+                     }`}
                   >
-                     Register
+                     {isLoading ? 'Registering...' : 'Register'}
                   </button>
-                  <button
-                     type="button"
-                     onClick={() => navigate('/')}
-                     className="bg-[#9406e6] text-white rounded-lg p-2 px-4 md:px-6 font-bold hover:bg-[#8306ca] transition-all duration-300 w-full md:w-auto text-sm md:text-base lg:text-lg"
-                  >
-                     Back to Login
-                  </button>
+
+                  <div className="text-center">
+                     <p className="text-gray-600">Or sign up with</p>
+                     <div className="flex justify-center mt-2">
+                        <GoogleSignIn />
+                     </div>
+                  </div>
+
+                  <div className="text-center mt-4">
+                     <p className="text-gray-600">
+                        Already have an account?{' '}
+                        <Link to="/" className="text-[#9406E6] font-medium hover:underline">
+                           Login
+                        </Link>
+                     </p>
+                  </div>
                </div>
             </form>
          </div>

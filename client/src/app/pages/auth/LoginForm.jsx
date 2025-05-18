@@ -4,17 +4,27 @@ import { useAuth } from '../../context/AuthContext';
 import GoogleSignIn from './GoogleSignIn';
 
 function LoginForm() {
-   const [showRegister, setShowRegister] = useState(false);
-   const [email, setEmail] = useState('');
-   const [password, setPassword] = useState('');
+   const [formData, setFormData] = useState({
+      email: '',
+      password: '',
+   });
    const [error, setError] = useState('');
    const [loading, setLoading] = useState(true);
+   const [isLoggingIn, setIsLoggingIn] = useState(false);
    const [isPasswordVisible, setPasswordVisible] = useState(false);
    const navigate = useNavigate();
    const { login } = useAuth();
 
    const togglePasswordVisibility = () => {
       setPasswordVisible(!isPasswordVisible);
+   };
+
+   const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData({
+         ...formData,
+         [name]: value,
+      });
    };
 
    // Check for token in local storage on component mount and validate it
@@ -51,6 +61,13 @@ function LoginForm() {
    const handleSubmit = async (e) => {
       e.preventDefault();
       setError('');
+      setIsLoggingIn(true);
+
+      if (!formData.email || !formData.password) {
+         setError('Email and password are required');
+         setIsLoggingIn(false);
+         return;
+      }
 
       try {
          const response = await fetch('https://smart-full-stack-todo-app.vercel.app/api/users/login', {
@@ -58,98 +75,114 @@ function LoginForm() {
             headers: {
                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({
+               email: formData.email,
+               password: formData.password,
+            }),
          });
 
          const data = await response.json();
 
          if (response.ok) {
-            login(data.token); // Use the login function from AuthContext
+            login(data.token);
             navigate('/dashboard');
          } else {
-            setError(data.message || 'Login failed');
+            setError(data.message || 'Invalid credentials');
          }
       } catch (err) {
-         setError('An error occurred during login.');
+         setError('Server error. Please try again later.');
+      } finally {
+         setIsLoggingIn(false);
       }
    };
 
    if (loading) {
       return (
-         <div className="min-h-screen w-full bg-gradient-to-br from-[#0172af] to-[#74febd] flex justify-center items-center">
-            <div className="relative w-full h-[300px] flex items-center justify-center rounded-md overflow-hidden">
-               {/* Scan line */}
-               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent via-white/30 to-transparent animate-[scan_2s_infinite_linear]"></div>
-
-               {/* Glowing border */}
-               <div className="absolute top-0 left-0 w-full h-full border-2 border-transparent rounded-md animate-[glow_3s_infinite_ease-in-out]"></div>
-
-               {/* Loading text */}
-               <div className="relative z-10 text-white text-lg font-semibold">Please wait...</div>
+         <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] flex justify-center items-center">
+            <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
+               <div className="flex justify-center items-center h-40">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6]"></div>
+               </div>
             </div>
          </div>
       );
    }
 
    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0172af] to-[#74febd] flex justify-center items-center p-4">
-         <div className="bg-gradient-to-br from-[#5d53e7] to-[#ea26fb] p-5 rounded-xl text-gray-200 shadow-xl w-full max-w-sm md:max-w-lg lg:max-w-xl">
-            <h2 className="text-center text-xl md:text-2xl lg:text-3xl font-extrabold">Login Form</h2>
-            <form onSubmit={handleSubmit}>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">User name</label>
-                  <input
-                     type="text"
-                     required
-                     className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base"
-                     placeholder="Enter your username"
-                  />
-               </div>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">Email</label>
+      <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] flex justify-center items-center p-4">
+         <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
+            <h2 className="text-3xl font-bold text-center text-[#9406E6] mb-6">Welcome Back</h2>
+
+            {error && (
+               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+               <div>
+                  <label htmlFor="email" className="block text-gray-700 font-medium mb-1">
+                     Email
+                  </label>
                   <input
                      type="email"
-                     value={email}
-                     onChange={(e) => setEmail(e.target.value)}
-                     required
-                     className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base"
+                     id="email"
+                     name="email"
+                     value={formData.email}
+                     onChange={handleChange}
+                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
                      placeholder="Enter your email"
                   />
                </div>
-               <div className="flex flex-col justify-center mb-4 font-bold">
-                  <label className="pt-4 pb-2 text-sm md:text-base lg:text-lg">Password</label>
+
+               <div>
+                  <label htmlFor="password" className="block text-gray-700 font-medium mb-1">
+                     Password
+                  </label>
                   <div className="relative">
                      <input
                         type={isPasswordVisible ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="border-b border-white bg-transparent text-white placeholder-gray-300 focus:outline-none px-2 py-1 text-sm md:text-base pr-16 w-full"
+                        id="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
                         placeholder="Enter your password"
                      />
-                     <div
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer text-white text-sm"
+                     <button
+                        type="button"
                         onClick={togglePasswordVisibility}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                      >
                         {isPasswordVisible ? 'Hide' : 'Show'}
-                     </div>
+                     </button>
                   </div>
                </div>
-               {error && <p className="text-red-500 text-xs md:text-sm lg:text-base mb-4">{error}</p>}
-               <div className="flex flex-col md:flex-row gap-3 items-center justify-center">
+
+               <div className="flex flex-col gap-4">
                   <button
                      type="submit"
-                     className="bg-[#9406e6] text-white rounded-lg p-2 px-4 md:px-6 font-bold hover:bg-[#8306ca] transition-all duration-300 w-full md:w-auto text-sm md:text-base lg:text-lg"
+                     disabled={isLoggingIn}
+                     className={`w-full bg-[#9406E6] text-white font-bold py-3 rounded-lg hover:bg-[#7d05c3] transition-colors ${
+                        isLoggingIn ? 'opacity-70 cursor-not-allowed' : ''
+                     }`}
                   >
-                     Login
+                     {isLoggingIn ? 'Logging in...' : 'Login'}
                   </button>
-                  <Link
-                     to="/register"
-                     className="bg-[#9406e6] text-white rounded-lg p-2 px-4 md:px-6 font-bold hover:bg-[#8306ca] transition-all duration-300 w-full md:w-auto text-sm md:text-base lg:text-lg text-center"
-                  >
-                     Register
-                  </Link>
-                  <GoogleSignIn />
+
+                  <div className="text-center">
+                     <p className="text-gray-600">Or sign in with</p>
+                     <div className="flex justify-center mt-2">
+                        <GoogleSignIn />
+                     </div>
+                  </div>
+
+                  <div className="text-center mt-4">
+                     <p className="text-gray-600">
+                        Don't have an account?{' '}
+                        <Link to="/register" className="text-[#9406E6] font-medium hover:underline">
+                           Register
+                        </Link>
+                     </p>
+                  </div>
                </div>
             </form>
          </div>
