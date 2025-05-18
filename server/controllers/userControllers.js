@@ -4,56 +4,106 @@ const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/userModel");
 const Task = require("../models/taskModel"); // Ensure Task is imported
+const https = require("https");
+const http = require("http");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
-// Google Sign-In Handler// Google Sign-In Handler
-// Required for fetching images
-const fetch = require("node-fetch");
+// Required for fetching images - with fallback
+let fetch;
+try {
+    // Try to use node-fetch if available
+    fetch = require("node-fetch");
+} catch (e) {
+    console.log("node-fetch not available, using custom implementation");
+    // Simple fallback implementation of fetch for profile pictures
+    fetch = async (url) => {
+        return new Promise((resolve, reject) => {
+            const isHttps = url.startsWith("https");
+            const client = isHttps ? https : http;
 
+            const req = client.get(url, (res) => {
+                if (res.statusCode < 200 || res.statusCode >= 300) {
+                    return reject(new Error(`HTTP status code ${res.statusCode}`));
+                }
+
+                const data = [];
+                res.on("data", (chunk) => data.push(chunk));
+                res.on("end", () => {
+                    resolve({
+                        ok: true,
+                        status: res.statusCode,
+                        statusText: res.statusMessage,
+                        buffer: () => Promise.resolve(Buffer.concat(data)),
+                    });
+                });
+            });
+
+            req.on("error", reject);
+            req.end();
+        });
+    };
+}
+
+// Google Sign-In Handler// Google Sign-In Handler
 // Google Sign-In Handler
 exports.googleSignIn = async (req, res) => {
-    const { name, email, picture } = req.body;
-
-    if (!name || !email) {
-        return res.status(400).json({ error: "Missing required fields (name, email)" });
-    }
-
     try {
+        const { name, email, picture } = req.body;
+
+        if (!name || !email) {
+            return res.status(400).json({ error: "Missing required fields (name, email)" });
+        }
+
+        // Log the incoming request data for debugging
+        console.log("Google Sign-In request:", { name, email, picture: picture ? "Picture provided" : "No picture" });
+
         let user = await User.findOne({ email });
 
         if (!user) {
-            // Try to fetch picture if provided
-            let base64Picture = null;
-            if (picture) {
-                try {
-                    const response = await fetch(picture);
-                    const imageBuffer = await response.buffer();
-                    base64Picture = imageBuffer.toString("base64");
-                } catch (fetchError) {
-                    console.error("Error fetching profile picture:", fetchError);
-                    // Continue without picture if fetch fails
-                }
-            }
+            console.log("Creating new user for:", email);
 
-            // Create new user
+            // Create new user without trying to fetch the picture
             user = new User({
                 username: name,
                 gender: "",
                 occupation: "",
                 organization: "",
                 email: email,
-                password: await bcrypt.hash("tempPassword123", 10),
-                picture: base64Picture,
+                password: await bcrypt.hash("tempPassword123" + Date.now(), 10), // Add timestamp to make unique
+                picture: null, // Skip picture for now
             });
 
             await user.save();
+
+            // If a picture URL was provided, try to fetch it in the background
+            if (picture) {
+                try {
+                    console.log("Attempting to fetch profile picture");
+                    const response = await fetch(picture);
+
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+                    }
+
+                    const imageBuffer = await response.buffer();
+                    const base64Picture = imageBuffer.toString("base64");
+
+                    // Update the user with the picture after saving
+                    await User.findByIdAndUpdate(user._id, { picture: base64Picture });
+                    console.log("Profile picture updated successfully");
+                } catch (pictureError) {
+                    console.error("Error fetching profile picture:", pictureError);
+                    // Non-blocking - we continue even if picture fetch fails
+                }
+            }
         }
 
         const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "1d" });
+        console.log("User authenticated successfully:", user.email);
 
         return res.status(200).json({
             message: "User authenticated successfully",
@@ -66,7 +116,7 @@ exports.googleSignIn = async (req, res) => {
         });
     } catch (error) {
         console.error("Error during Google sign-in:", error);
-        return res.status(500).json({ error: "Failed to authenticate user" });
+        return res.status(500).json({ error: `Failed to authenticate user: ${error.message}` });
     }
 };
 
@@ -90,33 +140,59 @@ exports.registerUser = [
     upload.single("picture"), // Handle image uploads
     async (req, res) => {
         try {
-            console.log("Request Body:", req.body);
-            console.log("Password:", req.body.password);
-            console.log("Picture:", req.file);
+            console.log("Registration request received");
+
+            // Check if body contains required fields
+            if (!req.body) {
+                return res.status(400).json({ message: "Request body is missing" });
+            }
 
             const { username, gender, occupation, organization, email, password } = req.body;
+            console.log("Registration data:", {
+                username,
+                email,
+                hasPassword: !!password,
+                hasFile: !!req.file,
+            });
 
             if (!username || !email || !password) {
                 return res.status(400).json({ message: "All fields are required" });
             }
 
-            // Check if user already exists
-            const existingUser = await User.findOne({ email });
-            if (existingUser) {
-                return res.status(400).json({ message: "User already exists" });
+            try {
+                // Check if user already exists - with error handling
+                const existingUser = await User.findOne({ email }).maxTimeMS(15000);
+                if (existingUser) {
+                    return res.status(400).json({ message: "User already exists" });
+                }
+            } catch (dbError) {
+                console.error("Database error checking existing user:", dbError);
+                return res.status(500).json({ message: "Database error. Please try again." });
             }
 
             // Hash the password
-            const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+            const saltRounds = 10;
+            let hashedPassword;
+            try {
+                hashedPassword = await bcrypt.hash(password, saltRounds);
+            } catch (hashError) {
+                console.error("Password hashing error:", hashError);
+                return res.status(500).json({ message: "Error securing your password. Please try again." });
+            }
 
             // Convert image to base64 string if it exists
             let base64Picture = null;
             if (req.file) {
-                // Check file size if a file was uploaded
-                if (req.file.size > 50 * 1024 * 1024) {
-                    return res.status(400).json({ message: "Picture size exceeds 50MB." });
+                try {
+                    // Check file size if a file was uploaded
+                    if (req.file.size > 50 * 1024 * 1024) {
+                        return res.status(400).json({ message: "Picture size exceeds 50MB." });
+                    }
+                    base64Picture = req.file.buffer.toString("base64"); // Convert buffer to base64
+                } catch (fileError) {
+                    console.error("File processing error:", fileError);
+                    // Continue without picture if there's an error
                 }
-                base64Picture = req.file.buffer.toString("base64"); // Convert buffer to base64
             }
 
             // Create a new user object with base64-encoded image
@@ -130,17 +206,22 @@ exports.registerUser = [
                 picture: base64Picture, // Store base64 image
             });
 
-            // Save the user to the database
-            await newUser.save();
-
-            res.status(201).json({ message: "User registered successfully" });
+            // Save the user to the database with error handling
+            try {
+                await newUser.save();
+                console.log("User registered successfully:", email);
+                res.status(201).json({ message: "User registered successfully" });
+            } catch (saveError) {
+                console.error("Error saving user:", saveError);
+                res.status(500).json({ message: "Error creating user account. Please try again." });
+            }
         } catch (error) {
-            console.error(error); // Log error to the console
+            console.error("Registration error:", error); // Log error to the console
             if (error instanceof multer.MulterError) {
-                return res.status(400).json({ message: error.message });
+                return res.status(400).json({ message: `File upload error: ${error.message}` });
             } else if (error.message) {
                 // Generic error message
-                return res.status(500).json({ message: error.message });
+                return res.status(500).json({ message: `Server error: ${error.message}` });
             }
             res.status(500).json({ message: "An internal server error occurred." });
         }
