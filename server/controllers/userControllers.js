@@ -18,18 +18,26 @@ const fetch = require("node-fetch");
 exports.googleSignIn = async (req, res) => {
     const { name, email, picture } = req.body;
 
-    if (!name || !email || !picture) {
-        return res.status(400).json({ error: "Missing required fields (name, email, picture)" });
+    if (!name || !email) {
+        return res.status(400).json({ error: "Missing required fields (name, email)" });
     }
 
     try {
         let user = await User.findOne({ email });
 
         if (!user) {
-            // Fetch picture and convert to base64
-            const response = await fetch(picture);
-            const imageBuffer = await response.buffer();
-            const base64Picture = imageBuffer.toString("base64");
+            // Try to fetch picture if provided
+            let base64Picture = null;
+            if (picture) {
+                try {
+                    const response = await fetch(picture);
+                    const imageBuffer = await response.buffer();
+                    base64Picture = imageBuffer.toString("base64");
+                } catch (fetchError) {
+                    console.error("Error fetching profile picture:", fetchError);
+                    // Continue without picture if fetch fails
+                }
+            }
 
             // Create new user
             user = new User({
@@ -92,11 +100,6 @@ exports.registerUser = [
                 return res.status(400).json({ message: "All fields are required" });
             }
 
-            // Check file size (this is extra precaution if needed)
-            if (req.file.size > 50 * 1024 * 1024) {
-                return res.status(400).json({ message: "Picture size exceeds 50MB." });
-            }
-
             // Check if user already exists
             const existingUser = await User.findOne({ email });
             if (existingUser) {
@@ -109,16 +112,20 @@ exports.registerUser = [
             // Convert image to base64 string if it exists
             let base64Picture = null;
             if (req.file) {
+                // Check file size if a file was uploaded
+                if (req.file.size > 50 * 1024 * 1024) {
+                    return res.status(400).json({ message: "Picture size exceeds 50MB." });
+                }
                 base64Picture = req.file.buffer.toString("base64"); // Convert buffer to base64
             }
 
             // Create a new user object with base64-encoded image
             const newUser = new User({
                 username,
-                gender,
+                gender: gender || "",
                 email,
-                occupation,
-                organization,
+                occupation: occupation || "",
+                organization: organization || "",
                 password: hashedPassword,
                 picture: base64Picture, // Store base64 image
             });
@@ -180,23 +187,17 @@ exports.profile = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Prepare the picture as base64
-        let base64Picture = null;
-        if (user.picture) {
-            const mimeType = "image/*";
-            base64Picture = `data:${mimeType};base64,${user.picture}`; // Prepare base64 string
-        }
-
-        // Return user details including base64 image
+        // Return user details with picture as is (already base64)
         return res.status(200).json({
             username: user.username,
             email: user.email,
-            gender: user.gender,
-            occupation: user.occupation,
-            organization: user.organization,
-            picture: base64Picture, // Send the base64-encoded image
+            gender: user.gender || "",
+            occupation: user.occupation || "",
+            organization: user.organization || "",
+            picture: user.picture ? user.picture : null,
         });
     } catch (error) {
+        console.error("Error fetching profile:", error);
         res.status(500).json({ message: "Error fetching user profile", error: error.message });
     }
 };
