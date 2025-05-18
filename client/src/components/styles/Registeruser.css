@@ -1,0 +1,115 @@
+@font-face {
+    font-family: 'Caros Light';
+    src: url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot');
+    src: url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot?#iefix') format('embedded-opentype'),
+        url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff2') format('woff2'),
+        url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff') format('woff'),
+        url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.ttf') format('truetype'),
+        url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.svg#Caros Light') format('svg');
+}
+
+.containerr {
+    background: linear-gradient(to bottom right, #0700DE, #DDFFC9);
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    border-radius: 15px;
+    font-family: 'Caros Light';
+    color: rgb(235, 235, 235);
+    min-width: 250px;
+    box-shadow: 10px 8px 12px rgba(0, 0, 0, 0.146);
+}
+
+.titlee {
+    color: rgb(235, 235, 235);
+    text-align: center;
+    font-weight: 800;
+}
+
+.verticall {
+    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+
+input[type='text'] {
+    border-radius: 6px;
+    padding: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.626);
+    color: rgb(235, 235, 235);
+    background-color: transparent;
+    font-family: 'Caros Light';
+}
+input[type='text']:focus {
+    outline: none;
+    color: rgb(235, 235, 235);
+    font-family: 'Caros Light';
+}
+
+input[type='email'] {
+    border-radius: 6px;
+    padding: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.626);
+    color: rgb(235, 235, 235);
+    background-color: transparent;
+    font-family: 'Caros Light';
+}
+input[type='email']:focus {
+    outline: none;
+    color: rgb(235, 235, 235);
+    font-family: 'Caros Light';
+}
+
+input[type='password'] {
+    border-radius: 6px;
+    padding: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.626);
+    background-color: transparent;
+    font-family: 'Caros Light';
+}
+input[type='password']:focus {
+    outline: none;
+    font-family: 'Caros Light';
+}
+
+.buttonscontainerr {
+    display: flex;
+    flex-direction: row;
+    gap: 12px !important;
+}
+
+.btnn {
+    padding: 1px;
+    background-color: rgb(148, 6, 230);
+    border: none;
+    border-radius: 12px;
+    padding: 6px 15px 6px 15px;
+    font-family: 'Caros Light';
+    font-weight: 700;
+    color: white;
+    margin-top: 12px;
+}
+.btnn:hover {
+    background-color: rgb(131, 6, 202);
+    color: white;
+    cursor: pointer;
+}
+@media screen and (min-width: 280px) and (max-width: 300px) {
+    .containerr {
+        min-width: 150px;
+        max-height: 235px;
+    }
+
+    .verticall {
+        margin-bottom: 3px;
+    }
+    .btnn {
+        padding: 3px 7px 3px 7px;
+        margin-top: 3px;
+    }
+}

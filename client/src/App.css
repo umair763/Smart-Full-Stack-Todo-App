@@ -1,0 +1,211 @@
+@font-face {
+    font-family: 'Caros Light';
+    src: url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot');
+    src: url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot?#iefix') format('embedded-opentype'),
+        url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff2') format('woff2'),
+        url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff') format('woff'),
+        url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.ttf') format('truetype'),
+        url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.svg#Caros Light') format('svg');
+}
+
+body {
+    /* background: linear-gradient(to bottom right, rgba(0, 225, 255, 0.702), rgba(148, 6, 230, 0.702)); */
+    background: linear-gradient(to bottom right, #0172af, #74febd);
+    padding: 18px 3px;
+    height: 93vh;
+}
+.grid {
+    display: grid;
+    grid-template-rows: 1fr;
+    grid-template-columns: 1fr 300px;
+    /* grid-template-columns: 5fr 1fr 25px; */
+    margin-right: 13%;
+}
+
+/* .div-1{
+    border-right: 5px solid white;
+    margin-right: 22px;
+} */
+
+.text {
+    padding-left: 10px;
+    font-weight: 700;
+    color: rgb(253, 148, 67);
+    font-family: 'Caros Light', sans-serif;
+}
+.backgroundForm {
+    border-radius: 15px;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 15px 0 rgba(0, 0, 0, 0.152);
+    padding: 5px 20px 5px 20px;
+    background: linear-gradient(to bottom right, rgba(148, 6, 230, 0.702), rgba(0, 225, 255, 0.702));
+}
+
+/* Small Screens (280px - 300px) */
+@media screen and (min-width: 280px) and (max-width: 300px) {
+    .text {
+        padding-left: 2px;
+        margin: 0;
+        width: 220px;
+    }
+    .backgroundForm {
+        padding: 3px !important;
+        width: 96%;
+    }
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .right-side {
+        padding: 0;
+        border-left: transparent;
+    }
+
+    .text h1 {
+        font-size: 1.5rem;
+    }
+
+    .text h3 {
+        font-size: 1rem;
+    }
+}
+
+/* Small Screens (301px - 600px) */
+/* @media screen and (min-width: 301px) and (max-width: 600px) {
+    .backgroundForm {
+        height: calc(100vh - 25px);
+        padding: 15px !important;
+        margin-left: 1.5%;
+        width: 96%;
+        padding: 10px;
+    }
+
+    .grid {
+        width: 100%;
+        grid-template-columns: 12fr !important;
+    }
+
+    .right-side {
+        padding: 0;
+        border-left: transparent;
+    }
+
+    .text h1 {
+        font-size: 1.5rem;
+    }
+
+    .text h3 {
+        font-size: 1rem;
+    }
+} */
+@media screen and (min-width: 301px) and (max-width: 350px) {
+    .text {
+        padding-left: 4px;
+        margin: 0;
+        width: 270px;
+    }
+    .backgroundForm {
+        padding: 5px !important;
+        width: 97% !important;
+    }
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .right-side {
+        padding: 0;
+        border-left: transparent;
+    }
+
+    .text h1 {
+        font-size: 1.5rem;
+    }
+
+    .text h3 {
+        font-size: 1rem;
+    }
+}
+@media screen and (min-width: 351px) and (max-width: 400px) {
+    .text {
+        padding-left: 2px;
+        margin: 0;
+        min-width: 300px;
+    }
+    .backgroundForm {
+        padding: 3px !important;
+        width: 96%;
+    }
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .right-side {
+        padding: 0;
+        border-left: transparent;
+    }
+
+    .text h1 {
+        font-size: 1.5rem;
+    }
+
+    .text h3 {
+        font-size: 1rem;
+    }
+}
+
+@media screen and (min-width: 401px) and (max-width: 500px) {
+    .text {
+        padding-left: 2px;
+        margin: 0;
+        width: 350px;
+    }
+    .backgroundForm {
+        padding: 8px !important;
+        width: 96%;
+    }
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .right-side {
+        padding: 0;
+        border-left: transparent;
+    }
+
+    .text h1 {
+        font-size: 1.5rem;
+    }
+
+    .text h3 {
+        font-size: 1rem;
+    }
+}
+
+@media screen and (min-width: 501px) and (max-width: 600px) {
+    .text {
+        padding-left: 2px;
+        margin: 0;
+        width: 220px;
+    }
+    .backgroundForm {
+        padding: 3px !important;
+        width: 96%;
+    }
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .right-side {
+        padding: 0;
+        border-left: transparent;
+    }
+
+    .text h1 {
+        font-size: 1.5rem;
+    }
+
+    .text h3 {
+        font-size: 1rem;
+    }
+}

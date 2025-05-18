@@ -1,0 +1,18 @@
+@font-face {
+	font-family: "Caros Light";
+	src: url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot");
+	src: url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot?#iefix") format("embedded-opentype"),
+		url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff2") format("woff2"),
+		url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff") format("woff"),
+		url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.ttf") format("truetype"),
+		url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.svg#Caros Light") format("svg");
+}
+
+.right-side {
+	height: 100%;
+	border-left: 5px solid white;
+	border-radius: 18px;
+}
+
+
+
