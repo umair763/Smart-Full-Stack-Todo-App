@@ -4,18 +4,19 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from '../../components/NotificationBell';
 
 const Header = () => {
-   const { isLoggedIn, logout } = useAuth();
+   const { isLoggedIn } = useAuth();
    const location = useLocation();
    const navigate = useNavigate();
    const isSettingsPage = location.pathname === '/settings';
    const isInsightsPage = location.pathname === '/insights';
    const isDashboardPage = location.pathname === '/dashboard';
+   const isProfilePage = location.pathname === '/profile';
 
    return (
       <header className="bg-gradient-to-r from-purple-600 to-blue-500 text-white p-4 rounded-lg shadow-md">
          <div className="container mx-auto flex justify-between items-center">
             <div className="flex items-center">
-               {(isSettingsPage || isInsightsPage) && (
+               {(isSettingsPage || isInsightsPage || isProfilePage) && (
                   <button onClick={() => navigate('/dashboard')} className="mr-4 hover:text-blue-200 transition-colors">
                      <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -92,12 +93,22 @@ const Header = () => {
                         </li>
                      )}
                      <li>
-                        <button
-                           onClick={logout}
-                           className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded transition-colors"
-                        >
-                           Logout
-                        </button>
+                        <Link to="/profile" className="flex items-center hover:text-blue-200 transition-colors">
+                           <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-6 w-6"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                           >
+                              <path
+                                 strokeLinecap="round"
+                                 strokeLinejoin="round"
+                                 strokeWidth={2}
+                                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                           </svg>
+                        </Link>
                      </li>
                   </ul>
                </nav>

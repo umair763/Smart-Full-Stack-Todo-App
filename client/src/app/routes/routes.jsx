@@ -6,6 +6,7 @@ import Layout from '../layout/Layout';
 import Dashboard from '../pages/Dashboard';
 import Settings from '../pages/Settings';
 import Insights from '../pages/Insights';
+import Profile from '../pages/Profile';
 import { useAuth } from '../context/AuthContext';
 
 const AppRoutes = () => {
@@ -25,6 +26,7 @@ const AppRoutes = () => {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/insights" element={<Insights />} />
+                  <Route path="/profile" element={<Profile />} />
                </Route>
                <Route path="/" element={<Navigate to="/dashboard" />} />
                <Route path="*" element={<Navigate to="/dashboard" />} />
