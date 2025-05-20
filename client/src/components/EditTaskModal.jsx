@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 
 function EditTaskModal({ task, onClose, onSave }) {
    const [editedTask, setEditedTask] = useState({
-      _id: '',
-      task: '',
-      date: '',
-      time: '',
-      color: 'green',
+      _id: task._id,
+      task: task.task,
+      date: task.date,
+      time: task.time,
+      color: task.color,
+      completed: task.completed,
+      priority: task.priority,
    });
    const [showDatePicker, setShowDatePicker] = useState(false);
    const [showTimePicker, setShowTimePicker] = useState(false);
@@ -24,6 +26,8 @@ function EditTaskModal({ task, onClose, onSave }) {
             date: task.date,
             time: task.time,
             color: task.color || 'green',
+            completed: task.completed,
+            priority: task.priority,
          });
 
          // Parse the time string to set hour, minute, and AM/PM
@@ -49,22 +53,19 @@ function EditTaskModal({ task, onClose, onSave }) {
 
    const handleSubmit = (e) => {
       e.preventDefault();
+      // Map color to priority
+      const colorToPriority = {
+         red: 'High',
+         yellow: 'Medium',
+         green: 'Low',
+      };
 
-      // Validate date format (DD/MM/YYYY)
-      const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-      if (!dateRegex.test(editedTask.date)) {
-         alert('Please enter date in DD/MM/YYYY format');
-         return;
-      }
+      const updatedTask = {
+         ...editedTask,
+         priority: colorToPriority[editedTask.color] || 'Medium',
+      };
 
-      // Validate time format (HH:MM AM/PM)
-      const timeRegex = /^(1[0-2]|0?[1-9]):[0-5][0-9]\s(AM|PM)$/;
-      if (!timeRegex.test(editedTask.time)) {
-         alert('Please enter time in HH:MM AM/PM format');
-         return;
-      }
-
-      onSave(editedTask);
+      onSave(updatedTask);
    };
 
    // Format date to DD/MM/YYYY
@@ -212,7 +213,7 @@ function EditTaskModal({ task, onClose, onSave }) {
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                </button>
-               </div>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
                <div>
@@ -295,7 +296,7 @@ function EditTaskModal({ task, onClose, onSave }) {
                <div className="relative">
                   <label className="block text-white text-sm font-medium mb-2">Time</label>
                   <div className="relative">
-                  <input
+                     <input
                         type="text"
                         name="time"
                         value={editedTask.time}
@@ -303,8 +304,8 @@ function EditTaskModal({ task, onClose, onSave }) {
                         onFocus={() => setShowTimePicker(true)}
                         className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white transition-all"
                         placeholder="HH:MM AM/PM"
-                     required
-                  />
+                        required
+                     />
                      <button
                         type="button"
                         onClick={() => setShowTimePicker(!showTimePicker)}
@@ -448,7 +449,7 @@ function EditTaskModal({ task, onClose, onSave }) {
                      </label>
 
                      <label className="inline-flex items-center">
-                  <input
+                        <input
                            type="radio"
                            name="color"
                            value="green"

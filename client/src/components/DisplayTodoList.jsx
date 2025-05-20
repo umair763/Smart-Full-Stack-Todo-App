@@ -6,12 +6,14 @@ import EditTaskModal from './EditTaskModal';
 import Subtask from './Subtask';
 import SubtaskModal from './SubtaskModal';
 import { useSocket } from '../app/context/SocketContext';
+import ReminderModal from './ReminderModal';
+import { toast } from 'react-hot-toast';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange }) {
-   const [completed, setCompleted] = useState(list.status || false);
+   const [completed, setCompleted] = useState(list.completed || false);
    const [showEditModal, setShowEditModal] = useState(false);
    const [isUpdating, setIsUpdating] = useState(false);
    const [showSubtasks, setShowSubtasks] = useState(false);
@@ -21,6 +23,8 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
    const [showMoreOptions, setShowMoreOptions] = useState(false);
    const [isLoadingSubtasks, setIsLoadingSubtasks] = useState(false);
    const { socket } = useSocket();
+   const [isMenuOpen, setIsMenuOpen] = useState(false);
+   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
 
    // Initialize editedTask with the list props
    const [editedTask, setEditedTask] = useState({
@@ -30,10 +34,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
       color: list.color,
    });
 
-   // Sync the component state with the list prop (which might be updated elsewhere)
+   // Sync the component state with the list prop
    useEffect(() => {
-      setCompleted(list.status || false);
-   }, [list.status]);
+      setCompleted(list.completed || false);
+   }, [list.completed]);
 
    // Fetch subtasks when expanding
    useEffect(() => {
@@ -53,34 +57,38 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                const newSubtasks = [...prev, data.subtask];
                return sortSubtasksByPriority(newSubtasks);
             });
+            // Update parent task counts
+            onUpdate(list._id, {
+               ...list,
+               subtaskCount: (list.subtaskCount || 0) + 1,
+               completedSubtasks: list.completedSubtasks || 0,
+            });
          }
       };
 
       // Handle subtask status changed event
       const handleSubtaskStatusChanged = (data) => {
-         if (data.parentTaskId === list._id) {
+         if (data.data && data.data.parentTaskId === list._id) {
             // Update the subtask in local state
             setSubtasks((prev) => {
-               const updatedSubtasks = prev.map((st) => (st._id === data.subtask._id ? data.subtask : st));
+               const updatedSubtasks = prev.map((st) =>
+                  st._id === data.data.subtaskId ? { ...st, status: data.data.status } : st
+               );
                return sortSubtasksByPriority(updatedSubtasks);
             });
 
-            // Recalculate completion count for parent task
-            const updatedTask = {
+            // Update parent task with new completion counts
+            onUpdate(list._id, {
                ...list,
-               completedSubtasks: data.subtask.status
-                  ? (list.completedSubtasks || 0) + 1
-                  : Math.max((list.completedSubtasks || 0) - 1, 0),
-            };
-
-            // Update parent task through props
-            onUpdate(list._id, updatedTask);
+               subtaskCount: data.data.subtaskCount,
+               completedSubtasks: data.data.completedSubtasks,
+            });
          }
       };
 
       // Handle subtask updated event
       const handleSubtaskUpdated = (data) => {
-         if (data.subtask && data.subtask.parentTask === list._id) {
+         if (data.subtask && data.subtask.taskId === list._id) {
             setSubtasks((prev) => {
                const updatedSubtasks = prev.map((st) => (st._id === data.subtask._id ? data.subtask : st));
                return sortSubtasksByPriority(updatedSubtasks);
@@ -92,9 +100,14 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
       const handleSubtaskDeleted = (data) => {
          if (data.parentTaskId === list._id) {
             setSubtasks((prev) => {
-               // Remove the deleted subtask
                const filteredSubtasks = prev.filter((st) => st._id !== data.subtaskId);
                return sortSubtasksByPriority(filteredSubtasks);
+            });
+            // Update parent task counts
+            onUpdate(list._id, {
+               ...list,
+               subtaskCount: Math.max((list.subtaskCount || 0) - 1, 0),
+               completedSubtasks: Math.max((list.completedSubtasks || 0) - 1, 0),
             });
          }
       };
@@ -112,7 +125,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          socket.off('subtaskUpdated', handleSubtaskUpdated);
          socket.off('subtaskDeleted', handleSubtaskDeleted);
       };
-   }, [socket, list._id, list.completedSubtasks]);
+   }, [socket, list._id, list.subtaskCount, list.completedSubtasks]);
 
    // Fetch subtasks from the server
    const fetchSubtasks = async () => {
@@ -178,7 +191,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                Authorization: `Bearer ${token}`,
                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ status: newStatus }),
+            body: JSON.stringify({ completed: newStatus }),
          });
 
          if (!response.ok) {
@@ -223,8 +236,14 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
    }
 
    // Toggle subtasks visibility
-   const toggleSubtasks = () => {
-      setShowSubtasks(!showSubtasks);
+   const toggleSubtasks = (e) => {
+      e.stopPropagation(); // Prevent event bubbling
+      if (list.subtaskCount > 0) {
+         setShowSubtasks(!showSubtasks);
+         if (!showSubtasks && subtasks.length === 0) {
+            fetchSubtasks();
+         }
+      }
    };
 
    // Toggle the more options menu
@@ -248,16 +267,23 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
             throw new Error('Authentication required');
          }
 
+         // Format the subtask data
+         const formattedData = {
+            ...subtaskData,
+            taskId: list._id,
+            status: false,
+         };
+
          let response;
          if (subtaskId) {
             // Update existing subtask
-            response = await fetch(`${API_BASE_URL}/api/tasks/subtasks/${subtaskId}`, {
+            response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/subtasks/${subtaskId}`, {
                method: 'PUT',
                headers: {
                   Authorization: `Bearer ${token}`,
                   'Content-Type': 'application/json',
                },
-               body: JSON.stringify(subtaskData),
+               body: JSON.stringify(formattedData),
             });
          } else {
             // Create new subtask
@@ -267,12 +293,13 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                   Authorization: `Bearer ${token}`,
                   'Content-Type': 'application/json',
                },
-               body: JSON.stringify(subtaskData),
+               body: JSON.stringify(formattedData),
             });
          }
 
          if (!response.ok) {
-            throw new Error(subtaskId ? 'Failed to update subtask' : 'Failed to create subtask');
+            const errorData = await response.json();
+            throw new Error(errorData.message || (subtaskId ? 'Failed to update subtask' : 'Failed to create subtask'));
          }
 
          const data = await response.json();
@@ -280,7 +307,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          if (subtaskId) {
             // Update the subtask in the local state
             const updatedSubtasks = subtasks.map((st) => (st._id === subtaskId ? data : st));
-            // Re-sort after updating
             setSubtasks(sortSubtasksByPriority(updatedSubtasks));
          } else {
             // Add the new subtask to the local state and re-sort
@@ -289,8 +315,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
             // Show subtasks if they were hidden
             setShowSubtasks(true);
          }
+
+         // Close the modal
+         setShowSubtaskModal(false);
       } catch (error) {
          console.error('Error saving subtask:', error);
+         toast.error(error.message || 'Failed to save subtask');
       }
    };
 
@@ -385,6 +415,29 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
       );
    };
 
+   const handleSetReminder = async (reminderData) => {
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(reminderData),
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to set reminder');
+         }
+
+         toast.success('Reminder set successfully');
+      } catch (error) {
+         console.error('Error setting reminder:', error);
+         toast.error('Failed to set reminder');
+      }
+   };
+
    return (
       <>
          <div className="grid grid-cols-[30px,1fr,auto] w-[98%] px-4 py-2 mb-2 mt-2 rounded-lg text-[#1D1D1D] bg-[#C8F0F3]/90 items-center max-[300px]:grid-cols-[20px,1fr,auto] max-[300px]:text-[9px] min-[301px]:max-[340px]:grid-cols-[22px,1fr,auto] min-[301px]:max-[340px]:text-[10px] min-[341px]:max-[600px]:grid-cols-[25px,1fr,auto] min-[341px]:max-[600px]:text-[11px] min-[601px]:grid-cols-[28px,1fr,auto] min-[601px]:text-[12px]">
@@ -406,6 +459,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                      <button
                         onClick={toggleSubtasks}
                         className="mr-1 text-gray-600 hover:text-[#9406E6] transition-colors"
+                        title={showSubtasks ? 'Collapse subtasks' : 'Expand subtasks'}
                      >
                         {showSubtasks ? <FiChevronDown className="h-4 w-4" /> : <FiChevronRight className="h-4 w-4" />}
                      </button>
@@ -420,7 +474,19 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                </div>
 
                {/* Subtask progress indicator */}
-               {renderSubtaskProgress()}
+               {list.subtaskCount > 0 && (
+                  <div className="flex items-center text-xs text-gray-600 mt-1">
+                     <div className="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
+                        <div
+                           className="bg-[#9406E6] h-2.5 rounded-full"
+                           style={{ width: `${(list.completedSubtasks / list.subtaskCount) * 100}%` }}
+                        ></div>
+                     </div>
+                     <span>
+                        {list.completedSubtasks}/{list.subtaskCount} completed
+                     </span>
+                  </div>
+               )}
             </div>
             <div className="flex justify-between items-center gap-2">
                <div className="flex flex-col items-start">
@@ -480,7 +546,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                   {/* More options (three dots) */}
                   <div className="relative">
                      <button
-                        onClick={toggleMoreOptions}
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="text-gray-600 hover:text-gray-800"
                         title="More options"
                      >
@@ -488,14 +554,51 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                      </button>
 
                      {/* Dropdown menu */}
-                     {showMoreOptions && (
+                     {isMenuOpen && (
                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                           <button
+                              onClick={() => {
+                                 setIsReminderModalOpen(true);
+                                 setIsMenuOpen(false);
+                              }}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                           >
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 className="h-5 w-5 mr-2"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                              >
+                                 <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                 />
+                              </svg>
+                              Set Reminder
+                           </button>
                            <button
                               onClick={handleAddSubtask}
                               className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                            >
                               <FiPlus className="mr-2 h-4 w-4" />
                               Add Subtask
+                           </button>
+                           <button
+                              onClick={handleEdit}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                           >
+                              <FiEdit2 className="mr-2 h-4 w-4" />
+                              Edit
+                           </button>
+                           <button
+                              onClick={handleDelete}
+                              className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-gray-100 w-full text-left"
+                           >
+                              <FiTrash2 className="mr-2 h-4 w-4" />
+                              Delete
                            </button>
                         </div>
                      )}
@@ -505,7 +608,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          </div>
 
          {/* Subtasks section */}
-         {showSubtasks && (
+         {showSubtasks && list.subtaskCount > 0 && (
             <div className="relative pl-6 mb-2 group">
                {/* Vertical connector from parent to first child */}
                <div className="absolute left-[16px] top-[5px] bottom-2 w-[2px] bg-gray-300 group-hover:bg-[#9406E6] transition-colors z-0"></div>
@@ -551,6 +654,14 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                subtask={currentSubtask}
             />
          )}
+
+         {/* Reminder Modal */}
+         <ReminderModal
+            isOpen={isReminderModalOpen}
+            onClose={() => setIsReminderModalOpen(false)}
+            task={list}
+            onSetReminder={handleSetReminder}
+         />
       </>
    );
 }

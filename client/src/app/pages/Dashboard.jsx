@@ -7,6 +7,7 @@ import AddTaskForm from '../../components/AddTaskForm';
 import DeleteTaskForm from '../../components/DeleteTaskForm';
 import Modal from '../../components/Modal';
 import Header from '../layout/Header'; // Import Header
+import ReminderModal from '../../components/ReminderModal';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -20,6 +21,8 @@ function Dashboard() {
    const [isexceeded, setIFexceeded] = useState(false);
    const [apiError, setApiError] = useState(null);
    const [isLoading, setIsLoading] = useState(true);
+   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+   const [selectedTask, setSelectedTask] = useState(null);
 
    useEffect(() => {
       const fetchTasks = async () => {
@@ -173,19 +176,42 @@ function Dashboard() {
       searched = sorted.filter((el) => el.task.toLowerCase().includes(searchtask.toLowerCase()));
    }
 
+   const handleSetReminder = async (reminderData) => {
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(reminderData),
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to set reminder');
+         }
+
+         toast.success('Reminder set successfully');
+      } catch (error) {
+         console.error('Error setting reminder:', error);
+         toast.error('Failed to set reminder');
+      }
+   };
+
    return (
-      <div className="w-11/12 -mt-10 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] p-4">
+      <div className="w-11/12 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] p-2 sm:p-4">
          <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
                <Header />
             </div>
 
             {/* Main Content */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
                <div className="text">
-                  <h1 className="text-4xl text-white font-extrabold mb-4">Todo App</h1>
-                  <h3 className="text-xl text-white font-semibold mb-6">
+                  <h1 className="text-2xl sm:text-4xl text-white font-extrabold mb-2 sm:mb-4">Todo App</h1>
+                  <h3 className="text-base sm:text-xl text-white font-semibold mb-4 sm:mb-6">
                      To-Do lists help us break life into small steps.
                   </h3>
                </div>
@@ -196,15 +222,17 @@ function Dashboard() {
                   setSearch={setSearchTask}
                />
                {apiError && (
-                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{apiError}</div>
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 sm:px-4 sm:py-3 rounded text-sm sm:text-base">
+                     {apiError}
+                  </div>
                )}
 
                {isLoading ? (
-                  <div className="flex justify-center items-center h-40">
-                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+                  <div className="flex justify-center items-center h-32 sm:h-40">
+                     <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-t-2 border-b-2 border-white"></div>
                   </div>
                ) : (
-                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-6">
+                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-6">
                      <TodoListParser todolist={searched} setexceeded={isexceeded} settask={setTasks} />
                   </div>
                )}
@@ -222,6 +250,15 @@ function Dashboard() {
                setisDeleteFormVisible={handleisDeleteFormVisible}
             />
          </Modal>
+         <ReminderModal
+            isOpen={isReminderModalOpen}
+            onClose={() => {
+               setIsReminderModalOpen(false);
+               setSelectedTask(null);
+            }}
+            task={selectedTask}
+            onSetReminder={handleSetReminder}
+         />
       </div>
    );
 }

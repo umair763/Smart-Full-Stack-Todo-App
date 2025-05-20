@@ -1,28 +1,26 @@
-const express = require("express");
-const { getTasks, createTask, deleteTask, updateTask } = require("../controllers/taskControllers");
-const authenticator = require("../middleware/auth");
-const {
-    deleteAcc,
-    googleSignIn,
-    registerUser,
-    loginUser,
-    profile,
-    updateUsername,
-    updateProfileImage,
-} = require("../controllers/userControllers");
+import express from "express";
+import * as userController from "../controllers/userController.js";
+import { getTasks, createTask, deleteTask, updateTask } from "../controllers/taskController.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", authenticator, getTasks);
-router.post("/", authenticator, createTask);
-router.put("/:id", authenticator, updateTask);
-router.delete("/:id", authenticator, deleteTask);
-router.post("/google-signin", googleSignIn);
-router.post("/register", registerUser);
-router.post("/login", loginUser);
-router.get("/profile", authenticator, profile);
-router.post("/update-username", authenticator, updateUsername);
-router.post("/update-profile-image", authenticator, updateProfileImage);
-router.delete("/delete-account", authenticator, deleteAcc);
+// Public routes
+router.post("/register", userController.register);
+router.post("/login", userController.login);
+router.post("/google-signin", userController.googleSignIn);
 
-module.exports = router;
+// Protected routes
+router.use(auth);
+router.get("/profile", userController.getProfile);
+router.put("/username", userController.updateUsername);
+router.put("/profile-image", userController.updateProfileImage);
+router.delete("/account", userController.deleteAccount);
+
+// Task routes
+router.get("/tasks", getTasks);
+router.post("/tasks", createTask);
+router.delete("/tasks/:id", deleteTask);
+router.put("/tasks/:id", updateTask);
+
+export default router;

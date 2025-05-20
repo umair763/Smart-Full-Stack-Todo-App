@@ -1,18 +1,26 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const http = require("http");
-const { Server } = require("socket.io");
-require("dotenv").config();
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import bodyParser from "body-parser";
+import http from "http";
+import { Server } from "socket.io";
+import { EventEmitter } from "events";
+import dotenv from "dotenv";
+import userRoutes from "./routes/userRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
+import subtaskRoutes from "./routes/subtaskRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import reminderRoutes from "./routes/reminderRoutes.js";
 
-const userRoutes = require("./routes/userRoutes");
-const taskRoutes = require("./routes/taskRoutes");
-const subtaskRoutes = require("./routes/subtaskRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Create an EventEmitter for database changes
+const dbEvents = new EventEmitter();
+// Export dbEvents for use in controllers
+export { dbEvents };
 
 // Improved CORS configuration
 app.use(
@@ -177,6 +185,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/tasks", subtaskRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/reminders", reminderRoutes);
 
 // Add a global error handler
 app.use((err, req, res, next) => {
@@ -192,4 +201,41 @@ server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`API available at http://localhost:${PORT}/api`);
     console.log(`Socket.io running on ws://localhost:${PORT}/socket.io/`);
+});
+
+// Handle database changes
+dbEvents.on("db_change", (changeData) => {
+    // Enhanced notification with icons for different operation types
+    let icon = "🔔";
+    let type = "info";
+
+    switch (changeData.operation) {
+        case "create":
+            icon = "✨";
+            type = "success";
+            break;
+        case "update":
+            icon = "📝";
+            type = "info";
+            break;
+        case "delete":
+            icon = "🗑️";
+            type = "error";
+            break;
+        case "status_change":
+            icon = "✅";
+            type = "success";
+            break;
+        case "reminder":
+            icon = "⏰";
+            type = "reminder";
+            break;
+    }
+
+    // Emit a single notification event
+    io.emit("db_change", {
+        operation: changeData.operation,
+        message: `${icon} ${changeData.message}`,
+        type: type,
+    });
 });
