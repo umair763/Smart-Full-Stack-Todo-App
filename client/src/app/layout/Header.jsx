@@ -1,7 +1,7 @@
 'use client';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import NotificationCenter from '../../components/NotificationCenter';
+import NotificationBell from '../../components/NotificationBell';
 
 const Header = () => {
    const { isLoggedIn, logout } = useAuth();
@@ -88,7 +88,7 @@ const Header = () => {
                      )}
                      {isLoggedIn && (
                         <li>
-                           <NotificationCenter />
+                           <NotificationBell />
                         </li>
                      )}
                      <li>
