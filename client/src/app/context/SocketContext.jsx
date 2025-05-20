@@ -1,191 +1,110 @@
-'use client';
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
-import { useAuth } from './AuthContext';
+import io from 'socket.io-client';
+import toast from 'react-hot-toast';
 
-// Use the consistent API base URL but replace http with ws
+// Get the API URL from environment variables
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const SOCKET_URL = API_BASE_URL.replace(/^http/, 'ws');
 
 // Create context
-const SocketContext = createContext();
+const SocketContext = createContext(null);
 
-export function SocketProvider({ children }) {
+// Socket provider component
+export const SocketProvider = ({ children }) => {
    const [socket, setSocket] = useState(null);
-   const [notifications, setNotifications] = useState([]);
-   const { user, isLoggedIn } = useAuth();
+   const [connected, setConnected] = useState(false);
 
-   // Connect to socket when user is authenticated
+   // Initialize socket connection
    useEffect(() => {
-      if (!isLoggedIn || !user) {
-         // Disconnect if exists
-         if (socket) {
-            socket.disconnect();
-            setSocket(null);
-         }
-         return;
-      }
+      // Create socket instance
+      const newSocket = io(API_BASE_URL, {
+         path: '/socket.io',
+         transports: ['websocket', 'polling'],
+         reconnection: true,
+         reconnectionAttempts: 5,
+         reconnectionDelay: 1000,
+      });
 
-      // Create socket connection
-      const newSocket = io(SOCKET_URL);
-      setSocket(newSocket);
-
-      // Setup event listeners
+      // Handle connection events
       newSocket.on('connect', () => {
-         console.log('Socket.io connected');
-         // Authenticate with user ID
-         if (user) {
-            newSocket.emit('authenticate', user);
+         console.log('Socket connected:', newSocket.id);
+         setConnected(true);
+
+         // Try to authenticate if token exists
+         const token = localStorage.getItem('token');
+         const userId = localStorage.getItem('userId');
+
+         if (userId) {
+            newSocket.emit('authenticate', userId);
          }
       });
 
-      newSocket.on('connect_error', (error) => {
-         console.error('Socket connection error:', error);
+      newSocket.on('disconnect', () => {
+         console.log('Socket disconnected');
+         setConnected(false);
       });
 
-      // Setup notification listeners
-      setupNotificationListeners(newSocket);
+      // Handle notification events
+      newSocket.on('db_change', (data) => {
+         const { operation, message, type } = data;
+
+         // Customize notification based on operation type
+         switch (operation) {
+            case 'create':
+               toast.success(message, {
+                  icon: '✨',
+                  duration: 3000,
+               });
+               break;
+            case 'update':
+               toast.info(message, {
+                  icon: '📝',
+                  duration: 3000,
+               });
+               break;
+            case 'delete':
+               toast.error(message, {
+                  icon: '🗑️',
+                  duration: 3000,
+               });
+               break;
+            case 'status_change':
+               toast.success(message, {
+                  icon: '✅',
+                  duration: 3000,
+               });
+               break;
+            case 'reminder':
+               toast(message, {
+                  icon: '⏰',
+                  duration: 5000,
+                  style: {
+                     background: '#4CAF50',
+                     color: 'white',
+                  },
+               });
+               break;
+            default:
+               toast(message, {
+                  duration: 3000,
+               });
+         }
+      });
 
       // Cleanup on unmount
+      setSocket(newSocket);
       return () => {
-         if (newSocket) {
-            newSocket.disconnect();
-         }
+         newSocket.disconnect();
       };
-   }, [isLoggedIn, user]);
+   }, []);
 
-   // Setup notification listeners
-   const setupNotificationListeners = (socket) => {
-      if (!socket) return;
+   return <SocketContext.Provider value={{ socket, connected }}>{children}</SocketContext.Provider>;
+};
 
-      // Task created notification
-      socket.on('taskCreated', (data) => {
-         addNotification({
-            type: 'success',
-            message: data.message || 'New task created',
-            timestamp: new Date(),
-            data: data.task,
-         });
-      });
-
-      // Task updated notification
-      socket.on('taskUpdated', (data) => {
-         addNotification({
-            type: 'info',
-            message: data.message || 'Task updated',
-            timestamp: new Date(),
-            data: data.task,
-         });
-      });
-
-      // Task deleted notification
-      socket.on('taskDeleted', (data) => {
-         addNotification({
-            type: 'warning',
-            message: data.message || 'Task deleted',
-            timestamp: new Date(),
-            data: { id: data.taskId },
-         });
-      });
-
-      // Task status changed notification
-      socket.on('taskStatusChanged', (data) => {
-         addNotification({
-            type: data.task.status ? 'success' : 'info',
-            message: data.message || 'Task status changed',
-            timestamp: new Date(),
-            data: data.task,
-         });
-      });
-
-      // Subtask created notification
-      socket.on('subtaskCreated', (data) => {
-         addNotification({
-            type: 'success',
-            message: data.message || 'New subtask created',
-            timestamp: new Date(),
-            data: {
-               subtask: data.subtask,
-               taskId: data.taskId,
-            },
-         });
-      });
-
-      // Subtask updated notification
-      socket.on('subtaskUpdated', (data) => {
-         addNotification({
-            type: 'info',
-            message: data.message || 'Subtask updated',
-            timestamp: new Date(),
-            data: data.subtask,
-         });
-      });
-
-      // Subtask deleted notification
-      socket.on('subtaskDeleted', (data) => {
-         addNotification({
-            type: 'warning',
-            message: data.message || 'Subtask deleted',
-            timestamp: new Date(),
-            data: {
-               subtaskId: data.subtaskId,
-               parentTaskId: data.parentTaskId,
-            },
-         });
-      });
-
-      // Subtask status changed notification
-      socket.on('subtaskStatusChanged', (data) => {
-         addNotification({
-            type: data.subtask.status ? 'success' : 'info',
-            message: data.message || 'Subtask status changed',
-            timestamp: new Date(),
-            data: {
-               subtask: data.subtask,
-               parentTaskId: data.parentTaskId,
-            },
-         });
-      });
-   };
-
-   // Add a new notification
-   const addNotification = (notification) => {
-      setNotifications((prev) =>
-         [
-            {
-               id: Date.now(),
-               ...notification,
-            },
-            ...prev,
-         ].slice(0, 10)
-      ); // Keep only the last 10 notifications
-   };
-
-   // Remove a notification
-   const removeNotification = (id) => {
-      setNotifications((prev) => prev.filter((notification) => notification.id !== id));
-   };
-
-   // Clear all notifications
-   const clearNotifications = () => {
-      setNotifications([]);
-   };
-
-   return (
-      <SocketContext.Provider
-         value={{ socket, notifications, addNotification, removeNotification, clearNotifications }}
-      >
-         {children}
-      </SocketContext.Provider>
-   );
-}
-
-// Custom hook to use the socket context
-export function useSocket() {
+// Hook to use the socket context
+export const useSocket = () => {
    const context = useContext(SocketContext);
-   if (context === undefined) {
+   if (context === null) {
       throw new Error('useSocket must be used within a SocketProvider');
    }
    return context;
-}
+};

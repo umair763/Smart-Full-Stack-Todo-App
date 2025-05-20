@@ -143,12 +143,18 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
          return;
       }
 
+      // Map color to priority
+      const colorToPriority = {
+         red: 'High',
+         yellow: 'Medium',
+         green: 'Low',
+      };
+
       const newTask = {
-         color,
          task,
          date,
          time,
-         status: false,
+         priority: colorToPriority[color] || 'Medium',
       };
 
       addTask(newTask);
@@ -156,16 +162,16 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
    }
 
    return (
-      <div className="bg-white/20 backdrop-blur-md p-6 rounded-xl shadow-lg mb-6">
-         <div className="flex justify-between items-center mb-5">
-            <h2 className="text-xl font-bold text-white">Add New Task</h2>
+      <div className="bg-white/20 backdrop-blur-md p-3 sm:p-6 rounded-xl shadow-lg">
+         <div className="flex justify-between items-center mb-4 sm:mb-5">
+            <h2 className="text-lg sm:text-xl font-bold text-white">Add New Task</h2>
             <button
                onClick={() => SetisAddFormVisible(false)}
                className="text-white hover:text-red-300 transition-colors"
             >
                <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
+                  className="h-5 w-5 sm:h-6 sm:w-6"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -175,39 +181,39 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
             </button>
          </div>
 
-         <form onSubmit={handleSubmit} className="space-y-4">
+         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div>
-               <label className="block text-white text-sm font-medium mb-2">Task Name</label>
+               <label className="block text-white text-sm font-medium mb-1 sm:mb-2">Task Name</label>
                <input
                   type="text"
                   value={task}
                   onChange={(e) => setTask(e.target.value)}
-                  className="w-full px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
+                  className="w-full px-3 sm:px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all text-sm sm:text-base"
                   placeholder="Enter task name"
                   required
                />
             </div>
 
             <div className="relative">
-               <label className="block text-white text-sm font-medium mb-2">Date (DD/MM/YYYY)</label>
+               <label className="block text-white text-sm font-medium mb-1 sm:mb-2">Date (DD/MM/YYYY)</label>
                <div className="relative">
                   <input
                      type="text"
                      value={date}
                      onChange={(e) => setDate(e.target.value)}
                      onFocus={() => setShowDatePicker(true)}
-                     className="w-full px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
+                     className="w-full px-3 sm:px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all text-sm sm:text-base"
                      placeholder="DD/MM/YYYY"
                      required
                   />
                   <button
                      type="button"
                      onClick={() => setShowDatePicker(!showDatePicker)}
-                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white"
+                     className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-white"
                   >
                      <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
+                        className="h-4 w-4 sm:h-5 sm:w-5"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -224,10 +230,10 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
 
                {/* Date Picker */}
                {showDatePicker && (
-                  <div className="absolute z-10 mt-1 p-3 bg-white rounded-lg shadow-lg">
-                     <div className="grid grid-cols-7 gap-1">
+                  <div className="absolute z-10 mt-1 p-2 sm:p-3 bg-white rounded-lg shadow-lg">
+                     <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                           <div key={day} className="text-center text-xs text-gray-500">
+                           <div key={day} className="text-center text-[10px] sm:text-xs text-gray-500">
                               {day}
                            </div>
                         ))}
@@ -238,25 +244,25 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
             </div>
 
             <div className="relative">
-               <label className="block text-white text-sm font-medium mb-2">Time (HH:MM AM/PM)</label>
+               <label className="block text-white text-sm font-medium mb-1 sm:mb-2">Time (HH:MM AM/PM)</label>
                <div className="relative">
                   <input
                      type="text"
                      value={time}
                      onChange={(e) => setTime(e.target.value)}
                      onFocus={() => setShowTimePicker(true)}
-                     className="w-full px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
+                     className="w-full px-3 sm:px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all text-sm sm:text-base"
                      placeholder="HH:MM AM/PM"
                      required
                   />
                   <button
                      type="button"
                      onClick={() => setShowTimePicker(!showTimePicker)}
-                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white"
+                     className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-white"
                   >
                      <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
+                        className="h-4 w-4 sm:h-5 sm:w-5"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -273,36 +279,40 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
 
                {/* Time Picker */}
                {showTimePicker && (
-                  <div className="absolute z-10 mt-1 p-3 bg-white rounded-lg shadow-lg">
-                     <div className="mb-2">
-                        <div className="text-gray-700 font-medium text-center">Select Time</div>
+                  <div className="absolute z-10 mt-1 p-2 sm:p-3 bg-white rounded-lg shadow-lg">
+                     <div className="mb-1 sm:mb-2">
+                        <div className="text-gray-700 font-medium text-center text-sm sm:text-base">Select Time</div>
                      </div>
 
-                     <div className="flex gap-3">
+                     <div className="flex gap-2 sm:gap-3">
                         {/* Hour selector */}
                         <div>
-                           <div className="text-gray-500 text-xs font-medium text-center mb-1">Hour</div>
-                           <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto">
+                           <div className="text-gray-500 text-[10px] sm:text-xs font-medium text-center mb-1">Hour</div>
+                           <div className="grid grid-cols-3 gap-0.5 sm:gap-1 max-h-28 sm:max-h-32 overflow-y-auto">
                               {generateHourSelector()}
                            </div>
                         </div>
 
                         {/* Minute selector */}
                         <div>
-                           <div className="text-gray-500 text-xs font-medium text-center mb-1">Minute</div>
-                           <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto">
+                           <div className="text-gray-500 text-[10px] sm:text-xs font-medium text-center mb-1">
+                              Minute
+                           </div>
+                           <div className="grid grid-cols-3 gap-0.5 sm:gap-1 max-h-28 sm:max-h-32 overflow-y-auto">
                               {generateMinuteSelector()}
                            </div>
                         </div>
 
                         {/* AM/PM selector */}
                         <div>
-                           <div className="text-gray-500 text-xs font-medium text-center mb-1">AM/PM</div>
-                           <div className="flex flex-col gap-1">
+                           <div className="text-gray-500 text-[10px] sm:text-xs font-medium text-center mb-1">
+                              AM/PM
+                           </div>
+                           <div className="flex flex-col gap-0.5 sm:gap-1">
                               <button
                                  type="button"
                                  onClick={() => setSelectedAmPm('AM')}
-                                 className={`px-3 py-1.5 rounded-lg ${
+                                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-sm ${
                                     selectedAmPm === 'AM'
                                        ? 'bg-[#9406E6] text-white'
                                        : 'hover:bg-purple-200 text-gray-700'
@@ -313,7 +323,7 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                               <button
                                  type="button"
                                  onClick={() => setSelectedAmPm('PM')}
-                                 className={`px-3 py-1.5 rounded-lg ${
+                                 className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-sm ${
                                     selectedAmPm === 'PM'
                                        ? 'bg-[#9406E6] text-white'
                                        : 'hover:bg-purple-200 text-gray-700'
@@ -326,20 +336,20 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                      </div>
 
                      <div className="mt-2 flex justify-between items-center">
-                        <div className="text-sm font-medium text-gray-700">
+                        <div className="text-xs sm:text-sm font-medium text-gray-700">
                            {selectedHour}:{selectedMinute.toString().padStart(2, '0')} {selectedAmPm}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 sm:gap-2">
                            <button
                               type="button"
-                              className="px-3 py-1 bg-[#9406E6] text-white rounded-lg text-sm"
+                              className="px-2 sm:px-3 py-1 bg-[#9406E6] text-white rounded-lg text-xs sm:text-sm"
                               onClick={handleTimeSelect}
                            >
                               Set Time
                            </button>
                            <button
                               type="button"
-                              className="px-2 py-1 text-sm text-purple-600 hover:text-purple-800"
+                              className="px-2 py-1 text-xs sm:text-sm text-purple-600 hover:text-purple-800"
                               onClick={() => setShowTimePicker(false)}
                            >
                               Cancel
@@ -351,8 +361,8 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
             </div>
 
             <div>
-               <label className="block text-white text-sm font-medium mb-2">Priority</label>
-               <div className="flex space-x-4">
+               <label className="block text-white text-sm font-medium mb-1 sm:mb-2">Priority</label>
+               <div className="flex flex-wrap gap-3 sm:gap-4">
                   <label className="inline-flex items-center">
                      <input
                         type="radio"
@@ -361,11 +371,11 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                         className="hidden"
                      />
                      <span
-                        className={`w-6 h-6 rounded-full border-2 ${
+                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 ${
                            color === 'red' ? 'bg-red-500 border-white' : 'bg-red-500/40 border-transparent'
                         }`}
                      ></span>
-                     <span className="ml-2 text-white">High</span>
+                     <span className="ml-2 text-white text-sm">High</span>
                   </label>
 
                   <label className="inline-flex items-center">
@@ -376,11 +386,11 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                         className="hidden"
                      />
                      <span
-                        className={`w-6 h-6 rounded-full border-2 ${
+                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 ${
                            color === 'yellow' ? 'bg-yellow-400 border-white' : 'bg-yellow-400/40 border-transparent'
                         }`}
                      ></span>
-                     <span className="ml-2 text-white">Medium</span>
+                     <span className="ml-2 text-white text-sm">Medium</span>
                   </label>
 
                   <label className="inline-flex items-center">
@@ -391,26 +401,26 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                         className="hidden"
                      />
                      <span
-                        className={`w-6 h-6 rounded-full border-2 ${
+                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 ${
                            color === 'green' ? 'bg-green-500 border-white' : 'bg-green-500/40 border-transparent'
                         }`}
                      ></span>
-                     <span className="ml-2 text-white">Low</span>
+                     <span className="ml-2 text-white text-sm">Low</span>
                   </label>
                </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-2 sm:gap-3 pt-2">
                <button
                   type="button"
                   onClick={SetisAddFormVisible}
-                  className="px-4 py-2 text-white/80 hover:text-white transition-colors"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-white/80 hover:text-white transition-colors text-sm"
                >
                   Cancel
                </button>
                <button
                   type="submit"
-                  className="px-4 py-2 bg-[#9406E6] text-white rounded-lg hover:bg-[#7D05C3] transition-colors"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#9406E6] text-white rounded-lg hover:bg-[#7D05C3] transition-colors text-sm"
                >
                   Add Task
                </button>

@@ -1,27 +1,17 @@
-const express = require("express");
-const {
-    getSubtasks,
-    createSubtask,
-    updateSubtask,
-    deleteSubtask,
-    updateSubtaskStatus,
-} = require("../controllers/subtaskControllers");
-const authenticator = require("../middleware/auth");
+import express from "express";
+import * as subtaskController from "../controllers/subtaskController.js";
+import auth from "../middleware/auth.js";
+
 const router = express.Router();
 
-// Get all subtasks for a specific parent task
-router.get("/:taskId/subtasks", authenticator, getSubtasks);
+// All routes are protected with auth middleware
+router.use(auth);
 
-// Create a new subtask for a parent task
-router.post("/:taskId/subtasks", authenticator, createSubtask);
+// Subtask routes
+router.get("/:taskId/subtasks", subtaskController.getSubtasks);
+router.post("/:taskId/subtasks", subtaskController.createSubtask);
+router.put("/:taskId/subtasks/:subtaskId", subtaskController.updateSubtask);
+router.delete("/:taskId/subtasks/:subtaskId", subtaskController.deleteSubtask);
+router.patch("/:taskId/subtasks/:subtaskId/status", subtaskController.updateSubtaskStatus);
 
-// Update a subtask
-router.put("/subtasks/:subtaskId", authenticator, updateSubtask);
-
-// Delete a subtask
-router.delete("/subtasks/:subtaskId", authenticator, deleteSubtask);
-
-// Update just the subtask status
-router.patch("/subtasks/:subtaskId/status", authenticator, updateSubtaskStatus);
-
-module.exports = router;
+export default router;

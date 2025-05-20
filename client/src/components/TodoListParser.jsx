@@ -6,6 +6,8 @@ import EditTaskModal from './EditTaskModal';
 import ConfirmationModal from './ConfirmationModal';
 import Notification from './Notification';
 import { useSocket } from '../app/context/SocketContext';
+import ReminderModal from './ReminderModal';
+import { toast } from 'react-hot-toast';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -69,6 +71,11 @@ function TodoListParser({ todolist, settask }) {
    // State for notifications
    const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
+   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+   const [selectedTask, setSelectedTask] = useState(null);
+
+   const [isMenuOpen, setIsMenuOpen] = useState(null);
+
    useEffect(() => {
       // Calculate exceeded statuses for all tasks and store them in state
       const statuses = validTodoList.map((task) => isDeadlineExceeded(task));
@@ -112,8 +119,8 @@ function TodoListParser({ todolist, settask }) {
          if (data && data.task) {
             settask((prevTasks) => prevTasks.map((task) => (task._id === data.task._id ? data.task : task)));
             showNotification(
-               data.task.status ? 'Task marked as completed' : 'Task marked as incomplete',
-               data.task.status ? 'success' : 'info'
+               data.task.completed ? 'Task marked as completed' : 'Task marked as incomplete',
+               data.task.completed ? 'success' : 'info'
             );
          }
       });
@@ -212,7 +219,7 @@ function TodoListParser({ todolist, settask }) {
                Authorization: `Bearer ${token}`,
                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ status: completed }),
+            body: JSON.stringify({ completed }),
          });
 
          if (!response.ok) {
@@ -220,7 +227,7 @@ function TodoListParser({ todolist, settask }) {
          }
 
          // Update the local state
-         settask((prevTasks) => prevTasks.map((task) => (task._id === taskId ? { ...task, status: completed } : task)));
+         settask((prevTasks) => prevTasks.map((task) => (task._id === taskId ? { ...task, completed } : task)));
 
          // Show success notification
          showNotification(`Task ${completed ? 'completed' : 'marked as incomplete'}`);
@@ -311,6 +318,29 @@ function TodoListParser({ todolist, settask }) {
       }
    };
 
+   const handleSetReminder = async (reminderData) => {
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reminders`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(reminderData),
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to set reminder');
+         }
+
+         toast.success('Reminder set successfully');
+      } catch (error) {
+         console.error('Error setting reminder:', error);
+         toast.error('Failed to set reminder');
+      }
+   };
+
    return (
       <div className="max-h-[45vh] overflow-y-auto [&::-webkit-scrollbar]:w-[10px] [&::-webkit-scrollbar]:ml-[2px] [&::-webkit-scrollbar-thumb]:bg-[rgba(5,103,189,0.782)] [&::-webkit-scrollbar-thumb]:rounded-[10px] [&::-webkit-scrollbar-thumb:hover]:bg-[rgba(3,90,166,0.782)] [&::-webkit-scrollbar-track]:bg-[rgb(133,198,255)] [&::-webkit-scrollbar-track]:rounded-[10px]">
          {apiError && (
@@ -328,14 +358,98 @@ function TodoListParser({ todolist, settask }) {
 
          {validTodoList.length > 0 ? (
             validTodoList.map((list, i) => (
-               <DisplayTodoList
-                  key={list._id || i}
-                  list={list}
-                  isexceeded={exceededStatuses[i]} // Pass the exceeded status for each task
-                  onDelete={handleDeleteTask}
-                  onUpdate={handleUpdateTask}
-                  onStatusChange={handleTaskStatusChange}
-               />
+               <div key={list._id || i} className="relative">
+                  <DisplayTodoList
+                     list={list}
+                     isexceeded={exceededStatuses[i]} // Pass the exceeded status for each task
+                     onDelete={handleDeleteTask}
+                     onUpdate={handleUpdateTask}
+                     onStatusChange={handleTaskStatusChange}
+                  />
+                  {isMenuOpen === list._id && (
+                     <div className="absolute right-0 mt-2 w-48 bg-white/10 backdrop-blur-md rounded-lg shadow-lg z-10">
+                        <div className="py-1">
+                           {/* Set Reminder Option */}
+                           <button
+                              onClick={() => {
+                                 setSelectedTask(list);
+                                 setIsReminderModalOpen(true);
+                                 setIsMenuOpen(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-white hover:bg-white/20 transition-colors flex items-center"
+                           >
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 className="h-5 w-5 mr-2"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                              >
+                                 <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                 />
+                              </svg>
+                              Set Reminder
+                           </button>
+
+                           {/* Edit Option */}
+                           <button
+                              onClick={() => {
+                                 setSelectedTask(list);
+                                 setEditModalOpen(true);
+                                 setIsMenuOpen(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-white hover:bg-white/20 transition-colors flex items-center"
+                           >
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 className="h-5 w-5 mr-2"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                              >
+                                 <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                 />
+                              </svg>
+                              Edit
+                           </button>
+
+                           {/* Delete Option */}
+                           <button
+                              onClick={() => {
+                                 setSelectedTask(list);
+                                 setDeleteModalOpen(true);
+                                 setIsMenuOpen(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-red-400 hover:bg-white/20 transition-colors flex items-center"
+                           >
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 className="h-5 w-5 mr-2"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                              >
+                                 <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                 />
+                              </svg>
+                              Delete
+                           </button>
+                        </div>
+                     </div>
+                  )}
+               </div>
             ))
          ) : (
             <NoTasksMessage />
@@ -354,6 +468,17 @@ function TodoListParser({ todolist, settask }) {
                onCancel={() => setDeleteModalOpen(false)}
             />
          )}
+
+         {/* Reminder Modal */}
+         <ReminderModal
+            isOpen={isReminderModalOpen}
+            onClose={() => {
+               setIsReminderModalOpen(false);
+               setSelectedTask(null);
+            }}
+            task={selectedTask}
+            onSetReminder={handleSetReminder}
+         />
       </div>
    );
 }

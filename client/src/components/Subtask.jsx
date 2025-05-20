@@ -28,7 +28,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/subtasks/${subtask._id}/status`, {
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${subtask.taskId}/subtasks/${subtask._id}/status`, {
             method: 'PATCH',
             headers: {
                Authorization: `Bearer ${token}`,
