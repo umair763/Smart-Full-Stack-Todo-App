@@ -5,7 +5,7 @@ import TodoListParser from '../../components/TodoListParser';
 import AddTask from '../../components/AddTask';
 import AddTaskForm from '../../components/AddTaskForm';
 import DeleteTaskForm from '../../components/DeleteTaskForm';
-import UserProfile from '../../components/UserProfile';
+import Modal from '../../components/Modal';
 import Header from '../layout/Header'; // Import Header
 
 // Use the consistent API base URL
@@ -174,51 +174,54 @@ function Dashboard() {
    }
 
    return (
-      <div className="w-11/12 p-5 rounded-xl shadow-lg bg-gradient-to-br from-[#9406E6] to-[#00FFFF] grid grid-cols-1 md:grid-cols-[1.5fr,1fr] lg:grid-cols-[1.5fr,1fr] gap-4">
-         {/* Add Header at the top of the container */}
-         <div className="col-span-1 md:col-span-2 lg:col-span-2 mb-4">
-            <Header />
-         </div>
-
-         <div className="div-1">
-            <div className="text">
-               <h1 className="text-4xl text-white font-extrabold mb-4">Todo App</h1>
-               <h3 className="text-xl text-white font-semibold mb-6">
-                  To-Do lists help us break life into small steps.
-               </h3>
+      <div className="w-11/12 -mt-10 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] p-4">
+         <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="mb-6">
+               <Header />
             </div>
-            <AddTask
-               SetisAddFormVisible={handleisAddFormVisible}
-               setisDeleteFormVisible={handleisDeleteFormVisible}
-               setSort={setSortBy}
-               setSearch={setSearchTask}
-            />
-            {apiError && (
-               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{apiError}</div>
-            )}
 
-            {isLoading ? (
-               <div className="flex justify-center items-center h-40">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+            {/* Main Content */}
+            <div className="space-y-6">
+               <div className="text">
+                  <h1 className="text-4xl text-white font-extrabold mb-4">Todo App</h1>
+                  <h3 className="text-xl text-white font-semibold mb-6">
+                     To-Do lists help us break life into small steps.
+                  </h3>
                </div>
-            ) : (
-               <TodoListParser todolist={searched} setexceeded={isexceeded} settask={setTasks} />
-            )}
+               <AddTask
+                  SetisAddFormVisible={handleisAddFormVisible}
+                  setisDeleteFormVisible={handleisDeleteFormVisible}
+                  setSort={setSortBy}
+                  setSearch={setSearchTask}
+               />
+               {apiError && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{apiError}</div>
+               )}
+
+               {isLoading ? (
+                  <div className="flex justify-center items-center h-40">
+                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+                  </div>
+               ) : (
+                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-6">
+                     <TodoListParser todolist={searched} setexceeded={isexceeded} settask={setTasks} />
+                  </div>
+               )}
+            </div>
          </div>
 
-         <div className="right-side">
-            {isAddFormVisible && (
-               <AddTaskForm addTask={handleAddNewTasks} SetisAddFormVisible={handleisAddFormVisible} />
-            )}
-            {isDeleteFormVisible && (
-               <DeleteTaskForm
-                  tasks={tasks}
-                  deleteTask={handleDeleteTask}
-                  setisDeleteFormVisible={handleisDeleteFormVisible}
-               />
-            )}
-            {!isAddFormVisible && !isDeleteFormVisible && <UserProfile />}
-         </div>
+         {/* Form Modals */}
+         <Modal isOpen={isAddFormVisible} onClose={handleisAddFormVisible}>
+            <AddTaskForm addTask={handleAddNewTasks} SetisAddFormVisible={handleisAddFormVisible} />
+         </Modal>
+         <Modal isOpen={isDeleteFormVisible} onClose={handleisDeleteFormVisible}>
+            <DeleteTaskForm
+               tasks={tasks}
+               deleteTask={handleDeleteTask}
+               setisDeleteFormVisible={handleisDeleteFormVisible}
+            />
+         </Modal>
       </div>
    );
 }

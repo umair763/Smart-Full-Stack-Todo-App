@@ -182,7 +182,7 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                   type="text"
                   value={task}
                   onChange={(e) => setTask(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
+                  className="w-full px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
                   placeholder="Enter task name"
                   required
                />
@@ -196,7 +196,7 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                      value={date}
                      onChange={(e) => setDate(e.target.value)}
                      onFocus={() => setShowDatePicker(true)}
-                     className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
+                     className="w-full px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
                      placeholder="DD/MM/YYYY"
                      required
                   />
@@ -222,30 +222,16 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                   </button>
                </div>
 
-               {/* Date Picker Calendar */}
+               {/* Date Picker */}
                {showDatePicker && (
-                  <div className="absolute z-10 mt-1 p-4 bg-white rounded-lg shadow-lg">
-                     <div className="mb-3">
-                        <div className="text-gray-700 font-medium text-center">
-                           {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                        </div>
-                     </div>
-                     <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                           <div key={day} className="text-gray-500 text-xs font-medium">
+                  <div className="absolute z-10 mt-1 p-3 bg-white rounded-lg shadow-lg">
+                     <div className="grid grid-cols-7 gap-1">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                           <div key={day} className="text-center text-xs text-gray-500">
                               {day}
                            </div>
                         ))}
-                     </div>
-                     <div className="grid grid-cols-7 gap-1">{generateCalendar()}</div>
-                     <div className="mt-3 text-right">
-                        <button
-                           type="button"
-                           className="text-sm text-purple-600 hover:text-purple-800"
-                           onClick={() => setShowDatePicker(false)}
-                        >
-                           Close
-                        </button>
+                        {generateCalendar()}
                      </div>
                   </div>
                )}
@@ -259,7 +245,7 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                      value={time}
                      onChange={(e) => setTime(e.target.value)}
                      onFocus={() => setShowTimePicker(true)}
-                     className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
+                     className="w-full px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
                      placeholder="HH:MM AM/PM"
                      required
                   />
@@ -287,36 +273,36 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
 
                {/* Time Picker */}
                {showTimePicker && (
-                  <div className="absolute z-10 mt-1 p-4 bg-white rounded-lg shadow-lg">
-                     <div className="mb-3">
+                  <div className="absolute z-10 mt-1 p-3 bg-white rounded-lg shadow-lg">
+                     <div className="mb-2">
                         <div className="text-gray-700 font-medium text-center">Select Time</div>
                      </div>
 
-                     <div className="flex space-x-4">
+                     <div className="flex gap-3">
                         {/* Hour selector */}
                         <div>
-                           <div className="text-gray-500 text-xs font-medium text-center mb-2">Hour</div>
-                           <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
+                           <div className="text-gray-500 text-xs font-medium text-center mb-1">Hour</div>
+                           <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto">
                               {generateHourSelector()}
                            </div>
                         </div>
 
                         {/* Minute selector */}
                         <div>
-                           <div className="text-gray-500 text-xs font-medium text-center mb-2">Minute</div>
-                           <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
+                           <div className="text-gray-500 text-xs font-medium text-center mb-1">Minute</div>
+                           <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto">
                               {generateMinuteSelector()}
                            </div>
                         </div>
 
                         {/* AM/PM selector */}
                         <div>
-                           <div className="text-gray-500 text-xs font-medium text-center mb-2">AM/PM</div>
-                           <div className="flex flex-col gap-2">
+                           <div className="text-gray-500 text-xs font-medium text-center mb-1">AM/PM</div>
+                           <div className="flex flex-col gap-1">
                               <button
                                  type="button"
                                  onClick={() => setSelectedAmPm('AM')}
-                                 className={`px-4 py-2 rounded-lg ${
+                                 className={`px-3 py-1.5 rounded-lg ${
                                     selectedAmPm === 'AM'
                                        ? 'bg-[#9406E6] text-white'
                                        : 'hover:bg-purple-200 text-gray-700'
@@ -327,7 +313,7 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                               <button
                                  type="button"
                                  onClick={() => setSelectedAmPm('PM')}
-                                 className={`px-4 py-2 rounded-lg ${
+                                 className={`px-3 py-1.5 rounded-lg ${
                                     selectedAmPm === 'PM'
                                        ? 'bg-[#9406E6] text-white'
                                        : 'hover:bg-purple-200 text-gray-700'
@@ -339,21 +325,21 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                         </div>
                      </div>
 
-                     <div className="mt-3 flex justify-between">
-                        <div className="text-lg font-medium">
+                     <div className="mt-2 flex justify-between items-center">
+                        <div className="text-sm font-medium text-gray-700">
                            {selectedHour}:{selectedMinute.toString().padStart(2, '0')} {selectedAmPm}
                         </div>
-                        <div>
+                        <div className="flex gap-2">
                            <button
                               type="button"
-                              className="ml-2 px-4 py-1 bg-[#9406E6] text-white rounded-lg"
+                              className="px-3 py-1 bg-[#9406E6] text-white rounded-lg text-sm"
                               onClick={handleTimeSelect}
                            >
                               Set Time
                            </button>
                            <button
                               type="button"
-                              className="ml-2 px-2 py-1 text-sm text-purple-600 hover:text-purple-800"
+                              className="px-2 py-1 text-sm text-purple-600 hover:text-purple-800"
                               onClick={() => setShowTimePicker(false)}
                            >
                               Cancel
@@ -414,10 +400,17 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                </div>
             </div>
 
-            <div className="pt-4">
+            <div className="flex justify-end gap-3 pt-2">
+               <button
+                  type="button"
+                  onClick={SetisAddFormVisible}
+                  className="px-4 py-2 text-white/80 hover:text-white transition-colors"
+               >
+                  Cancel
+               </button>
                <button
                   type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-[#9406E6] to-[#0066ff] text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/30 active:scale-[0.98] transition-all"
+                  className="px-4 py-2 bg-[#9406E6] text-white rounded-lg hover:bg-[#7D05C3] transition-colors"
                >
                   Add Task
                </button>
