@@ -8,6 +8,8 @@ require("dotenv").config();
 
 const userRoutes = require("./routes/userRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+const subtaskRoutes = require("./routes/subtaskRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -73,6 +75,16 @@ io.on("connection", (socket) => {
     });
 });
 
+// Helper function to send notifications through socket
+io.sendNotification = (userId, notification) => {
+    if (connectedUsers.has(userId.toString())) {
+        const socketId = connectedUsers.get(userId.toString());
+        io.to(socketId).emit("notification", notification);
+        return true;
+    }
+    return false;
+};
+
 // Make io accessible to route handlers
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
@@ -136,6 +148,13 @@ app.get("/api/debug", (req, res) => {
                 { method: "GET", path: "/api/tasks/stats" },
                 { method: "PATCH", path: "/api/tasks/:id/status" },
             ],
+            subtasks: [
+                { method: "GET", path: "/api/tasks/:taskId/subtasks" },
+                { method: "POST", path: "/api/tasks/:taskId/subtasks" },
+                { method: "PUT", path: "/api/subtasks/:subtaskId" },
+                { method: "DELETE", path: "/api/subtasks/:subtaskId" },
+                { method: "PATCH", path: "/api/subtasks/:subtaskId/status" },
+            ],
             sockets: [
                 { event: "connection", description: "New client connected" },
                 { event: "authenticate", description: "Authenticate user with socket" },
@@ -144,6 +163,10 @@ app.get("/api/debug", (req, res) => {
                 { event: "taskUpdated", description: "Task updated notification" },
                 { event: "taskDeleted", description: "Task deleted notification" },
                 { event: "taskStatusChanged", description: "Task status changed notification" },
+                { event: "subtaskCreated", description: "Subtask created notification" },
+                { event: "subtaskUpdated", description: "Subtask updated notification" },
+                { event: "subtaskDeleted", description: "Subtask deleted notification" },
+                { event: "subtaskStatusChanged", description: "Subtask status changed notification" },
             ],
         },
     });
@@ -152,6 +175,8 @@ app.get("/api/debug", (req, res) => {
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/tasks", subtaskRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Add a global error handler
 app.use((err, req, res, next) => {

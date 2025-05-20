@@ -6,6 +6,7 @@ import App from './App';
 import './index.css';
 import { AuthProvider } from './app/context/AuthContext';
 import { SocketProvider } from './app/context/SocketContext';
+import { NotificationProvider } from './app/context/NotificationContext';
 
 // Get Google Client ID from environment variable or use the hardcoded one as fallback
 const CLIENT_ID =
@@ -16,9 +17,11 @@ createRoot(document.getElementById('root')).render(
       <BrowserRouter>
          <AuthProvider>
             <SocketProvider>
-               <GoogleOAuthProvider clientId={CLIENT_ID}>
-                  <App />
-               </GoogleOAuthProvider>
+               <NotificationProvider>
+                  <GoogleOAuthProvider clientId={CLIENT_ID}>
+                     <App />
+                  </GoogleOAuthProvider>
+               </NotificationProvider>
             </SocketProvider>
          </AuthProvider>
       </BrowserRouter>

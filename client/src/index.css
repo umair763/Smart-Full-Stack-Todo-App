@@ -11,3 +11,54 @@
       url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.ttf') format('truetype'),
       url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.svg#Caros Light') format('svg');
 }
+
+/* Add these notification animations */
+@keyframes slideIn {
+   0% {
+      transform: translateX(100%);
+      opacity: 0;
+   }
+   100% {
+      transform: translateX(0);
+      opacity: 1;
+   }
+}
+
+@keyframes slideOut {
+   0% {
+      transform: translateX(0);
+      opacity: 1;
+   }
+   100% {
+      transform: translateX(100%);
+      opacity: 0;
+   }
+}
+
+.animate-slideIn {
+   animation: slideIn 0.3s ease-out forwards;
+}
+
+.animate-slideOut {
+   animation: slideOut 0.3s ease-in forwards;
+}
+
+/* Make sure notifications are responsive */
+@media (max-width: 640px) {
+   .fixed.top-4.right-4 {
+      top: 1rem;
+      right: 1rem;
+      max-width: calc(100% - 2rem);
+   }
+}
+
+/* Additional responsive styles */
+@media (max-width: 375px) {
+   .text-sm {
+      font-size: 0.75rem;
+   }
+
+   .p-3 {
+      padding: 0.5rem;
+   }
+}
