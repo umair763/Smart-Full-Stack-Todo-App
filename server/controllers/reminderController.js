@@ -1,6 +1,7 @@
 import { dbEvents } from "../index.js";
 import Reminder from "../models/Reminder.js";
 import Task from "../models/Task.js";
+import reminderService from "../services/reminderService.js";
 
 // Helper function to calculate reminder time based on preset type
 const calculateReminderTime = (taskDateTime, presetType) => {
@@ -31,39 +32,21 @@ export const createReminder = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        // Create reminder
-        const reminder = new Reminder({
-            taskId,
-            reminderTime: new Date(reminderTime),
-            userId
+        // Create reminder using the service
+        const reminder = await reminderService.createReminder(taskId, reminderTime, userId);
+
+        // Emit initial reminder set notification
+        dbEvents.emit("db_change", {
+            operation: "reminder_set",
+            collection: "reminders",
+            message: `Reminder set for task "${task.task}" at ${new Date(reminderTime).toLocaleString()}`,
+            type: "info",
         });
-
-        await reminder.save();
-
-        // Calculate time until reminder
-        const now = new Date();
-        const timeUntilReminder = new Date(reminderTime).getTime() - now.getTime();
-
-        // Schedule the reminder notification
-        setTimeout(() => {
-            // Emit reminder notification with golden bell icon
-            dbEvents.emit("db_change", {
-                operation: "reminder",
-                collection: "reminders",
-                message: `🔔 Reminder: "${task.task}" is due now!`,
-                type: "reminder",
-                data: {
-                    taskId: task._id,
-                    taskTitle: task.task,
-                    reminderTime: reminderTime
-                }
-            });
-        }, timeUntilReminder);
 
         res.status(201).json({
             message: "Reminder set successfully",
             reminder,
-            reminderTime: new Date(reminderTime).toLocaleString()
+            reminderTime: new Date(reminderTime).toLocaleString(),
         });
     } catch (error) {
         console.error("Error creating reminder:", error);
@@ -77,7 +60,8 @@ export const getTaskReminders = async (req, res) => {
         const { taskId } = req.params;
         const userId = req.user._id;
 
-        const reminders = await Reminder.find({ taskId, userId });
+        const reminders = await Reminder.find({ taskId, userId }).populate("taskId", "task date time").sort({ reminderTime: 1 });
+
         res.json(reminders);
     } catch (error) {
         console.error("Error fetching reminders:", error);
@@ -141,7 +125,7 @@ export const getUserReminders = async (req, res) => {
         const userId = req.user._id;
         const reminders = await Reminder.find({ userId, isActive: true })
             .populate("taskId", "task date time")
-            .sort({ customDateTime: 1 });
+            .sort({ reminderTime: 1 });
 
         res.json(reminders);
     } catch (error) {
@@ -153,39 +137,51 @@ export const getUserReminders = async (req, res) => {
 // Add the simplified setTaskReminder function that emits notifications
 export const setTaskReminder = async (req, res) => {
     try {
-        const { taskId, reminderTime } = req.body;
+        const { taskId, reminderTime, userId } = req.body;
 
-        if (!taskId || !reminderTime) {
-            return res.status(400).json({ message: "Task ID and reminder time are required" });
+        // Validate required fields
+        if (!taskId || !reminderTime || !userId) {
+            return res.status(400).json({
+                success: false,
+                message: "Task ID, reminder time, and user ID are required",
+            });
         }
 
-        // Verify the task exists
-        const task = await Task.findById(taskId);
+        // Verify the task exists and belongs to the user
+        const task = await Task.findOne({ _id: taskId, userId });
         if (!task) {
-            return res.status(404).json({ message: "Task not found" });
+            return res.status(404).json({
+                success: false,
+                message: "Task not found or does not belong to the user",
+            });
         }
 
-        // Save reminder to DB
-        const reminder = new Reminder({ taskId, reminderTime });
-        await reminder.save();
+        // Create the reminder using the reminder service
+        const reminder = await reminderService.createReminder(taskId, reminderTime, userId);
 
-        // Emit a notification via the global event emitter
+        // Emit notification that reminder was set
         dbEvents.emit("db_change", {
-            operation: "reminder_set",
+            operation: "reminder",
             collection: "reminders",
-            message: `Reminder set on task "${task.task}" for time ${new Date(reminderTime).toLocaleString()}`,
+            message: `🔔 Reminder set for "${task.task}"`,
+            type: "reminder",
+            data: {
+                taskId: task._id,
+                taskTitle: task.task,
+                reminderTime: reminder.reminderTime,
+            },
         });
 
-        res.status(201).json({ message: "Reminder set successfully", reminder });
+        res.status(201).json({
+            success: true,
+            message: "Reminder set successfully",
+            data: reminder,
+        });
     } catch (error) {
         console.error("Error setting reminder:", error);
-
-        dbEvents.emit("db_change", {
-            operation: "reminder_set",
-            collection: "reminders",
-            error: error.message,
+        res.status(500).json({
+            success: false,
+            message: error.message || "Failed to set reminder",
         });
-
-        res.status(500).json({ message: "Failed to set reminder", error: error.message });
     }
 };

@@ -14,20 +14,17 @@ const ReminderModal = ({ isOpen, onClose, task, onSetReminder }) => {
          return;
       }
 
-      let reminderData = {
-         taskId: task._id,
-      };
+      let reminderTime;
+      const now = new Date();
 
       if (selectedOption === 'custom') {
          if (!customDateTime) {
             toast.error('Please select a date and time');
             return;
          }
-         reminderData.reminderTime = new Date(customDateTime).toISOString();
+         reminderTime = new Date(customDateTime).toISOString();
       } else {
          // Calculate time based on presets
-         const now = new Date();
-
          switch (selectedOption) {
             case '10min':
                now.setMinutes(now.getMinutes() + 10);
@@ -55,11 +52,18 @@ const ReminderModal = ({ isOpen, onClose, task, onSetReminder }) => {
             default:
                break;
          }
-
-         reminderData.reminderTime = now.toISOString();
+         reminderTime = now.toISOString();
       }
 
-      onSetReminder(reminderData);
+      console.log('ReminderModal - Sending reminder data:', {
+         taskId: task._id,
+         reminderTime,
+         selectedOption,
+         customDateTime,
+      });
+
+      // Call onSetReminder with taskId and reminderTime
+      onSetReminder(task._id, reminderTime);
       onClose();
    };
 

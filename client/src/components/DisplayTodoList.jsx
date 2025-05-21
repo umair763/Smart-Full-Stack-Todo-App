@@ -415,26 +415,42 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
       );
    };
 
-   const handleSetReminder = async (reminderData) => {
+   const handleSetReminder = async (taskId, reminderTime) => {
       try {
-         const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
+         console.log('DisplayTodoList - Setting reminder for task:', { taskId, reminderTime });
+
+         if (!taskId || !reminderTime) {
+            console.error('Missing required data:', { taskId, reminderTime });
+            toast.error('Task ID and reminder time are required');
+            return;
+         }
+
+         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reminders`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
-               Authorization: `Bearer ${token}`,
+               Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
-            body: JSON.stringify(reminderData),
+            body: JSON.stringify({
+               taskId,
+               reminderTime,
+               userId: list.userId,
+            }),
          });
 
+         const data = await response.json();
+
          if (!response.ok) {
-            throw new Error('Failed to set reminder');
+            console.error('Failed to set reminder:', data);
+            throw new Error(data.message || 'Failed to set reminder');
          }
 
-         toast.success('Reminder set successfully');
+         console.log('Reminder set successfully:', data);
+         toast.success('Reminder set successfully!');
+         setIsReminderModalOpen(false);
       } catch (error) {
          console.error('Error setting reminder:', error);
-         toast.error('Failed to set reminder');
+         toast.error(error.message || 'Failed to set reminder. Please try again.');
       }
    };
 
@@ -586,20 +602,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                               <FiPlus className="mr-2 h-4 w-4" />
                               Add Subtask
                            </button>
-                           <button
-                              onClick={handleEdit}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                           >
-                              <FiEdit2 className="mr-2 h-4 w-4" />
-                              Edit
-                           </button>
-                           <button
-                              onClick={handleDelete}
-                              className="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-gray-100 w-full text-left"
-                           >
-                              <FiTrash2 className="mr-2 h-4 w-4" />
-                              Delete
-                           </button>
                         </div>
                      )}
                   </div>
@@ -658,9 +660,15 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          {/* Reminder Modal */}
          <ReminderModal
             isOpen={isReminderModalOpen}
-            onClose={() => setIsReminderModalOpen(false)}
+            onClose={() => {
+               setIsReminderModalOpen(false);
+               console.log('DisplayTodoList - Closing reminder modal, current task:', list);
+            }}
             task={list}
-            onSetReminder={handleSetReminder}
+            onSetReminder={(taskId, reminderTime) => {
+               console.log('DisplayTodoList - Setting reminder for task:', { taskId, reminderTime });
+               handleSetReminder(taskId, reminderTime);
+            }}
          />
       </>
    );

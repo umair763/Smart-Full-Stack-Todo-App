@@ -1,5 +1,6 @@
 import Task from "../models/Task.js";
 import { dbEvents } from "../index.js";
+import Notification from "../models/Notification.js";
 
 // Get all tasks for a user
 export const getTasks = async (req, res) => {
@@ -49,7 +50,26 @@ export const createTask = async (req, res) => {
 
         await newTask.save();
 
-        // Emit task creation event
+        // Save notification to DB
+        await Notification.create({
+            userId: req.user._id,
+            type: "create",
+            message: `Task "${task}" created`,
+            data: { taskId: newTask._id },
+        });
+
+        // Emit task creation event (real-time)
+        const io = req.app.get("io");
+        if (io && io.sendNotification) {
+            io.sendNotification(req.user._id, {
+                type: "create",
+                message: `Task "${task}" created`,
+                data: { taskId: newTask._id },
+                persistent: true,
+            });
+        }
+
+        // Emit dbEvents for legacy listeners
         dbEvents.emit("db_change", {
             operation: "create",
             collection: "tasks",
@@ -103,7 +123,25 @@ export const updateTask = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        // Emit task update event
+        // Save notification to DB
+        await Notification.create({
+            userId: req.user._id,
+            type: "update",
+            message: `Task "${task}" updated`,
+            data: { taskId: updatedTask._id },
+        });
+
+        // Emit task update event (real-time)
+        const io = req.app.get("io");
+        if (io && io.sendNotification) {
+            io.sendNotification(req.user._id, {
+                type: "update",
+                message: `Task "${task}" updated`,
+                data: { taskId: updatedTask._id },
+                persistent: true,
+            });
+        }
+
         dbEvents.emit("db_change", {
             operation: "update",
             collection: "tasks",
@@ -122,23 +160,38 @@ export const updateTask = async (req, res) => {
 export const deleteTask = async (req, res) => {
     try {
         const { id } = req.params;
-        const task = await Task.findOne({ _id: id, userId: req.user._id });
-
-        if (!task) {
+        const deletedTask = await Task.findOneAndDelete({ _id: id, userId: req.user._id });
+        if (!deletedTask) {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        await Task.findByIdAndDelete(id);
+        // Save notification to DB
+        await Notification.create({
+            userId: req.user._id,
+            type: "delete",
+            message: `Task "${deletedTask.task}" deleted`,
+            data: { taskId: deletedTask._id },
+        });
 
-        // Emit task deletion event
+        // Emit task deletion event (real-time)
+        const io = req.app.get("io");
+        if (io && io.sendNotification) {
+            io.sendNotification(req.user._id, {
+                type: "delete",
+                message: `Task "${deletedTask.task}" deleted`,
+                data: { taskId: deletedTask._id },
+                persistent: true,
+            });
+        }
+
         dbEvents.emit("db_change", {
             operation: "delete",
             collection: "tasks",
-            message: `Task "${task.task}" deleted`,
+            message: `Task "${deletedTask.task}" deleted`,
             type: "task",
         });
 
-        res.json({ message: "Task deleted successfully" });
+        res.json({ message: "Task deleted" });
     } catch (error) {
         console.error("Delete task error:", error);
         res.status(500).json({ message: "Error deleting task" });

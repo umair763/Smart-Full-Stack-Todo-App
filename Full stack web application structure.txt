@@ -33,20 +33,20 @@
 │   └── package.json
 │   └── .gitignore
 │   └── vite.config.js
-├── server
-│   ├── controllers
-│   │   └── taskControllers.js
-│   │   └── userControllers.js
-│   ├── middleware
-│   │   └── auth.js
-│   ├── models
-│   │   └── taskModels.js
-│   │   └── userModels.js
-│   ├── routes
-│   │   └── taskRoutes.js
-│   └── index.js
-│   └── .env
-│   └── .gitignore
-│   └── package-lock.json
-│   └── package.json
+server/
+├── db/
+│   └── mysql.js           # DB connection file
+├── routes/
+│   └── auth.js            # Login/Register routes
+│   └── vote.js            # Vote and result routes
+│   └── admin.js           # Admin controls
+├── controllers/
+│   └── authController.js
+│   └── voteController.js
+│   └── adminController.js
+├── .env
+├── index.js               # Main server entry
+├── package.json
+└── README.md
+
 

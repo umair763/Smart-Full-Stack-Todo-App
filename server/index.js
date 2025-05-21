@@ -69,6 +69,34 @@ io.on("connection", (socket) => {
         connectedUsers.set(userId, socket.id);
     });
 
+    // Handle notification events
+    socket.on("notificationCreated", (notification) => {
+        // Broadcast to all connected clients
+        io.emit("notification", notification);
+    });
+
+    socket.on("notificationDeleted", (notificationId) => {
+        // Broadcast to all connected clients
+        io.emit("notificationUpdate", {
+            type: "delete",
+            notificationId,
+        });
+    });
+
+    socket.on("notificationsCleared", () => {
+        // Broadcast to all connected clients
+        io.emit("notificationUpdate", {
+            type: "clearAll",
+        });
+    });
+
+    socket.on("notificationsMarkedAsRead", () => {
+        // Broadcast to all connected clients
+        io.emit("notificationUpdate", {
+            type: "markAllRead",
+        });
+    });
+
     // Handle disconnect
     socket.on("disconnect", () => {
         console.log("Client disconnected:", socket.id);

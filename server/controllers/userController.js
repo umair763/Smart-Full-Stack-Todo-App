@@ -87,43 +87,62 @@ export const login = async (req, res) => {
 export const googleSignIn = async (req, res) => {
     try {
         const { token } = req.body;
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
 
-        const { email, name, picture, sub: googleId } = ticket.getPayload();
-
-        // Find or create user
-        let user = await User.findOne({ email });
-        if (!user) {
-            user = new User({
-                username: name,
-                email,
-                googleId,
-                profileImage: picture,
+        if (!token) {
+            return res.status(400).json({
+                message: "Google token is required",
+                code: "MISSING_TOKEN",
             });
-            await user.save();
         }
 
-        // Generate token
-        const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-            expiresIn: "7d",
-        });
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
 
-        res.json({
-            message: "Google sign in successful",
-            token: jwtToken,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                profileImage: user.profileImage,
-            },
-        });
+            const { email, name, picture, sub: googleId } = ticket.getPayload();
+
+            // Find or create user
+            let user = await User.findOne({ email });
+            if (!user) {
+                user = new User({
+                    username: name,
+                    email,
+                    googleId,
+                    profileImage: picture,
+                });
+                await user.save();
+            }
+
+            // Generate token
+            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+                expiresIn: "7d",
+            });
+
+            res.json({
+                message: "Google sign in successful",
+                token: jwtToken,
+                user: {
+                    id: user._id,
+                    username: user.username,
+                    email: user.email,
+                    profileImage: user.profileImage,
+                },
+            });
+        } catch (error) {
+            console.error("Google token verification error:", error);
+            return res.status(401).json({
+                message: "Invalid Google token",
+                code: "INVALID_GOOGLE_TOKEN",
+            });
+        }
     } catch (error) {
         console.error("Google sign in error:", error);
-        res.status(500).json({ message: "Error signing in with Google" });
+        res.status(500).json({
+            message: "Error signing in with Google",
+            code: "GOOGLE_SIGNIN_ERROR",
+        });
     }
 };
 

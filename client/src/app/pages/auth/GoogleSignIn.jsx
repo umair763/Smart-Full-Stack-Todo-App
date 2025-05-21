@@ -18,31 +18,19 @@ function GoogleSignIn() {
       setError(null);
 
       try {
-         // Decode Google token
-         const decodedToken = JSON.parse(atob(credential.split('.')[1]));
-
-         // User data (matching backend schema)
-         const userData = {
-            name: decodedToken.name,
-            email: decodedToken.email,
-            picture: decodedToken.picture,
-         };
-
-         console.log('Google login data:', userData);
-
-         // Send to backend
+         // Send the credential token to backend
          const backendResponse = await fetch(`${API_BASE_URL}/api/users/google-signin`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
             },
-            body: JSON.stringify(userData),
+            body: JSON.stringify({ token: credential }),
             credentials: 'include',
          });
 
          if (!backendResponse.ok) {
-            const errorText = await backendResponse.text();
-            throw new Error(`Server returned ${backendResponse.status}: ${errorText}`);
+            const errorData = await backendResponse.json();
+            throw new Error(`Server returned ${backendResponse.status}: ${JSON.stringify(errorData)}`);
          }
 
          const data = await backendResponse.json();
@@ -57,7 +45,7 @@ function GoogleSignIn() {
          }
       } catch (error) {
          console.error('Error during Google login:', error);
-         setError('Failed to login with Google. Please check your network connection and try again.');
+         setError('Failed to login with Google. Please try again.');
       }
    };
 

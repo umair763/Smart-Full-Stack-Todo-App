@@ -18,3 +18,4 @@ router.put("/:reminderId", reminderController.updateReminder);
 router.delete("/:reminderId", reminderController.deleteReminder);
 
 export default router;
+ 

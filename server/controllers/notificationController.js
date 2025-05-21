@@ -3,7 +3,8 @@ import Notification from "../models/Notification.js";
 // Get all notifications for a user
 export const getNotifications = async (req, res) => {
     try {
-        const notifications = await Notification.find({ userId: req.user._id }).sort({ createdAt: -1 });
+        const userId = req.user._id;
+        const notifications = await Notification.find({ userId }).sort({ createdAt: -1 });
         res.json(notifications);
     } catch (error) {
         console.error("Get notifications error:", error);
@@ -31,15 +32,10 @@ export const createNotification = async (req, res) => {
 // Delete a notification
 export const deleteNotification = async (req, res) => {
     try {
+        const userId = req.user._id;
         const { id } = req.params;
-        const notification = await Notification.findOneAndDelete({
-            _id: id,
-            userId: req.user._id,
-        });
-        if (!notification) {
-            return res.status(404).json({ message: "Notification not found" });
-        }
-        res.json({ message: "Notification deleted successfully" });
+        await Notification.deleteOne({ _id: id, userId });
+        res.json({ message: "Notification deleted" });
     } catch (error) {
         console.error("Delete notification error:", error);
         res.status(500).json({ message: "Error deleting notification" });
@@ -69,5 +65,15 @@ export const markAsRead = async (req, res) => {
     } catch (error) {
         console.error("Mark as read error:", error);
         res.status(500).json({ message: "Error marking notification as read" });
+    }
+};
+
+export const clearNotifications = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        await Notification.deleteMany({ userId });
+        res.json({ message: "All notifications cleared" });
+    } catch (error) {
+        res.status(500).json({ message: "Error clearing notifications" });
     }
 };
