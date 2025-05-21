@@ -50,36 +50,53 @@ export const SocketProvider = ({ children }) => {
          // Customize notification based on operation type
          switch (operation) {
             case 'create':
-               toast.success(message, {
-                  icon: '✨',
-                  duration: 3000,
-               });
-               break;
             case 'update':
-               toast.info(message, {
-                  icon: '📝',
-                  duration: 3000,
-               });
-               break;
             case 'delete':
-               toast.error(message, {
-                  icon: '🗑️',
-                  duration: 3000,
-               });
-               break;
             case 'status_change':
-               toast.success(message, {
-                  icon: '✅',
+               toast(message, {
                   duration: 3000,
+                  style: {
+                     background: 'white',
+                     color: '#333',
+                     border: '1px solid #ddd',
+                     padding: '12px 20px',
+                     borderRadius: '8px',
+                     fontSize: '14px',
+                     fontWeight: '500',
+                  },
                });
                break;
-            case 'reminder':
+            case 'reminder_set':
                toast(message, {
                   icon: '⏰',
                   duration: 5000,
                   style: {
                      background: '#4CAF50',
                      color: 'white',
+                     border: '1px solid #45a049',
+                     padding: '12px 20px',
+                     borderRadius: '8px',
+                     fontSize: '14px',
+                     fontWeight: '500',
+                  },
+               });
+               break;
+            case 'reminder':
+               toast(message, {
+                  icon: '🔔',
+                  duration: 60000, // 1 minute
+                  style: {
+                     background: '#FFD700',
+                     color: 'black',
+                     border: '1px solid #DAA520',
+                     padding: '12px 20px',
+                     borderRadius: '8px',
+                     fontSize: '14px',
+                     fontWeight: '500',
+                  },
+                  iconTheme: {
+                     primary: '#DAA520',
+                     secondary: 'black',
                   },
                });
                break;

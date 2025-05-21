@@ -161,6 +161,26 @@ function Dashboard() {
       });
    }
 
+   function sortByPriority(tasks) {
+      const priorityOrder = { high: 1, medium: 2, low: 3 };
+      return tasks.sort((a, b) => {
+         return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+      });
+   }
+
+   function sortByStatus(tasks) {
+      return tasks.sort((a, b) => {
+         if (a.completed === b.completed) return 0;
+         return a.completed ? 1 : -1;
+      });
+   }
+
+   function sortByCreatedDate(tasks) {
+      return tasks.sort((a, b) => {
+         return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+   }
+
    const sorted = [...tasks];
 
    if (sortby === 'Task') {
@@ -169,11 +189,45 @@ function Dashboard() {
    } else if (sortby === 'Time') {
       // Sort tasks by time
       sortByDateTime(sorted);
+   } else if (sortby === 'Priority') {
+      // Sort tasks by priority
+      sortByPriority(sorted);
+   } else if (sortby === 'Status') {
+      // Sort tasks by status
+      sortByStatus(sorted);
+   } else if (sortby === 'Created') {
+      // Sort tasks by creation date
+      sortByCreatedDate(sorted);
    }
 
    let searched = sorted;
    if (searchtask) {
-      searched = sorted.filter((el) => el.task.toLowerCase().includes(searchtask.toLowerCase()));
+      searched = sorted.filter((task) => {
+         // Text search
+         const matchesText = task.task.toLowerCase().includes(searchtask.text.toLowerCase());
+
+         // Priority filter
+         const matchesPriority = !searchtask.priority || task.priority === searchtask.priority;
+
+         // Tags filter
+         const matchesTags =
+            !searchtask.tags ||
+            (task.tags && task.tags.some((tag) => tag.toLowerCase().includes(searchtask.tags.toLowerCase())));
+
+         // Due date filter
+         const matchesDueDate = !searchtask.dueDate || task.date === searchtask.dueDate;
+
+         // Status filter
+         const matchesStatus =
+            !searchtask.status ||
+            (searchtask.status === 'completed' && task.completed) ||
+            (searchtask.status === 'pending' && !task.completed) ||
+            (searchtask.status === 'overdue' &&
+               convertToComparableDateTime(task.date, task.time) < new Date() &&
+               !task.completed);
+
+         return matchesText && matchesPriority && matchesTags && matchesDueDate && matchesStatus;
+      });
    }
 
    const handleSetReminder = async (reminderData) => {

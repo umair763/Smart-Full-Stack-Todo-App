@@ -1,6 +1,7 @@
 import Subtask from "../models/Subtask.js";
 import Task from "../models/Task.js";
 import { dbEvents } from "../index.js";
+import Notification from "../models/Notification.js";
 
 // Get all subtasks for a task
 export const getSubtasks = async (req, res) => {
@@ -52,7 +53,26 @@ export const createSubtask = async (req, res) => {
         task.subtasks.push(newSubtask._id);
         await task.save();
 
-        // Emit subtask creation event
+        // Save notification to DB
+        await Notification.create({
+            userId: req.user._id,
+            type: "create",
+            message: `Subtask "${title}" created for task "${task.task}"`,
+            data: { subtaskId: newSubtask._id, taskId: task._id },
+        });
+
+        // Emit subtask creation event (real-time)
+        const io = req.app.get("io");
+        if (io && io.sendNotification) {
+            io.sendNotification(req.user._id, {
+                type: "create",
+                message: `Subtask "${title}" created for task "${task.task}"`,
+                data: { subtaskId: newSubtask._id, taskId: task._id },
+                persistent: true,
+            });
+        }
+
+        // Emit subtask creation event for legacy listeners
         dbEvents.emit("db_change", {
             operation: "create",
             collection: "subtasks",
@@ -73,42 +93,52 @@ export const updateSubtask = async (req, res) => {
         const { subtaskId } = req.params;
         const { title, description, date, time, priority } = req.body;
 
-        if (!title || !date || !time) {
-            return res.status(400).json({ message: "Title, date, and time are required" });
-        }
-
-        // Find subtask and verify task ownership
         const subtask = await Subtask.findById(subtaskId);
         if (!subtask) {
             return res.status(404).json({ message: "Subtask not found" });
         }
 
+        // Verify parent task belongs to user
         const task = await Task.findOne({ _id: subtask.taskId, userId: req.user._id });
         if (!task) {
-            return res.status(403).json({ message: "Not authorized to update this subtask" });
+            return res.status(404).json({ message: "Parent task not found" });
         }
 
-        const updatedSubtask = await Subtask.findByIdAndUpdate(
-            subtaskId,
-            {
-                title,
-                description,
-                date,
-                time,
-                priority: priority || subtask.priority,
-            },
-            { new: true }
-        );
+        subtask.title = title || subtask.title;
+        subtask.description = description !== undefined ? description : subtask.description;
+        subtask.date = date || subtask.date;
+        subtask.time = time || subtask.time;
+        subtask.priority = priority || subtask.priority;
 
-        // Emit subtask update event
+        await subtask.save();
+
+        // Save notification to DB
+        await Notification.create({
+            userId: req.user._id,
+            type: "update",
+            message: `Subtask "${subtask.title}" updated for task "${task.task}"`,
+            data: { subtaskId: subtask._id, taskId: task._id },
+        });
+
+        // Emit subtask update event (real-time)
+        const io = req.app.get("io");
+        if (io && io.sendNotification) {
+            io.sendNotification(req.user._id, {
+                type: "update",
+                message: `Subtask "${subtask.title}" updated for task "${task.task}"`,
+                data: { subtaskId: subtask._id, taskId: task._id },
+                persistent: true,
+            });
+        }
+
         dbEvents.emit("db_change", {
             operation: "update",
             collection: "subtasks",
-            message: `Subtask "${title}" updated for task "${task.task}"`,
+            message: `Subtask "${subtask.title}" updated for task "${task.task}"`,
             type: "subtask",
         });
 
-        res.json(updatedSubtask);
+        res.json(subtask);
     } catch (error) {
         console.error("Update subtask error:", error);
         res.status(500).json({ message: "Error updating subtask" });
@@ -119,25 +149,41 @@ export const updateSubtask = async (req, res) => {
 export const deleteSubtask = async (req, res) => {
     try {
         const { subtaskId } = req.params;
-
-        // Find subtask and verify task ownership
         const subtask = await Subtask.findById(subtaskId);
         if (!subtask) {
             return res.status(404).json({ message: "Subtask not found" });
         }
 
+        // Verify parent task belongs to user
         const task = await Task.findOne({ _id: subtask.taskId, userId: req.user._id });
         if (!task) {
-            return res.status(403).json({ message: "Not authorized to delete this subtask" });
+            return res.status(404).json({ message: "Parent task not found" });
         }
 
-        await Subtask.findByIdAndDelete(subtaskId);
-
+        await subtask.deleteOne();
         // Remove subtask from task's subtasks array
-        task.subtasks = task.subtasks.filter((id) => id.toString() !== subtaskId.toString());
+        task.subtasks = task.subtasks.filter((id) => id.toString() !== subtaskId);
         await task.save();
 
-        // Emit subtask deletion event
+        // Save notification to DB
+        await Notification.create({
+            userId: req.user._id,
+            type: "delete",
+            message: `Subtask "${subtask.title}" deleted from task "${task.task}"`,
+            data: { subtaskId: subtask._id, taskId: task._id },
+        });
+
+        // Emit subtask deletion event (real-time)
+        const io = req.app.get("io");
+        if (io && io.sendNotification) {
+            io.sendNotification(req.user._id, {
+                type: "delete",
+                message: `Subtask "${subtask.title}" deleted from task "${task.task}"`,
+                data: { subtaskId: subtask._id, taskId: task._id },
+                persistent: true,
+            });
+        }
+
         dbEvents.emit("db_change", {
             operation: "delete",
             collection: "subtasks",
@@ -145,7 +191,7 @@ export const deleteSubtask = async (req, res) => {
             type: "subtask",
         });
 
-        res.json({ message: "Subtask deleted successfully" });
+        res.json({ message: "Subtask deleted" });
     } catch (error) {
         console.error("Delete subtask error:", error);
         res.status(500).json({ message: "Error deleting subtask" });

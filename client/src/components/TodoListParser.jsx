@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import DisplayTodoList from './DisplayTodoList';
 import EditTaskModal from './EditTaskModal';
 import ConfirmationModal from './ConfirmationModal';
-import Notification from './Notification';
 import { useSocket } from '../app/context/SocketContext';
 import ReminderModal from './ReminderModal';
 import { toast } from 'react-hot-toast';
@@ -67,9 +66,6 @@ function TodoListParser({ todolist, settask }) {
 
    // State for API errors
    const [apiError, setApiError] = useState(null);
-
-   // State for notifications
-   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
    const [selectedTask, setSelectedTask] = useState(null);
@@ -136,12 +132,21 @@ function TodoListParser({ todolist, settask }) {
 
    // Show notification helper function
    const showNotification = (message, type = 'success') => {
-      setNotification({ show: true, message, type });
+      // Import and use the notification context
+      import('../app/context/NotificationContext').then(({ useNotification }) => {
+         const { createSuccessNotification, createErrorNotification, createInfoNotification } = useNotification();
 
-      // Auto-hide notification after 3 seconds
-      setTimeout(() => {
-         setNotification({ show: false, message: '', type: 'success' });
-      }, 3000);
+         switch (type) {
+            case 'error':
+               createErrorNotification(message);
+               break;
+            case 'info':
+               createInfoNotification(message);
+               break;
+            default:
+               createSuccessNotification(message);
+         }
+      });
    };
 
    // Delete task handler
@@ -163,8 +168,8 @@ function TodoListParser({ todolist, settask }) {
          // Update local state by filtering out the deleted task
          settask((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
 
-         // Show success notification
-         showNotification('Task deleted successfully');
+         // Show success notification (persistent)
+         showNotification('Task deleted successfully', 'success');
       } catch (error) {
          console.error('Error deleting task:', error);
          showNotification('Failed to delete task. Please try again.', 'error');
@@ -192,8 +197,8 @@ function TodoListParser({ todolist, settask }) {
             throw new Error('Failed to update task');
          }
 
-         // Show success notification
-         showNotification('Task updated successfully');
+         // Show success notification (persistent)
+         showNotification('Task updated successfully', 'success');
 
          // Update the task in the local state
          settask((prevTasks) =>
@@ -229,8 +234,8 @@ function TodoListParser({ todolist, settask }) {
          // Update the local state
          settask((prevTasks) => prevTasks.map((task) => (task._id === taskId ? { ...task, completed } : task)));
 
-         // Show success notification
-         showNotification(`Task ${completed ? 'completed' : 'marked as incomplete'}`);
+         // Show success notification (persistent)
+         showNotification(`Task ${completed ? 'completed' : 'marked as incomplete'}`, completed ? 'success' : 'info');
 
          return true;
       } catch (error) {
@@ -345,15 +350,6 @@ function TodoListParser({ todolist, settask }) {
       <div className="max-h-[45vh] overflow-y-auto [&::-webkit-scrollbar]:w-[10px] [&::-webkit-scrollbar]:ml-[2px] [&::-webkit-scrollbar-thumb]:bg-[rgba(5,103,189,0.782)] [&::-webkit-scrollbar-thumb]:rounded-[10px] [&::-webkit-scrollbar-thumb:hover]:bg-[rgba(3,90,166,0.782)] [&::-webkit-scrollbar-track]:bg-[rgb(133,198,255)] [&::-webkit-scrollbar-track]:rounded-[10px]">
          {apiError && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{apiError}</div>
-         )}
-
-         {/* Notification component */}
-         {notification.show && (
-            <Notification
-               message={notification.message}
-               type={notification.type}
-               onClose={() => setNotification({ ...notification, show: false })}
-            />
          )}
 
          {validTodoList.length > 0 ? (
