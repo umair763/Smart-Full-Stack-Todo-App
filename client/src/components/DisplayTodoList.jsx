@@ -1,13 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiEdit2, FiTrash2, FiMoreVertical, FiChevronDown, FiChevronRight, FiPlus } from 'react-icons/fi';
+import {
+   FiEdit2,
+   FiTrash2,
+   FiMoreVertical,
+   FiChevronDown,
+   FiChevronRight,
+   FiPlus,
+   FiEye,
+   FiDownload,
+} from 'react-icons/fi';
 import EditTaskModal from './EditTaskModal';
 import Subtask from './Subtask';
 import SubtaskModal from './SubtaskModal';
 import { useSocket } from '../app/context/SocketContext';
 import ReminderModal from './ReminderModal';
 import { toast } from 'react-hot-toast';
+import NoteModal from './NoteModal';
+import AttachmentModal from './AttachmentModal';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -25,6 +36,13 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
    const { socket } = useSocket();
    const [isMenuOpen, setIsMenuOpen] = useState(false);
    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+   const [showNoteModal, setShowNoteModal] = useState(false);
+   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+   const [showNoteView, setShowNoteView] = useState(false);
+   const [notes, setNotes] = useState([]);
+   const [attachments, setAttachments] = useState([]);
+   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+   const [isLoadingAttachments, setIsLoadingAttachments] = useState(false);
 
    // Initialize editedTask with the list props
    const [editedTask, setEditedTask] = useState({
@@ -154,6 +172,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          setSubtasks(sortedSubtasks);
       } catch (error) {
          console.error('Error fetching subtasks:', error);
+         toast.error('Failed to load subtasks');
       } finally {
          setIsLoadingSubtasks(false);
       }
@@ -215,12 +234,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
 
    function handleEdit() {
       setShowEditModal(true);
-   }
-
-   function handleEditSubmit(e) {
-      e.preventDefault();
-      onUpdate(list._id, editedTask);
-      setShowEditModal(false);
    }
 
    function handleDelete() {
@@ -347,6 +360,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          setSubtasks((prevSubtasks) => prevSubtasks.filter((st) => st._id !== subtaskId));
       } catch (error) {
          console.error('Error deleting subtask:', error);
+         toast.error('Failed to delete subtask');
       }
    };
 
@@ -394,27 +408,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
       }
    };
 
-   // Render subtask count and progress
-   const renderSubtaskProgress = () => {
-      const { subtaskCount = 0, completedSubtasks = 0 } = list;
-
-      if (subtaskCount === 0) return null;
-
-      return (
-         <div className="flex items-center text-xs text-gray-600 mt-1">
-            <div className="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
-               <div
-                  className="bg-[#9406E6] h-2.5 rounded-full"
-                  style={{ width: `${subtaskCount > 0 ? (completedSubtasks / subtaskCount) * 100 : 0}%` }}
-               ></div>
-            </div>
-            <span>
-               {completedSubtasks}/{subtaskCount} completed
-            </span>
-         </div>
-      );
-   };
-
    const handleSetReminder = async (taskId, reminderTime) => {
       try {
          console.log('DisplayTodoList - Setting reminder for task:', { taskId, reminderTime });
@@ -425,7 +418,14 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
             return;
          }
 
-         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/reminders`, {
+         // Validate that reminder time is in the future
+         const reminderDateTime = new Date(reminderTime);
+         if (reminderDateTime <= new Date()) {
+            toast.error('Reminder time must be in the future');
+            return;
+         }
+
+         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -451,6 +451,154 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
       } catch (error) {
          console.error('Error setting reminder:', error);
          toast.error(error.message || 'Failed to set reminder. Please try again.');
+      }
+   };
+
+   // Fetch notes when note view is opened
+   useEffect(() => {
+      if (showNoteView) {
+         fetchNotes();
+      }
+   }, [showNoteView]);
+
+   // Fetch attachments when component mounts
+   useEffect(() => {
+      fetchAttachments();
+   }, []);
+
+   // Fetch notes for the task
+   const fetchNotes = async () => {
+      setIsLoadingNotes(true);
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/notes`, {
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to fetch notes');
+         }
+
+         const data = await response.json();
+         setNotes(data);
+      } catch (error) {
+         console.error('Error fetching notes:', error);
+         toast.error('Failed to load notes');
+      } finally {
+         setIsLoadingNotes(false);
+      }
+   };
+
+   // Fetch attachments for the task
+   const fetchAttachments = async () => {
+      setIsLoadingAttachments(true);
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/attachments`, {
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to fetch attachments');
+         }
+
+         const data = await response.json();
+         setAttachments(data);
+      } catch (error) {
+         console.error('Error fetching attachments:', error);
+         toast.error('Failed to load attachments');
+      } finally {
+         setIsLoadingAttachments(false);
+      }
+   };
+
+   // Handle note creation
+   const handleCreateNote = async (content) => {
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/notes`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ content }),
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to create note');
+         }
+
+         const newNote = await response.json();
+         setNotes((prev) => [newNote, ...prev]);
+         toast.success('Note added successfully');
+         setShowNoteModal(false);
+      } catch (error) {
+         console.error('Error creating note:', error);
+         toast.error('Failed to add note');
+      }
+   };
+
+   // Handle attachment upload
+   const handleUploadAttachment = async (file) => {
+      try {
+         const formData = new FormData();
+         formData.append('file', file);
+
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/attachments`, {
+            method: 'POST',
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to upload attachment');
+         }
+
+         const data = await response.json();
+         // Replace the existing attachment with the new one
+         setAttachments([data.attachment]);
+         toast.success('File uploaded successfully');
+         setShowAttachmentModal(false);
+      } catch (error) {
+         console.error('Error uploading attachment:', error);
+         toast.error('Failed to upload file');
+      }
+   };
+
+   // Handle attachment download
+   const handleDownloadAttachment = async (attachmentId) => {
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/attachments/${attachmentId}/download`, {
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to download attachment');
+         }
+
+         const blob = await response.blob();
+         const url = window.URL.createObjectURL(blob);
+         const a = document.createElement('a');
+         a.href = url;
+         a.download = attachments.find((a) => a._id === attachmentId)?.originalname || 'download';
+         document.body.appendChild(a);
+         a.click();
+         window.URL.revokeObjectURL(url);
+         document.body.removeChild(a);
+      } catch (error) {
+         console.error('Error downloading attachment:', error);
+         toast.error('Failed to download file');
       }
    };
 
@@ -559,6 +707,26 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                      )}
                   </button>
 
+                  {/* View notes button */}
+                  <button
+                     onClick={() => setShowNoteView(!showNoteView)}
+                     className="text-yellow-600 hover:text-yellow-800"
+                     title="View notes"
+                  >
+                     <FiEye className="h-5 w-5" />
+                  </button>
+
+                  {/* Download attachment button */}
+                  {attachments.length > 0 && (
+                     <button
+                        onClick={() => handleDownloadAttachment(attachments[0]._id)}
+                        className="text-blue-600 hover:text-blue-800"
+                        title="Download attachment"
+                     >
+                        <FiDownload className="h-5 w-5" />
+                     </button>
+                  )}
+
                   {/* More options (three dots) */}
                   <div className="relative">
                      <button
@@ -601,6 +769,26 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                            >
                               <FiPlus className="mr-2 h-4 w-4" />
                               Add Subtask
+                           </button>
+                           <button
+                              onClick={() => {
+                                 setShowNoteModal(true);
+                                 setIsMenuOpen(false);
+                              }}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                           >
+                              <FiPlus className="mr-2 h-4 w-4" />
+                              Add Note
+                           </button>
+                           <button
+                              onClick={() => {
+                                 setShowAttachmentModal(true);
+                                 setIsMenuOpen(false);
+                              }}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                           >
+                              <FiPlus className="mr-2 h-4 w-4" />
+                              Add Attachment
                            </button>
                         </div>
                      )}
@@ -670,6 +858,43 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                handleSetReminder(taskId, reminderTime);
             }}
          />
+
+         {/* Notes View */}
+         {showNoteView && (
+            <div className="ml-8 mb-4 bg-yellow-50 rounded-lg p-4">
+               <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">Notes</h3>
+                  {isLoadingNotes ? (
+                     <p className="text-gray-500">Loading notes...</p>
+                  ) : notes.length > 0 ? (
+                     <div className="space-y-2">
+                        {notes.map((note) => (
+                           <div key={note._id} className="bg-white p-3 rounded shadow">
+                              <p className="text-gray-800">{note.content}</p>
+                              <p className="text-xs text-gray-500 mt-1">{new Date(note.createdAt).toLocaleString()}</p>
+                           </div>
+                        ))}
+                     </div>
+                  ) : (
+                     <p className="text-gray-500">No notes yet</p>
+                  )}
+               </div>
+            </div>
+         )}
+
+         {/* Note Modal */}
+         {showNoteModal && (
+            <NoteModal isOpen={showNoteModal} onClose={() => setShowNoteModal(false)} onSubmit={handleCreateNote} />
+         )}
+
+         {/* Attachment Modal */}
+         {showAttachmentModal && (
+            <AttachmentModal
+               isOpen={showAttachmentModal}
+               onClose={() => setShowAttachmentModal(false)}
+               onSubmit={handleUploadAttachment}
+            />
+         )}
       </>
    );
 }

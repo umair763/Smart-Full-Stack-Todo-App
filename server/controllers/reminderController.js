@@ -107,10 +107,24 @@ export const deleteReminder = async (req, res) => {
         const { reminderId } = req.params;
         const userId = req.user._id;
 
+        // Validate reminderId
+        if (!reminderId) {
+            return res.status(400).json({ message: "Reminder ID is required" });
+        }
+
+        // Find and delete the reminder
         const reminder = await Reminder.findOneAndDelete({ _id: reminderId, userId });
         if (!reminder) {
             return res.status(404).json({ message: "Reminder not found" });
         }
+
+        // Emit reminder deletion event
+        dbEvents.emit("db_change", {
+            operation: "delete",
+            collection: "reminders",
+            message: "Reminder deleted",
+            type: "reminder",
+        });
 
         res.json({ message: "Reminder deleted successfully" });
     } catch (error) {
