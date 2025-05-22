@@ -12,6 +12,9 @@ import subtaskRoutes from "./routes/subtaskRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 
+import noteRoutes from "./routes/noteRoutes.js";
+import attachmentRoutes from "./routes/attachmentRoutes.js";
+
 dotenv.config();
 
 const app = express();
@@ -214,6 +217,9 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/tasks", subtaskRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
+
+app.use("/api", noteRoutes);
+app.use("/api", attachmentRoutes);
 
 // Add a global error handler
 app.use((err, req, res, next) => {
