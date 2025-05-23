@@ -10,20 +10,23 @@ import {
    FiPlus,
    FiEye,
    FiDownload,
+   FiLink,
 } from 'react-icons/fi';
 import EditTaskModal from './EditTaskModal';
 import Subtask from './Subtask';
 import SubtaskModal from './SubtaskModal';
 import { useSocket } from '../app/context/SocketContext';
-import ReminderModal from './ReminderModal';
 import { toast } from 'react-hot-toast';
 import NoteModal from './NoteModal';
 import AttachmentModal from './AttachmentModal';
+import DependencyModal from './DependencyModal';
+import DependencyTree from './DependencyTree';
+import ReminderModal from './ReminderModal'; // Declare the ReminderModal variable
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange }) {
+function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange, dependencies, onDependencyChange }) {
    const [completed, setCompleted] = useState(list.completed || false);
    const [showEditModal, setShowEditModal] = useState(false);
    const [isUpdating, setIsUpdating] = useState(false);
@@ -43,6 +46,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
    const [attachments, setAttachments] = useState([]);
    const [isLoadingNotes, setIsLoadingNotes] = useState(false);
    const [isLoadingAttachments, setIsLoadingAttachments] = useState(false);
+   const [showDependencyModal, setShowDependencyModal] = useState(false);
+   const [showDependencyTree, setShowDependencyTree] = useState(false);
+   const [taskDependencies, setTaskDependencies] = useState({ prerequisites: [], dependents: [] });
+   const [isLoadingDependencies, setIsLoadingDependencies] = useState(false);
+   const [hasDependencies, setHasDependencies] = useState(false);
+   const [hasAttachments, setHasAttachments] = useState(false);
 
    // Initialize editedTask with the list props
    const [editedTask, setEditedTask] = useState({
@@ -63,6 +72,23 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          fetchSubtasks();
       }
    }, [showSubtasks]);
+
+   // Check if task has dependencies
+   useEffect(() => {
+      if (dependencies) {
+         const hasPrerequisites = dependencies.some(
+            (dep) => dep.dependentTaskId === list._id || (dep.dependentTaskId && dep.dependentTaskId._id === list._id)
+         );
+
+         const hasDependents = dependencies.some(
+            (dep) =>
+               dep.prerequisiteTaskId === list._id ||
+               (dep.prerequisiteTaskId && dep.prerequisiteTaskId._id === list._id)
+         );
+
+         setHasDependencies(hasPrerequisites || hasDependents);
+      }
+   }, [dependencies]); // Remove list._id from dependency array
 
    // Handle socket events for subtask changes
    useEffect(() => {
@@ -130,11 +156,33 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          }
       };
 
+      // Handle dependency created event
+      const handleDependencyCreated = (data) => {
+         if (data.dependentTaskId === list._id || data.prerequisiteTaskId === list._id) {
+            // Refresh dependencies if this task is involved
+            if (onDependencyChange) {
+               onDependencyChange();
+            }
+         }
+      };
+
+      // Handle dependency deleted event
+      const handleDependencyDeleted = (data) => {
+         if (data.dependentTaskId === list._id || data.prerequisiteTaskId === list._id) {
+            // Refresh dependencies if this task is involved
+            if (onDependencyChange) {
+               onDependencyChange();
+            }
+         }
+      };
+
       // Register socket listeners
       socket.on('subtaskCreated', handleSubtaskCreated);
       socket.on('subtaskStatusChanged', handleSubtaskStatusChanged);
       socket.on('subtaskUpdated', handleSubtaskUpdated);
       socket.on('subtaskDeleted', handleSubtaskDeleted);
+      socket.on('dependencyCreated', handleDependencyCreated);
+      socket.on('dependencyDeleted', handleDependencyDeleted);
 
       // Clean up listeners on unmount
       return () => {
@@ -142,8 +190,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          socket.off('subtaskStatusChanged', handleSubtaskStatusChanged);
          socket.off('subtaskUpdated', handleSubtaskUpdated);
          socket.off('subtaskDeleted', handleSubtaskDeleted);
+         socket.off('dependencyCreated', handleDependencyCreated);
+         socket.off('dependencyDeleted', handleDependencyDeleted);
       };
-   }, [socket, list._id, list.subtaskCount, list.completedSubtasks]);
+   }, [socket, list._id, onDependencyChange, onUpdate]);
 
    // Fetch subtasks from the server
    const fetchSubtasks = async () => {
@@ -175,6 +225,38 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          toast.error('Failed to load subtasks');
       } finally {
          setIsLoadingSubtasks(false);
+      }
+   };
+
+   // Fetch task dependencies
+   const fetchTaskDependencies = async () => {
+      setIsLoadingDependencies(true);
+      try {
+         const token = localStorage.getItem('token');
+         if (!token) {
+            throw new Error('Authentication required');
+         }
+
+         const response = await fetch(`${API_BASE_URL}/api/dependencies/task/${list._id}`, {
+            method: 'GET',
+            headers: {
+               Authorization: `Bearer ${token}`,
+               'Content-Type': 'application/json',
+            },
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to fetch dependencies');
+         }
+
+         const data = await response.json();
+         setTaskDependencies(data);
+         setHasDependencies(data.prerequisites.length > 0 || data.dependents.length > 0);
+      } catch (error) {
+         console.error('Error fetching dependencies:', error);
+         toast.error('Failed to load dependencies');
+      } finally {
+         setIsLoadingDependencies(false);
       }
    };
 
@@ -270,6 +352,26 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
       setCurrentSubtask(null);
       setShowSubtaskModal(true);
       setShowMoreOptions(false);
+   };
+
+   // Open dependency modal for adding a new dependency
+   const handleAddDependency = () => {
+      setShowDependencyModal(true);
+      setIsMenuOpen(false);
+   };
+
+   // Open dependency tree view
+   const handleViewDependencies = () => {
+      fetchTaskDependencies();
+      setShowDependencyTree(true);
+      setIsMenuOpen(false);
+   };
+
+   // Handle adding a new dependency
+   const handleDependencyAdded = (newDependency) => {
+      if (onDependencyChange) {
+         onDependencyChange();
+      }
    };
 
    // Save a new subtask
@@ -508,9 +610,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
 
          const data = await response.json();
          setAttachments(data);
+         setHasAttachments(data && data.length > 0);
       } catch (error) {
          console.error('Error fetching attachments:', error);
-         toast.error('Failed to load attachments');
+         // Don't show error toast on initial load
       } finally {
          setIsLoadingAttachments(false);
       }
@@ -563,8 +666,8 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
          }
 
          const data = await response.json();
-         // Replace the existing attachment with the new one
-         setAttachments([data.attachment]);
+         setAttachments([data]);
+         setHasAttachments(true);
          toast.success('File uploaded successfully');
          setShowAttachmentModal(false);
       } catch (error) {
@@ -604,7 +707,11 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
 
    return (
       <>
-         <div className="grid grid-cols-[30px,1fr,auto] w-[98%] px-4 py-2 mb-2 mt-2 rounded-lg text-[#1D1D1D] bg-[#C8F0F3]/90 items-center max-[300px]:grid-cols-[20px,1fr,auto] max-[300px]:text-[9px] min-[301px]:max-[340px]:grid-cols-[22px,1fr,auto] min-[301px]:max-[340px]:text-[10px] min-[341px]:max-[600px]:grid-cols-[25px,1fr,auto] min-[341px]:max-[600px]:text-[11px] min-[601px]:grid-cols-[28px,1fr,auto] min-[601px]:text-[12px]">
+         <div
+            className={`grid grid-cols-[30px,1fr,auto] w-[98%] px-4 py-2 mb-2 mt-2 rounded-lg text-[#1D1D1D] bg-[#C8F0F3]/90 items-center max-[300px]:grid-cols-[20px,1fr,auto] max-[300px]:text-[9px] min-[301px]:max-[340px]:grid-cols-[22px,1fr,auto] min-[301px]:max-[340px]:text-[10px] min-[341px]:max-[600px]:grid-cols-[25px,1fr,auto] min-[341px]:max-[600px]:text-[11px] min-[601px]:grid-cols-[28px,1fr,auto] min-[601px]:text-[12px] ${
+               hasDependencies ? 'border-l-4 border-[#9406E6]' : ''
+            }`}
+         >
             <input
                type="radio"
                className={`w-4 h-4 rounded-full cursor-pointer appearance-none ${
@@ -635,6 +742,16 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                   >
                      {list.task}
                   </p>
+                  {/* Dependency indicator */}
+                  {hasDependencies && (
+                     <button
+                        onClick={handleViewDependencies}
+                        className="ml-2 text-[#9406E6] hover:text-[#7D05C3]"
+                        title="View dependencies"
+                     >
+                        <FiLink className="h-4 w-4" />
+                     </button>
+                  )}
                </div>
 
                {/* Subtask progress indicator */}
@@ -716,8 +833,8 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                      <FiEye className="h-5 w-5" />
                   </button>
 
-                  {/* Download attachment button */}
-                  {attachments.length > 0 && (
+                  {/* Download attachment button - only show if attachments exist */}
+                  {hasAttachments && attachments.length > 0 && (
                      <button
                         onClick={() => handleDownloadAttachment(attachments[0]._id)}
                         className="text-blue-600 hover:text-blue-800"
@@ -790,6 +907,22 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                               <FiPlus className="mr-2 h-4 w-4" />
                               Add Attachment
                            </button>
+                           <button
+                              onClick={handleAddDependency}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                           >
+                              <FiLink className="mr-2 h-4 w-4" />
+                              Add Dependency
+                           </button>
+                           {hasDependencies && (
+                              <button
+                                 onClick={handleViewDependencies}
+                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                              >
+                                 <FiEye className="mr-2 h-4 w-4" />
+                                 View Dependencies
+                              </button>
+                           )}
                         </div>
                      )}
                   </div>
@@ -858,6 +991,21 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange 
                handleSetReminder(taskId, reminderTime);
             }}
          />
+
+         {/* Dependency Modal */}
+         <DependencyModal
+            isOpen={showDependencyModal}
+            onClose={() => setShowDependencyModal(false)}
+            task={list}
+            onAddDependency={handleDependencyAdded}
+         />
+
+         {/* Dependency Tree View */}
+         {showDependencyTree && (
+            <div className="ml-8 mb-4 bg-purple-50 rounded-lg">
+               <DependencyTree taskId={list._id} onClose={() => setShowDependencyTree(false)} />
+            </div>
+         )}
 
          {/* Notes View */}
          {showNoteView && (
