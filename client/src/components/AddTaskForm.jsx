@@ -13,6 +13,11 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
    const [selectedHour, setSelectedHour] = useState(12);
    const [selectedMinute, setSelectedMinute] = useState(0);
    const [selectedAmPm, setSelectedAmPm] = useState('PM');
+   const [dependencyTaskId, setDependencyTaskId] = useState('');
+   const [searchTerm, setSearchTerm] = useState('');
+   const [searchResults, setSearchResults] = useState([]);
+   const [isSearching, setIsSearching] = useState(false);
+   const [selectedDependency, setSelectedDependency] = useState(null);
 
    function convertTo12HourFormat(hour, minute, ampm) {
       return `${hour}:${minute.toString().padStart(2, '0')} ${ampm}`;
@@ -125,6 +130,49 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
       return minutes;
    };
 
+   // Search for tasks to set as dependencies
+   const handleSearchTasks = async (searchValue) => {
+      setSearchTerm(searchValue);
+
+      if (searchValue.length < 2) {
+         setSearchResults([]);
+         return;
+      }
+
+      setIsSearching(true);
+
+      try {
+         const token = localStorage.getItem('token');
+         const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+         const response = await fetch(`${API_BASE_URL}/api/tasks?search=${encodeURIComponent(searchValue)}`, {
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to search tasks');
+         }
+
+         const data = await response.json();
+         // Filter out completed tasks
+         const filteredResults = data.filter((t) => !t.completed);
+         setSearchResults(filteredResults);
+      } catch (error) {
+         console.error('Error searching tasks:', error);
+      } finally {
+         setIsSearching(false);
+      }
+   };
+
+   // Handle dependency selection
+   const handleSelectDependency = (task) => {
+      setSelectedDependency(task);
+      setDependencyTaskId(task._id);
+      setSearchTerm(task.task);
+      setSearchResults([]);
+   };
+
    function handleSubmit(e) {
       e.preventDefault();
       if (!task || !date || !time) return;
@@ -155,6 +203,7 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
          date,
          time,
          priority: colorToPriority[color] || 'Medium',
+         dependencyTaskId: dependencyTaskId || null,
       };
 
       addTask(newTask);
@@ -408,6 +457,48 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
                      <span className="ml-2 text-white text-sm">Low</span>
                   </label>
                </div>
+            </div>
+
+            <div className="relative">
+               <label className="block text-white text-sm font-medium mb-1 sm:mb-2">Dependency (Optional)</label>
+               <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => handleSearchTasks(e.target.value)}
+                  className="w-full px-3 sm:px-4 py-2 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all text-sm sm:text-base"
+                  placeholder="Search for a task this depends on"
+               />
+
+               {searchResults.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                     {searchResults.map((task) => (
+                        <div
+                           key={task._id}
+                           className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                           onClick={() => handleSelectDependency(task)}
+                        >
+                           <div className="font-medium">{task.task}</div>
+                           <div className="text-xs text-gray-500">
+                              Due: {task.date} at {task.time}
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               )}
+
+               {isSearching && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                     <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  </div>
+               )}
+
+               {selectedDependency && (
+                  <div className="mt-2 p-2 bg-white/10 rounded-lg">
+                     <p className="text-white text-sm">
+                        This task will depend on: <span className="font-medium">{selectedDependency.task}</span>
+                     </p>
+                  </div>
+               )}
             </div>
 
             <div className="flex justify-end gap-2 sm:gap-3 pt-2">

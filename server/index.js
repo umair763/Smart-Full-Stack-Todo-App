@@ -11,6 +11,7 @@ import taskRoutes from "./routes/taskRoutes.js";
 import subtaskRoutes from "./routes/subtaskRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
+import dependencyRoutes from "./routes/dependencyRoutes.js";
 
 import noteRoutes from "./routes/noteRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
@@ -97,6 +98,20 @@ io.on("connection", (socket) => {
         // Broadcast to all connected clients
         io.emit("notificationUpdate", {
             type: "markAllRead",
+        });
+    });
+
+    // Handle dependency events
+    socket.on("dependencyCreated", (dependency) => {
+        // Broadcast to all connected clients
+        io.emit("dependency", dependency);
+    });
+
+    socket.on("dependencyDeleted", (dependencyId) => {
+        // Broadcast to all connected clients
+        io.emit("dependencyUpdate", {
+            type: "delete",
+            dependencyId,
         });
     });
 
@@ -194,6 +209,14 @@ app.get("/api/debug", (req, res) => {
                 { method: "DELETE", path: "/api/subtasks/:subtaskId" },
                 { method: "PATCH", path: "/api/subtasks/:subtaskId/status" },
             ],
+            dependencies: [
+                { method: "GET", path: "/api/dependencies" },
+                { method: "GET", path: "/api/dependencies/task/:taskId" },
+                { method: "POST", path: "/api/dependencies" },
+                { method: "PUT", path: "/api/dependencies/:id" },
+                { method: "DELETE", path: "/api/dependencies/:id" },
+                { method: "POST", path: "/api/dependencies/validate" },
+            ],
             sockets: [
                 { event: "connection", description: "New client connected" },
                 { event: "authenticate", description: "Authenticate user with socket" },
@@ -206,6 +229,8 @@ app.get("/api/debug", (req, res) => {
                 { event: "subtaskUpdated", description: "Subtask updated notification" },
                 { event: "subtaskDeleted", description: "Subtask deleted notification" },
                 { event: "subtaskStatusChanged", description: "Subtask status changed notification" },
+                { event: "dependencyCreated", description: "Dependency created notification" },
+                { event: "dependencyDeleted", description: "Dependency deleted notification" },
             ],
         },
     });
@@ -217,6 +242,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/tasks", subtaskRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
+app.use("/api/dependencies", dependencyRoutes);
 
 app.use("/api", noteRoutes);
 app.use("/api", attachmentRoutes);

@@ -13,6 +13,7 @@ function AttachmentsList({ taskId }) {
    const [error, setError] = useState(null);
    const [uploading, setUploading] = useState(false);
    const fileInputRef = useRef(null);
+   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
    // Fetch attachments when component mounts or taskId changes
    useEffect(() => {
@@ -44,6 +45,7 @@ function AttachmentsList({ taskId }) {
          const data = await response.json();
          setAttachments(data);
          setError(null);
+         setInitialLoadComplete(true);
       } catch (err) {
          console.error('Error fetching attachments:', err);
          setError('Failed to load attachments. Please try again.');
@@ -238,7 +240,7 @@ function AttachmentsList({ taskId }) {
             </div>
          </div>
 
-         {loading ? (
+         {loading && !initialLoadComplete ? (
             <div className="text-center py-4 text-gray-500">Loading attachments...</div>
          ) : error ? (
             <div className="text-center py-4 text-red-500">{error}</div>
