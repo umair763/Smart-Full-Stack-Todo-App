@@ -59,6 +59,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       date: list.date,
       time: list.time,
       color: list.color,
+      priority: list.priority || 'medium', // Default to medium if not set
    });
 
    // Sync the component state with the list prop
@@ -88,7 +89,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
          setHasDependencies(hasPrerequisites || hasDependents);
       }
-   }, [dependencies]); // Remove list._id from dependency array
+   }, [dependencies, list._id]);
 
    // Handle socket events for subtask changes
    useEffect(() => {
@@ -193,7 +194,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          socket.off('dependencyCreated', handleDependencyCreated);
          socket.off('dependencyDeleted', handleDependencyDeleted);
       };
-   }, [socket, list._id, onDependencyChange, onUpdate]);
+   }, [socket, list._id, onDependencyChange, onUpdate, list]);
 
    // Fetch subtasks from the server
    const fetchSubtasks = async () => {
@@ -705,12 +706,26 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       }
    };
 
+   // Get priority color class
+   const getPriorityColorClass = () => {
+      switch (list.priority?.toLowerCase()) {
+         case 'high':
+            return 'border-red-500';
+         case 'medium':
+            return 'border-yellow-500';
+         case 'low':
+            return 'border-green-500';
+         default:
+            return '';
+      }
+   };
+
    return (
       <>
          <div
-            className={`grid grid-cols-[30px,1fr,auto] w-[98%] px-4 py-2 mb-2 mt-2 rounded-lg text-[#1D1D1D] bg-[#C8F0F3]/90 items-center max-[300px]:grid-cols-[20px,1fr,auto] max-[300px]:text-[9px] min-[301px]:max-[340px]:grid-cols-[22px,1fr,auto] min-[301px]:max-[340px]:text-[10px] min-[341px]:max-[600px]:grid-cols-[25px,1fr,auto] min-[341px]:max-[600px]:text-[11px] min-[601px]:grid-cols-[28px,1fr,auto] min-[601px]:text-[12px] ${
+            className={`grid grid-cols-[30px,1fr,auto] w-[98%] px-4 py-2 mb-2 mt-2 rounded-lg text-[#1D1D1D] bg-[#C8F0F3]/90 items-center max-[300px]:grid-cols-  px-4 py-2 mb-2 mt-2 rounded-lg text-[#1D1D1D] bg-[#C8F0F3]/90 items-center max-[300px]:grid-cols-[20px,1fr,auto] max-[300px]:text-[9px] min-[301px]:max-[340px]:grid-cols-[22px,1fr,auto] min-[301px]:max-[340px]:text-[10px] min-[341px]:max-[600px]:grid-cols-[25px,1fr,auto] min-[341px]:max-[600px]:text-[11px] min-[601px]:grid-cols-[28px,1fr,auto] min-[601px]:text-[12px] ${
                hasDependencies ? 'border-l-4 border-[#9406E6]' : ''
-            }`}
+            } ${getPriorityColorClass()}`}
          >
             <input
                type="radio"
@@ -742,6 +757,20 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                   >
                      {list.task}
                   </p>
+                  {/* Priority badge */}
+                  {list.priority && (
+                     <span
+                        className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                           list.priority.toLowerCase() === 'high'
+                              ? 'bg-red-100 text-red-800'
+                              : list.priority.toLowerCase() === 'medium'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-green-100 text-green-800'
+                        }`}
+                     >
+                        {list.priority}
+                     </span>
+                  )}
                   {/* Dependency indicator */}
                   {hasDependencies && (
                      <button
