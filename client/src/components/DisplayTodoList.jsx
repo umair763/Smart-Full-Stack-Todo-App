@@ -42,6 +42,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
    const [showNoteModal, setShowNoteModal] = useState(false);
    const [showAttachmentModal, setShowAttachmentModal] = useState(false);
    const [showNoteView, setShowNoteView] = useState(false);
+   const [noteViewAnimating, setNoteViewAnimating] = useState(false);
    const [notes, setNotes] = useState([]);
    const [attachments, setAttachments] = useState([]);
    const [isLoadingNotes, setIsLoadingNotes] = useState(false);
@@ -720,6 +721,21 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       }
    };
 
+   // Handle note view toggle with smooth animation
+   const toggleNoteView = () => {
+      if (showNoteView) {
+         setNoteViewAnimating(true);
+         setTimeout(() => {
+            setShowNoteView(false);
+            setNoteViewAnimating(false);
+         }, 200);
+      } else {
+         setShowNoteView(true);
+         setNoteViewAnimating(true);
+         setTimeout(() => setNoteViewAnimating(false), 300);
+      }
+   };
+
    return (
       <>
          {/* Enhanced Mobile-First Card Design */}
@@ -936,11 +952,28 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
                      {/* Notes */}
                      <button
-                        onClick={() => setShowNoteView(!showNoteView)}
-                        className="p-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg transition-colors"
-                        title="View notes"
+                        onClick={toggleNoteView}
+                        className={`group relative p-2 rounded-lg transition-all duration-300 ease-out ${
+                           showNoteView
+                              ? 'bg-yellow-100 text-yellow-800 shadow-lg scale-105'
+                              : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 hover:scale-105 hover:shadow-md'
+                        }`}
+                        title={showNoteView ? 'Hide notes' : 'View notes'}
                      >
-                        <FiEye className="h-4 w-4" />
+                        <div className="relative">
+                           <FiEye
+                              className={`h-4 w-4 transition-all duration-300 ease-out ${
+                                 showNoteView ? 'scale-110' : 'group-hover:scale-110'
+                              }`}
+                           />
+                           {notes.length > 0 && (
+                              <div
+                                 className={`absolute -top-1 -right-1 w-2 h-2 rounded-full transition-all duration-300 ${
+                                    showNoteView ? 'bg-yellow-600 scale-125' : 'bg-yellow-500 group-hover:scale-110'
+                                 }`}
+                              ></div>
+                           )}
+                        </div>
                      </button>
 
                      {/* Download */}
@@ -1195,11 +1228,28 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
                      {/* View notes button */}
                      <button
-                        onClick={() => setShowNoteView(!showNoteView)}
-                        className="text-yellow-600 hover:text-yellow-800 p-1 rounded transition-colors"
-                        title="View notes"
+                        onClick={toggleNoteView}
+                        className={`group relative p-1 rounded transition-all duration-300 ease-out ${
+                           showNoteView
+                              ? 'text-yellow-800 bg-yellow-100 shadow-md scale-105'
+                              : 'text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 hover:scale-105'
+                        }`}
+                        title={showNoteView ? 'Hide notes' : 'View notes'}
                      >
-                        <FiEye className="h-4 w-4 md:h-5 md:w-5" />
+                        <div className="relative">
+                           <FiEye
+                              className={`h-4 w-4 md:h-5 md:w-5 transition-all duration-300 ease-out ${
+                                 showNoteView ? 'scale-110' : 'group-hover:scale-110'
+                              }`}
+                           />
+                           {notes.length > 0 && (
+                              <div
+                                 className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                    showNoteView ? 'bg-yellow-600 scale-125' : 'bg-yellow-500 group-hover:scale-110'
+                                 }`}
+                              ></div>
+                           )}
+                        </div>
                      </button>
 
                      {/* Download attachment button - only show if attachments exist */}
@@ -1304,10 +1354,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          {showSubtasks && list.subtaskCount > 0 && (
             <div className="w-full mb-3">
                {/* Mobile Subtasks Layout (< 640px) */}
-               <div className="sm:hidden bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-xl p-3 ml-4 border-l-4 border-gradient-to-b from-purple-500 to-indigo-600 shadow-sm">
-                  <div className="flex items-center justify-between mb-3">
+               <div className="sm:hidden bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-xl p-2 ml-4 border-l-4 border-gradient-to-b from-purple-500 to-indigo-600 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
                      <h4 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center">
-                        <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-2 shadow-sm">
+                        <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-2 shadow-sm">
                            <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-3 w-3 text-white"
@@ -1325,33 +1375,33 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         </div>
                         Subtasks Tree
                      </h4>
-                     <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm border border-white/20">
+                     <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-2 py-1 rounded-full text-xs font-bold">
                         {list.completedSubtasks}/{list.subtaskCount}
                      </div>
                   </div>
 
                   {isLoadingSubtasks ? (
-                     <div className="flex items-center justify-center py-6">
+                     <div className="flex items-center justify-center py-4">
                         <div className="relative">
-                           <div className="animate-spin rounded-full h-8 w-8 border-4 border-purple-200"></div>
-                           <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-purple-600 absolute top-0 left-0"></div>
+                           <div className="animate-spin rounded-full h-6 w-6 border-3 border-purple-200"></div>
+                           <div className="animate-spin rounded-full h-6 w-6 border-t-3 border-purple-600 absolute top-0 left-0"></div>
                         </div>
-                        <span className="ml-3 text-purple-700 text-sm font-medium">Loading subtasks...</span>
+                        <span className="ml-2 text-purple-700 text-xs font-medium">Loading...</span>
                      </div>
                   ) : subtasks.length > 0 ? (
-                     <div className="space-y-3">
+                     <div className="space-y-1.5">
                         {subtasks.map((subtask, index) => (
                            <div
                               key={subtask._id}
-                              className="relative bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:bg-white/90"
+                              className="relative bg-white/80 backdrop-blur-sm rounded-lg p-1.5 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:bg-white/90"
                               style={{
-                                 animation: `fadeInUp 0.3s ease-out ${index * 0.1}s both`,
+                                 animation: `fadeInUp 0.3s ease-out ${index * 0.05}s both`,
                               }}
                            >
                               {/* Modern Tree Node Indicator */}
-                              <div className="absolute left-[-12px] top-1/2 transform -translate-y-1/2">
-                                 <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full border-3 border-white shadow-sm flex items-center justify-center">
-                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                              <div className="absolute left-[-10px] top-1/2 transform -translate-y-1/2">
+                                 <div className="w-5 h-5 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
+                                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                                  </div>
                               </div>
                               <Subtask
@@ -1364,11 +1414,11 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         ))}
                      </div>
                   ) : (
-                     <div className="text-center py-6 bg-white/60 backdrop-blur-sm rounded-xl border border-white/50">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-105 transition-transform duration-300">
+                     <div className="text-center py-4 bg-white/60 backdrop-blur-sm rounded-lg border border-white/50">
+                        <div className="w-12 h-12 mx-auto mb-2 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
                            <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-10 w-10 text-white"
+                              className="h-6 w-6 text-white"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -1377,35 +1427,32 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                                  strokeLinecap="round"
                                  strokeLinejoin="round"
                                  strokeWidth={1.5}
-                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
                               />
                            </svg>
-                           {/* Glow effect */}
-                           <div className="absolute inset-0 rounded-3xl bg-purple-400 animate-ping opacity-20"></div>
                         </div>
-                        <h4 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-2">
+                        <h4 className="text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-1">
                            Empty Tree
                         </h4>
-                        <p className="text-purple-600 text-sm font-medium mb-1">No subtasks in this branch</p>
-                        <p className="text-purple-500 text-xs">Build your task tree by adding subtasks!</p>
+                        <p className="text-purple-600 text-xs font-medium">No subtasks in this branch</p>
                      </div>
                   )}
                </div>
 
                {/* Desktop Subtasks Layout (>= 640px) - Modern Tree Structure */}
-               <div className="hidden sm:block relative pl-12 mb-4 group">
+               <div className="hidden sm:block relative pl-10 mb-3 group">
                   {/* Modern Vertical Tree Trunk */}
-                  <div className="absolute left-[24px] top-0 bottom-6 w-[3px] bg-gradient-to-b from-purple-400 via-indigo-500 to-purple-600 rounded-full shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:w-[4px]">
+                  <div className="absolute left-[20px] top-0 bottom-4 w-[2px] bg-gradient-to-b from-purple-400 via-indigo-500 to-purple-600 rounded-full shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:w-[3px]">
                      {/* Animated pulse effect */}
                      <div className="absolute inset-0 bg-gradient-to-b from-purple-300 to-indigo-400 rounded-full animate-pulse opacity-50"></div>
                   </div>
 
                   {/* Tree Header */}
-                  <div className="absolute left-[-8px] top-[-24px] flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-xl shadow-lg border border-white/20">
-                     <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
+                  <div className="absolute left-[-8px] top-[-20px] flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg shadow-lg border border-white/20">
+                     <div className="w-5 h-5 bg-white/20 rounded-md flex items-center justify-center">
                         <svg
                            xmlns="http://www.w3.org/2000/svg"
-                           className="h-4 w-4"
+                           className="h-3 w-3"
                            fill="none"
                            viewBox="0 0 24 24"
                            stroke="currentColor"
@@ -1418,69 +1465,50 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                            />
                         </svg>
                      </div>
-                     <span className="text-sm font-bold">Subtasks Tree</span>
-                     <div className="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">
+                     <span className="text-xs font-bold">Subtasks Tree</span>
+                     <div className="bg-white/20 px-1.5 py-0.5 rounded-full text-xs font-bold">
                         {list.completedSubtasks}/{list.subtaskCount}
                      </div>
                   </div>
 
                   {isLoadingSubtasks ? (
-                     <div className="flex items-center justify-center py-8 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl ml-8 border border-purple-200/50 shadow-inner">
+                     <div className="flex items-center justify-center py-6 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl ml-6 border border-purple-200/50 shadow-inner">
                         <div className="relative">
-                           <div className="animate-spin rounded-full h-10 w-10 border-4 border-purple-200"></div>
-                           <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-purple-600 absolute top-0 left-0"></div>
-                           <div className="animate-ping absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-purple-600 rounded-full"></div>
+                           <div className="animate-spin rounded-full h-8 w-8 border-3 border-purple-200"></div>
+                           <div className="animate-spin rounded-full h-8 w-8 border-t-3 border-purple-600 absolute top-0 left-0"></div>
+                           <div className="animate-ping absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
                         </div>
-                        <span className="ml-4 text-purple-700 text-sm font-medium">Loading tree structure...</span>
+                        <span className="ml-3 text-purple-700 text-xs font-medium">Loading tree...</span>
                      </div>
-                  ) : subtasks.length > 0 ? (
-                     <div className="pt-6">
+                  ) : (
+                     <div className="pt-4">
                         {subtasks.map((subtask, index) => (
                            <div
                               key={subtask._id}
-                              className="relative mb-6 flex items-start group/item"
+                              className="relative mb-2 flex items-start group/item"
                               style={{
-                                 animation: `slideInRight 0.4s ease-out ${index * 0.1}s both`,
+                                 animation: `slideInRight 0.3s ease-out ${index * 0.05}s both`,
                               }}
                            >
                               {/* Modern Tree Branch Connection */}
-                              <div className="absolute left-[-36px] top-[20px] flex items-center z-20">
+                              <div className="absolute left-[-28px] top-[16px] flex items-center z-20">
                                  {/* Horizontal branch */}
-                                 <div className="w-[28px] h-[3px] bg-gradient-to-r from-purple-400 to-indigo-500 rounded-full shadow-sm group-hover/item:shadow-md transition-all duration-300 group-hover/item:w-[32px]">
+                                 <div className="w-[20px] h-[2px] bg-gradient-to-r from-purple-400 to-indigo-500 rounded-full shadow-sm group-hover/item:shadow-md transition-all duration-300 group-hover/item:w-[24px]">
                                     <div className="absolute inset-0 bg-gradient-to-r from-purple-300 to-indigo-400 rounded-full animate-pulse opacity-50"></div>
                                  </div>
 
                                  {/* Modern Tree Node */}
                                  <div className="relative ml-1">
-                                    <div className="w-4 h-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full border-2 border-white shadow-lg group-hover/item:scale-110 transition-transform duration-300 flex items-center justify-center">
-                                       <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                                    <div className="w-3 h-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full border-2 border-white shadow-lg group-hover/item:scale-110 transition-transform duration-300 flex items-center justify-center">
+                                       <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
                                     </div>
                                     {/* Glowing effect */}
-                                    <div className="absolute inset-0 w-4 h-4 bg-purple-400 rounded-full animate-ping opacity-20"></div>
-                                 </div>
-
-                                 {/* Modern Arrow */}
-                                 <div className="ml-2 transform group-hover/item:translate-x-1 transition-transform duration-300">
-                                    <div className="w-0 h-0 border-l-[6px] border-l-gradient-to-r from-purple-500 to-indigo-600 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent shadow-sm"></div>
-                                    <div className="absolute top-0 left-0 w-0 h-0 border-l-[6px] border-l-purple-400 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent animate-pulse opacity-50"></div>
+                                    <div className="absolute inset-0 w-3 h-3 bg-purple-400 rounded-full animate-ping opacity-20"></div>
                                  </div>
                               </div>
 
-                              {/* Enhanced Subtask Container */}
-                              <div className="bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/30 rounded-2xl p-3 border border-purple-200/50 w-full hover:shadow-xl transition-all duration-300 hover:border-purple-300 hover:bg-gradient-to-br hover:from-white hover:via-purple-50/50 hover:to-indigo-50/50 backdrop-blur-sm relative overflow-hidden group-hover/item:translate-x-2">
-                                 {/* Subtle background pattern */}
-                                 <div className="absolute inset-0 opacity-5">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-indigo-600"></div>
-                                    <div
-                                       className="absolute inset-0"
-                                       style={{
-                                          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.3) 1px, transparent 0)`,
-                                          backgroundSize: '20px 20px',
-                                       }}
-                                    ></div>
-                                 </div>
-
-                                 {/* Priority indicator line */}
+                              {/* Subtask Container */}
+                              <div className="flex-1 bg-white/80 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:bg-white/90 group-hover/item:translate-x-1">
                                  <div
                                     className={`absolute left-0 top-0 bottom-0 w-1 rounded-r-full ${
                                        subtask.priority === 'High'
@@ -1501,48 +1529,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                                  </div>
 
                                  {/* Hover glow effect */}
-                                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400/0 via-purple-400/10 to-indigo-400/0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
+                                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-400/0 via-purple-400/10 to-indigo-400/0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
                               </div>
                            </div>
                         ))}
-                     </div>
-                  ) : (
-                     <div className="text-center py-8 bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-2xl ml-8 border border-purple-200/50 shadow-inner relative overflow-hidden">
-                        {/* Background decoration */}
-                        <div className="absolute inset-0 opacity-10">
-                           <div
-                              className="absolute inset-0"
-                              style={{
-                                 backgroundImage: `radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.3) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(99, 102, 241, 0.3) 0%, transparent 50%)`,
-                              }}
-                           ></div>
-                        </div>
-
-                        <div className="relative z-10">
-                           <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-105 transition-transform duration-300">
-                              <svg
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 className="h-10 w-10 text-white"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor"
-                              >
-                                 <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={1.5}
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                 />
-                              </svg>
-                              {/* Glow effect */}
-                              <div className="absolute inset-0 rounded-3xl bg-purple-400 animate-ping opacity-20"></div>
-                           </div>
-                           <h4 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-2">
-                              Empty Tree
-                           </h4>
-                           <p className="text-purple-600 text-sm font-medium mb-1">No subtasks in this branch</p>
-                           <p className="text-purple-500 text-xs">Build your task tree by adding subtasks!</p>
-                        </div>
                      </div>
                   )}
                </div>
@@ -1595,28 +1585,143 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             </div>
          )}
 
-         {/* Notes View */}
-         {showNoteView && (
-            <div className="ml-6 sm:ml-8 mb-4 bg-yellow-50 rounded-lg p-3 sm:p-4">
-               <div className="mb-4">
-                  <h3 className="text-base sm:text-lg font-semibold mb-2">Notes</h3>
-                  {isLoadingNotes ? (
-                     <p className="text-gray-500 text-sm">Loading notes...</p>
-                  ) : notes.length > 0 ? (
-                     <div className="space-y-2">
-                        {notes.map((note) => (
-                           <div key={note._id} className="bg-white p-3 rounded shadow">
-                              <p className="text-gray-800 text-sm">{note.content}</p>
-                              <p className="text-xs text-gray-500 mt-1">{new Date(note.createdAt).toLocaleString()}</p>
-                           </div>
-                        ))}
+         {/* Notes View with innovative animations */}
+         <div
+            className={`overflow-hidden transition-all duration-500 ease-out ${
+               showNoteView ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            }`}
+         >
+            <div
+               className={`ml-6 sm:ml-8 mb-4 transition-all duration-500 ease-out transform ${
+                  showNoteView ? 'translate-y-0 scale-100' : '-translate-y-4 scale-95'
+               }`}
+            >
+               <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-100 rounded-xl p-4 border border-yellow-200 shadow-lg backdrop-blur-sm">
+                  {/* Header with icon */}
+                  <div
+                     className={`flex items-center mb-4 transition-all duration-700 ease-out ${
+                        showNoteView ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'
+                     }`}
+                  >
+                     <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mr-3 shadow-md group-hover:shadow-lg transition-shadow duration-300">
+                        <svg
+                           xmlns="http://www.w3.org/2000/svg"
+                           className="h-5 w-5 text-white"
+                           fill="none"
+                           viewBox="0 0 24 24"
+                           stroke="currentColor"
+                        >
+                           <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                           />
+                        </svg>
                      </div>
-                  ) : (
-                     <p className="text-gray-500 text-sm">No notes yet</p>
-                  )}
+                     <h3 className="text-lg font-bold bg-gradient-to-r from-yellow-700 to-orange-600 bg-clip-text text-transparent">
+                        Notes
+                     </h3>
+                     {notes.length > 0 && (
+                        <span className="ml-auto bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold">
+                           {notes.length}
+                        </span>
+                     )}
+                  </div>
+
+                  {/* Content */}
+                  <div
+                     className={`transition-all duration-700 ease-out ${
+                        showNoteView ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+                     }`}
+                  >
+                     {isLoadingNotes ? (
+                        <div className="flex items-center justify-center py-6">
+                           <div className="animate-spin rounded-full h-6 w-6 border-2 border-yellow-300 border-t-yellow-600"></div>
+                           <span className="ml-3 text-yellow-700 text-sm font-medium">Loading notes...</span>
+                        </div>
+                     ) : notes.length > 0 ? (
+                        <div className="space-y-3">
+                           {notes.map((note, index) => (
+                              <div
+                                 key={note._id}
+                                 className={`group bg-white rounded-lg p-3 shadow-sm border border-yellow-200/50 hover:shadow-md hover:border-yellow-300 transition-all duration-300 ease-out hover:-translate-y-0.5 ${
+                                    showNoteView ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                                 }`}
+                                 style={{
+                                    transitionDelay: showNoteView ? `${index * 100}ms` : '0ms',
+                                 }}
+                              >
+                                 <p className="text-gray-800 text-sm leading-relaxed mb-2">{note.content}</p>
+                                 <div className="flex items-center text-xs text-gray-500">
+                                    <svg
+                                       xmlns="http://www.w3.org/2000/svg"
+                                       className="h-3 w-3 mr-1 opacity-70"
+                                       fill="none"
+                                       viewBox="0 0 24 24"
+                                       stroke="currentColor"
+                                    >
+                                       <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                       />
+                                    </svg>
+                                    <span>{new Date(note.createdAt).toLocaleString()}</span>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     ) : (
+                        <div className="text-center py-8">
+                           <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 className="h-8 w-8 text-white"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                              >
+                                 <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1.5}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                 />
+                              </svg>
+                           </div>
+                           <h4 className="text-lg font-semibold text-yellow-800 mb-2">No notes yet</h4>
+                           <p className="text-yellow-600 text-sm mb-4">Start capturing your thoughts and ideas</p>
+                           <button
+                              onClick={() => {
+                                 setShowNoteModal(true);
+                                 setIsMenuOpen(false);
+                              }}
+                              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                           >
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 className="h-4 w-4 mr-2"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                              >
+                                 <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 4v16m8-8H4"
+                                 />
+                              </svg>
+                              Add First Note
+                           </button>
+                        </div>
+                     )}
+                  </div>
                </div>
             </div>
-         )}
+         </div>
 
          {/* Note Modal */}
          {showNoteModal && (

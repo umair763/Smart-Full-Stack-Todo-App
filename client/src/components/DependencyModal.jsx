@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { FiAlertTriangle, FiCalendar, FiClock, FiLink, FiArrowRight } from 'react-icons/fi';
+import { FiAlertTriangle, FiCalendar, FiClock, FiLink, FiArrowRight, FiInfo } from 'react-icons/fi';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -13,12 +13,14 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
    const [isLoading, setIsLoading] = useState(false);
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [error, setError] = useState(null);
-   const [dependencyType, setDependencyType] = useState('prerequisite'); // Default to most common case
+   const [dependencyType, setDependencyType] = useState('prerequisite');
+   const [dependencies, setDependencies] = useState({ prerequisites: [], dependents: [] });
+   const [isLoadingDeps, setIsLoadingDeps] = useState(false);
 
    useEffect(() => {
       if (isOpen) {
          fetchAvailableTasks();
-         // Reset form when modal opens
+         fetchDependencies();
          setSelectedTaskId('');
          setError(null);
          setDependencyType('prerequisite');
@@ -59,6 +61,24 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
          setError('Failed to load available tasks');
       } finally {
          setIsLoading(false);
+      }
+   };
+
+   const fetchDependencies = async () => {
+      setIsLoadingDeps(true);
+      try {
+         const token = localStorage.getItem('token');
+         if (!token) throw new Error('Authentication required');
+         const response = await fetch(`${API_BASE_URL}/api/dependencies/task/${task._id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+         });
+         if (!response.ok) throw new Error('Failed to fetch dependencies');
+         const data = await response.json();
+         setDependencies(data);
+      } catch (err) {
+         setDependencies({ prerequisites: [], dependents: [] });
+      } finally {
+         setIsLoadingDeps(false);
       }
    };
 
@@ -139,6 +159,49 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
             </div>
 
             <div className="px-6 py-4">
+               {/* Info about dependencies */}
+               <div className="mb-4 p-3 bg-blue-50 rounded flex items-start text-blue-800 text-sm">
+                  <FiInfo className="mr-2 mt-0.5 flex-shrink-0" />
+                  <span>
+                     <b>What is a dependency?</b> A dependency means one task must be completed before another can
+                     start. You can set this task as a prerequisite for another, or require another task to be completed
+                     first.
+                  </span>
+               </div>
+               {/* Dependency summary */}
+               <div className="mb-4">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                     <div className="flex-1 bg-gray-50 rounded p-2 border">
+                        <div className="font-semibold text-xs text-gray-700 mb-1">Prerequisites</div>
+                        {isLoadingDeps ? (
+                           <div className="text-xs text-gray-400">Loading...</div>
+                        ) : dependencies.prerequisites.length === 0 ? (
+                           <div className="text-xs text-gray-400">None</div>
+                        ) : (
+                           <ul className="text-xs text-gray-700 list-disc ml-4">
+                              {dependencies.prerequisites.map((dep) => (
+                                 <li key={dep._id}>{dep.prerequisiteTaskId?.task || 'Unknown Task'}</li>
+                              ))}
+                           </ul>
+                        )}
+                     </div>
+                     <div className="flex-1 bg-gray-50 rounded p-2 border">
+                        <div className="font-semibold text-xs text-gray-700 mb-1">Dependents</div>
+                        {isLoadingDeps ? (
+                           <div className="text-xs text-gray-400">Loading...</div>
+                        ) : dependencies.dependents.length === 0 ? (
+                           <div className="text-xs text-gray-400">None</div>
+                        ) : (
+                           <ul className="text-xs text-gray-700 list-disc ml-4">
+                              {dependencies.dependents.map((dep) => (
+                                 <li key={dep._id}>{dep.dependentTaskId?.task || 'Unknown Task'}</li>
+                              ))}
+                           </ul>
+                        )}
+                     </div>
+                  </div>
+               </div>
+
                {/* Current Task Display */}
                <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
                   <p className="text-sm font-medium text-purple-900 mb-1">Current Task</p>

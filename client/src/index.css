@@ -106,6 +106,46 @@
    }
 }
 
+/* Modal animations */
+@keyframes modalBackdropFadeIn {
+   0% {
+      opacity: 0;
+   }
+   100% {
+      opacity: 1;
+   }
+}
+
+@keyframes modalSlideIn {
+   0% {
+      opacity: 0;
+      transform: scale(0.95) translateY(-20px);
+   }
+   100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+   }
+}
+
+@keyframes modalPulse {
+   0%,
+   100% {
+      transform: scale(1);
+   }
+   50% {
+      transform: scale(1.02);
+   }
+}
+
+@keyframes shimmer {
+   0% {
+      background-position: -200% 0;
+   }
+   100% {
+      background-position: 200% 0;
+   }
+}
+
 /* Custom utility classes for animations */
 .animate-float {
    animation: float 3s ease-in-out infinite;
@@ -113,6 +153,16 @@
 
 .animate-glow {
    animation: glow 2s ease-in-out infinite;
+}
+
+.animate-modal-pulse {
+   animation: modalPulse 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+   background-size: 200% 100%;
+   animation: shimmer 2s infinite;
 }
 
 /* Gradient border utilities */
@@ -148,6 +198,18 @@
    backdrop-filter: blur(4px);
 }
 
+.backdrop-blur-md {
+   backdrop-filter: blur(8px);
+}
+
+.backdrop-blur-lg {
+   backdrop-filter: blur(12px);
+}
+
+.backdrop-blur-xl {
+   backdrop-filter: blur(16px);
+}
+
 /* Enhanced shadow utilities */
 .shadow-glow {
    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
@@ -157,9 +219,47 @@
    box-shadow: 0 0 30px rgba(139, 92, 246, 0.4), 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
+.shadow-modal {
+   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
 /* Custom border width */
 .border-3 {
    border-width: 3px;
+}
+
+/* Enhanced focus states */
+.focus-ring {
+   @apply focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-white;
+}
+
+/* Glassmorphism utilities */
+.glass {
+   background: rgba(255, 255, 255, 0.1);
+   backdrop-filter: blur(10px);
+   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+   background: rgba(0, 0, 0, 0.1);
+   backdrop-filter: blur(10px);
+   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Text gradient utilities */
+.text-gradient-purple {
+   background: linear-gradient(135deg, #8b5cf6, #6366f1);
+   -webkit-background-clip: text;
+   background-clip: text;
+   -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-rainbow {
+   background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+   -webkit-background-clip: text;
+   background-clip: text;
+   -webkit-text-fill-color: transparent;
 }
 
 /* Global styles */

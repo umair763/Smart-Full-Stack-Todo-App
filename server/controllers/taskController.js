@@ -1,6 +1,7 @@
 import Task from "../models/Task.js";
 import { dbEvents } from "../index.js";
 import Notification from "../models/Notification.js";
+import Dependency from "../models/Dependency.js";
 
 // Get all tasks for a user
 export const getTasks = async (req, res) => {
@@ -147,6 +148,13 @@ export const updateTask = async (req, res) => {
 export const deleteTask = async (req, res) => {
     try {
         const { id } = req.params;
+        // Check if this task is a prerequisite for any other task
+        const dependent = await Dependency.findOne({ prerequisiteTaskId: id });
+        if (dependent) {
+            return res
+                .status(400)
+                .json({ message: "Cannot delete this task because other tasks depend on it. Please delete dependent tasks first." });
+        }
         const deletedTask = await Task.findOneAndDelete({ _id: id, userId: req.user._id });
         if (!deletedTask) {
             return res.status(404).json({ message: "Task not found" });

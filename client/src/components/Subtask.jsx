@@ -144,21 +144,29 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center space-x-2 ml-2">
+            <div className="flex items-center space-x-2 ml-2 sm:space-x-2 sm:flex-row flex-col flex-nowrap space-y-0 sm:space-y-0 space-y-1">
                {/* Edit button */}
-               <button onClick={handleEdit} className="text-blue-600 hover:text-blue-800" title="Edit subtask">
-                  <FiEdit2 className="h-5 w-5" />
+               <button
+                  onClick={handleEdit}
+                  className="text-blue-600 hover:text-blue-800 p-1 sm:p-0"
+                  title="Edit subtask"
+               >
+                  <FiEdit2 className="h-5 w-5 sm:h-5 sm:w-5 h-4 w-4" />
                </button>
 
                {/* Delete button */}
-               <button onClick={handleDelete} className="text-red-600 hover:text-red-800" title="Delete subtask">
-                  <FiTrash2 className="h-5 w-5" />
+               <button
+                  onClick={handleDelete}
+                  className="text-red-600 hover:text-red-800 p-1 sm:p-0"
+                  title="Delete subtask"
+               >
+                  <FiTrash2 className="h-5 w-5 sm:h-5 sm:w-5 h-4 w-4" />
                </button>
 
                {/* Completion checkbox */}
                <button
                   onClick={handleSubtaskStatusToggle}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 ${
+                  className={`w-6 h-6 sm:w-6 sm:h-6 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 ${
                      completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
                   }`}
                   disabled={isUpdating}
@@ -167,7 +175,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                   {completed && (
                      <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
+                        className="h-4 w-4 sm:h-4 sm:w-4 h-3 w-3"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
