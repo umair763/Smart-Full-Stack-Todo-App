@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
 
 // Use the consistent API base URL
@@ -125,13 +126,24 @@ function RegisterUser() {
    };
 
    return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] p-4">
-         <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-            <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Create Account</h2>
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 p-4">
+         {/* Theme Toggle in top-right corner */}
+         <div className="absolute top-4 right-4 z-10">
+            <ThemeToggle variant="floating" size="medium" />
+         </div>
 
-            {error && <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">{error}</div>}
+         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-6">Create Account</h2>
+
+            {error && (
+               <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-600 text-red-700 dark:text-red-300 p-4 mb-4">
+                  {error}
+               </div>
+            )}
             {success && (
-               <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">{success}</div>
+               <div className="bg-green-100 dark:bg-green-900/30 border-l-4 border-green-500 dark:border-green-600 text-green-700 dark:text-green-300 p-4 mb-4">
+                  {success}
+               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -139,12 +151,12 @@ function RegisterUser() {
                <div className="flex justify-center mb-6">
                   <div
                      onClick={handleImageClick}
-                     className="w-24 h-24 rounded-full cursor-pointer border-2 border-dashed border-purple-400 flex items-center justify-center overflow-hidden hover:border-purple-600 transition-colors"
+                     className="w-24 h-24 rounded-full cursor-pointer border-2 border-dashed border-purple-400 dark:border-purple-500 flex items-center justify-center overflow-hidden hover:border-purple-600 dark:hover:border-purple-400 transition-colors bg-gray-50 dark:bg-gray-700"
                   >
                      {previewUrl ? (
                         <img src={previewUrl} alt="Profile Preview" className="w-full h-full object-cover" />
                      ) : (
-                        <div className="text-center text-gray-500">
+                        <div className="text-center text-gray-500 dark:text-gray-400">
                            <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-8 w-8 mx-auto"
@@ -174,40 +186,40 @@ function RegisterUser() {
 
                {/* Rest of the form */}
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-1">Username</label>
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Username</label>
                   <input
                      type="text"
                      name="username"
                      value={formData.username}
                      onChange={handleChange}
-                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400"
                      placeholder="Enter your username"
                      required
                   />
                </div>
 
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-1">Email</label>
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Email</label>
                   <input
                      type="email"
                      name="email"
                      value={formData.email}
                      onChange={handleChange}
-                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400"
                      placeholder="Enter your email"
                      required
                   />
                </div>
 
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-1">Password</label>
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Password</label>
                   <div className="relative">
                      <input
                         type={isPasswordVisible ? 'text' : 'password'}
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400"
                         placeholder="Create a password"
                         required
                      />
@@ -219,7 +231,7 @@ function RegisterUser() {
                         {isPasswordVisible ? (
                            <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 text-gray-500"
+                              className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -240,7 +252,7 @@ function RegisterUser() {
                         ) : (
                            <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 text-gray-500"
+                              className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -258,13 +270,13 @@ function RegisterUser() {
                </div>
 
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-1">Confirm Password</label>
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Confirm Password</label>
                   <input
                      type={isPasswordVisible ? 'text' : 'password'}
                      name="confirmPassword"
                      value={formData.confirmPassword}
                      onChange={handleChange}
-                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400"
                      placeholder="Confirm your password"
                      required
                   />
@@ -274,7 +286,7 @@ function RegisterUser() {
                   <button
                      type="submit"
                      disabled={isLoading}
-                     className={`w-full bg-[#9406E6] text-white font-bold py-3 rounded-lg hover:bg-[#7d05c3] transition-colors ${
+                     className={`w-full bg-[#9406E6] dark:bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-[#7d05c3] dark:hover:bg-purple-700 transition-colors ${
                         isLoading ? 'opacity-70 cursor-not-allowed' : ''
                      }`}
                   >
@@ -282,16 +294,16 @@ function RegisterUser() {
                   </button>
 
                   <div className="text-center">
-                     <p className="text-gray-600">Or sign up with</p>
+                     <p className="text-gray-600 dark:text-gray-400">Or sign up with</p>
                      <div className="flex justify-center mt-2">
                         <GoogleSignIn />
                      </div>
                   </div>
 
                   <div className="text-center mt-4">
-                     <p className="text-gray-600">
+                     <p className="text-gray-600 dark:text-gray-400">
                         Already have an account?{' '}
-                        <Link to="/" className="text-[#9406E6] font-medium hover:underline">
+                        <Link to="/" className="text-[#9406E6] dark:text-purple-400 font-medium hover:underline">
                            Login
                         </Link>
                      </p>

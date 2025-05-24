@@ -164,7 +164,7 @@ function Dashboard() {
    };
 
    return (
-      <div className="w-full sm:w-11/12 md:w-10/12 lg:w-11/12 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] p-1 sm:p-2 md:p-3 lg:p-4 xl:p-6">
+      <div className="w-full sm:w-11/12 md:w-10/12 lg:w-11/12 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 p-1 sm:p-2 md:p-3 lg:p-4 xl:p-6">
          <div className="max-w-7xl mx-auto px-1 sm:px-2 md:px-4 lg:px-6">
             {/* Header */}
             <div className="mb-2 sm:mb-4 md:mb-6">
@@ -179,17 +179,17 @@ function Dashboard() {
                   onSearchChange={handleSearchChange}
                />
                {apiError && (
-                  <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-2 sm:px-3 sm:py-2 md:px-4 md:py-3 rounded text-xs sm:text-sm md:text-base">
+                  <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-2 py-2 sm:px-3 sm:py-2 md:px-4 md:py-3 rounded text-xs sm:text-sm md:text-base">
                      {apiError}
                   </div>
                )}
 
                {isLoading ? (
                   <div className="flex justify-center items-center h-24 sm:h-32 md:h-40">
-                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 md:h-12 md:w-12 border-t-2 border-b-2 border-white"></div>
+                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 md:h-12 md:w-12 border-t-2 border-b-2 border-white dark:border-gray-300"></div>
                   </div>
                ) : (
-                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-2 sm:p-3 md:p-4 lg:p-6">
+                  <div className="bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-xl p-2 sm:p-3 md:p-4 lg:p-6">
                      <TodoListParser searchTerm={searchTerm} />
                   </div>
                )}
