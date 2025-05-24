@@ -164,38 +164,32 @@ function Dashboard() {
    };
 
    return (
-      <div className="w-11/12 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] p-2 sm:p-4">
-         <div className="max-w-7xl mx-auto">
+      <div className="w-full sm:w-11/12 md:w-10/12 lg:w-11/12 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] p-1 sm:p-2 md:p-3 lg:p-4 xl:p-6">
+         <div className="max-w-7xl mx-auto px-1 sm:px-2 md:px-4 lg:px-6">
             {/* Header */}
-            <div className="mb-4 sm:mb-6">
+            <div className="mb-2 sm:mb-4 md:mb-6">
                <Header />
             </div>
 
             {/* Main Content */}
-            <div className="space-y-4 sm:space-y-6">
-               <div className="text">
-                  <h1 className="text-2xl sm:text-4xl text-white font-extrabold mb-2 sm:mb-4">Todo App</h1>
-                  <h3 className="text-base sm:text-xl text-white font-semibold mb-4 sm:mb-6">
-                     To-Do lists help us break life into small steps.
-                  </h3>
-               </div>
+            <div className="space-y-2 sm:space-y-4 md:space-y-6">
                <AddTask
                   SetisAddFormVisible={handleisAddFormVisible}
                   setisDeleteFormVisible={handleisDeleteFormVisible}
                   onSearchChange={handleSearchChange}
                />
                {apiError && (
-                  <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 sm:px-4 sm:py-3 rounded text-sm sm:text-base">
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-2 sm:px-3 sm:py-2 md:px-4 md:py-3 rounded text-xs sm:text-sm md:text-base">
                      {apiError}
                   </div>
                )}
 
                {isLoading ? (
-                  <div className="flex justify-center items-center h-32 sm:h-40">
-                     <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-t-2 border-b-2 border-white"></div>
+                  <div className="flex justify-center items-center h-24 sm:h-32 md:h-40">
+                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 md:h-12 md:w-12 border-t-2 border-b-2 border-white"></div>
                   </div>
                ) : (
-                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-6">
+                  <div className="bg-white/10 backdrop-blur-md rounded-xl p-2 sm:p-3 md:p-4 lg:p-6">
                      <TodoListParser searchTerm={searchTerm} />
                   </div>
                )}
