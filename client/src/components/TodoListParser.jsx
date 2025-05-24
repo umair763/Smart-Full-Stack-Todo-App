@@ -4,14 +4,12 @@ import { useState, useEffect } from 'react';
 import DisplayTodoList from './DisplayTodoList';
 import { useSocket } from '../app/context/SocketContext';
 import { useNotification } from '../app/context/NotificationContext';
-import SearchBar from './SearchBar';
-import TaskFilter from './TaskFilter';
 import ModernSortTabs from './ModernSortTabs';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-function TodoListParser() {
+function TodoListParser({ searchTerm = '' }) {
    const [todoList, setTodoList] = useState([]);
    const [filteredList, setFilteredList] = useState([]);
    const [isLoading, setIsLoading] = useState(true);
@@ -21,15 +19,6 @@ function TodoListParser() {
    const [dependencies, setDependencies] = useState([]);
    const [isLoadingDependencies, setIsLoadingDependencies] = useState(false);
 
-   // Search and filter state
-   const [searchTerm, setSearchTerm] = useState('');
-   const [showFilters, setShowFilters] = useState(false);
-   const [activeFilters, setActiveFilters] = useState({
-      priority: 'all',
-      description: '',
-      dueDate: '',
-      status: 'all',
-   });
    const [sortConfig, setSortConfig] = useState({
       type: 'deadline',
       direction: 'asc',
@@ -76,10 +65,22 @@ function TodoListParser() {
       };
    }, [socket]);
 
-   // Apply search, filters, and sorting whenever relevant state changes
+   // Apply search and sorting whenever relevant state changes
    useEffect(() => {
-      applySearchAndFilters();
-   }, [todoList, searchTerm, activeFilters, sortConfig]);
+      if (todoList.length >= 0) {
+         // First apply search filter
+         let searchFiltered = [...todoList];
+         if (searchTerm.trim()) {
+            searchFiltered = todoList.filter((task) =>
+               task.task.toLowerCase().includes(searchTerm.toLowerCase().trim())
+            );
+         }
+
+         // Then apply sorting to the search results
+         const result = sortTasks(searchFiltered, sortConfig.type, sortConfig.direction);
+         setFilteredList(result);
+      }
+   }, [todoList, sortConfig, searchTerm]);
 
    // Fetch tasks from the server
    const fetchTasks = async () => {
@@ -212,66 +213,68 @@ function TodoListParser() {
       }
    };
 
-   // Apply search, filters, and sorting to the task list
-   const applySearchAndFilters = () => {
-      let result = [...todoList];
-
-      // Apply search
-      if (searchTerm.trim() !== '') {
-         const searchLower = searchTerm.toLowerCase();
-         result = result.filter(
-            (task) =>
-               // Search in task name
-               task.task.toLowerCase().includes(searchLower) ||
-               // Search in description (if available)
-               (task.description && task.description.toLowerCase().includes(searchLower)) ||
-               // Search in notes (if available)
-               (task.notes && task.notes.some((note) => note.content.toLowerCase().includes(searchLower)))
-         );
-      }
-
-      // Apply filters
-      if (activeFilters.priority !== 'all') {
-         result = result.filter((task) => task.priority && task.priority.toLowerCase() === activeFilters.priority);
-      }
-
-      if (activeFilters.description) {
-         const descLower = activeFilters.description.toLowerCase();
-         result = result.filter((task) => task.description && task.description.toLowerCase().includes(descLower));
-      }
-
-      if (activeFilters.dueDate) {
-         const filterDate = new Date(activeFilters.dueDate).toDateString();
-         result = result.filter((task) => {
-            const taskDate = new Date(`${task.date} ${task.time}`).toDateString();
-            return taskDate === filterDate;
-         });
-      }
-
-      if (activeFilters.status !== 'all') {
-         const today = new Date();
-
-         if (activeFilters.status === 'completed') {
-            result = result.filter((task) => task.completed);
-         } else if (activeFilters.status === 'pending') {
-            result = result.filter((task) => !task.completed);
-         } else if (activeFilters.status === 'overdue') {
-            result = result.filter((task) => {
-               const taskDate = new Date(`${task.date} ${task.time}`);
-               return !task.completed && taskDate < today;
-            });
-         }
-      }
-
-      // Apply sorting
-      result = sortTasks(result, sortConfig.type, sortConfig.direction);
-
-      setFilteredList(result);
-   };
-
    // Sort tasks based on the selected sort type and direction
    const sortTasks = (tasks, sortType, direction) => {
       const sortedTasks = [...tasks];
+      const now = new Date();
+
+      // Helper function to create a proper Date object from task data
+      const createTaskDateTime = (task) => {
+         try {
+            if (!task.date) {
+               return new Date(8640000000000000); // Far future for tasks without dates
+            }
+
+            // Handle DD/MM/YYYY format
+            let dateStr = task.date;
+            if (dateStr.includes('/')) {
+               const parts = dateStr.split('/');
+               if (parts.length === 3) {
+                  // Convert DD/MM/YYYY to YYYY-MM-DD
+                  const day = parts[0].padStart(2, '0');
+                  const month = parts[1].padStart(2, '0');
+                  const year = parts[2];
+                  dateStr = `${year}-${month}-${day}`;
+               }
+            }
+
+            // Handle time in HH:MM AM/PM format
+            let timeStr = task.time || '11:59 PM'; // Default to end of day
+
+            // Convert 12-hour format to 24-hour format for proper parsing
+            if (timeStr.includes('AM') || timeStr.includes('PM')) {
+               const timeParts = timeStr.split(' ');
+               const time = timeParts[0];
+               const period = timeParts[1];
+
+               const [hours, minutes] = time.split(':');
+               let hour24 = parseInt(hours, 10);
+
+               if (period === 'AM' && hour24 === 12) {
+                  hour24 = 0;
+               } else if (period === 'PM' && hour24 !== 12) {
+                  hour24 += 12;
+               }
+
+               timeStr = `${hour24.toString().padStart(2, '0')}:${minutes}:00`;
+            }
+
+            // Create the full ISO datetime string
+            const fullDateTimeStr = `${dateStr}T${timeStr}`;
+            const taskDate = new Date(fullDateTimeStr);
+
+            // Validate the created date
+            if (isNaN(taskDate.getTime())) {
+               console.warn(`Invalid date created for task: ${task.task}`, { date: task.date, time: task.time });
+               return new Date(8640000000000000); // Far future for invalid dates
+            }
+
+            return taskDate;
+         } catch (error) {
+            console.error(`Error parsing date for task: ${task.task}`, error);
+            return new Date(8640000000000000); // Far future for error cases
+         }
+      };
 
       switch (sortType) {
          case 'alphabetical':
@@ -283,10 +286,29 @@ function TodoListParser() {
 
          case 'deadline':
             sortedTasks.sort((a, b) => {
-               const dateA = new Date(`${a.date} ${a.time}`);
-               const dateB = new Date(`${b.date} ${b.time}`);
-               const comparison = dateA - dateB;
-               return direction === 'asc' ? comparison : -comparison;
+               // Create proper Date objects for both tasks
+               const dateA = createTaskDateTime(a);
+               const dateB = createTaskDateTime(b);
+
+               // Calculate time differences from now (in milliseconds)
+               const diffA = dateA.getTime() - now.getTime();
+               const diffB = dateB.getTime() - now.getTime();
+
+               // Always sort completed tasks to the end, regardless of direction
+               if (a.completed !== b.completed) {
+                  return a.completed ? 1 : -1;
+               }
+
+               // Handle sorting direction
+               if (direction === 'asc') {
+                  // Ascending: Tasks with earliest deadlines first (most urgent)
+                  // Negative differences (overdue) come first, then positive (future)
+                  return diffA - diffB;
+               } else {
+                  // Descending: Tasks with latest deadlines first (least urgent)
+                  // Positive differences (future) come first, then negative (overdue)
+                  return diffB - diffA;
+               }
             });
             break;
 
@@ -301,57 +323,66 @@ function TodoListParser() {
             break;
 
          case 'dependencies':
-            // For dependencies, we need to maintain the dependency tree structure
-            // This is a simplified version - a full implementation would need to build a dependency graph
-            const dependencyMap = new Map();
-
             // Create a map of task IDs to their dependencies
+            const dependencyMap = new Map();
+            const taskDependencies = new Map();
+
+            // First pass: collect all dependencies
             dependencies.forEach((dep) => {
                const dependentId = dep.dependentTaskId?._id || dep.dependentTaskId;
                const prerequisiteId = dep.prerequisiteTaskId?._id || dep.prerequisiteTaskId;
 
                if (!dependencyMap.has(dependentId)) {
-                  dependencyMap.set(dependentId, []);
+                  dependencyMap.set(dependentId, new Set());
                }
-               dependencyMap.get(dependentId).push(prerequisiteId);
+               dependencyMap.get(dependentId).add(prerequisiteId);
+
+               // Track which tasks have dependencies
+               if (!taskDependencies.has(dependentId)) {
+                  taskDependencies.set(dependentId, { hasDependencies: true, isDependent: true });
+               }
+               if (!taskDependencies.has(prerequisiteId)) {
+                  taskDependencies.set(prerequisiteId, { hasDependencies: true, isDependent: false });
+               }
             });
 
-            // Helper function to get all prerequisites recursively
-            const getAllPrerequisites = (taskId, visited = new Set()) => {
-               if (visited.has(taskId)) return [];
-               visited.add(taskId);
+            // Sort tasks based on dependency relationships
+            sortedTasks.sort((a, b) => {
+               const aHasDeps = taskDependencies.get(a._id)?.hasDependencies || false;
+               const bHasDeps = taskDependencies.get(b._id)?.hasDependencies || false;
+               const aIsDependent = taskDependencies.get(a._id)?.isDependent || false;
+               const bIsDependent = taskDependencies.get(b._id)?.isDependent || false;
 
-               const prerequisites = dependencyMap.get(taskId) || [];
-               let allPrerequisites = [...prerequisites];
-
-               for (const prereqId of prerequisites) {
-                  allPrerequisites = [...allPrerequisites, ...getAllPrerequisites(prereqId, visited)];
+               // If one task has dependencies and the other doesn't, prioritize the one with dependencies
+               if (aHasDeps !== bHasDeps) {
+                  return direction === 'asc' ? (aHasDeps ? -1 : 1) : aHasDeps ? 1 : -1;
                }
 
-               return allPrerequisites;
-            };
+               // If both have dependencies, prioritize dependent tasks
+               if (aHasDeps && bHasDeps) {
+                  if (aIsDependent !== bIsDependent) {
+                     return direction === 'asc' ? (aIsDependent ? -1 : 1) : aIsDependent ? 1 : -1;
+                  }
+               }
 
-            // Sort based on dependency relationships
-            sortedTasks.sort((a, b) => {
-               const aPrereqs = getAllPrerequisites(a._id);
-               const bPrereqs = getAllPrerequisites(b._id);
-
-               // If A depends on B, B should come first
-               if (aPrereqs.includes(b._id)) return direction === 'asc' ? 1 : -1;
-               // If B depends on A, A should come first
-               if (bPrereqs.includes(a._id)) return direction === 'asc' ? -1 : 1;
-
-               // If neither depends on the other, sort by number of dependencies
-               const comparison = aPrereqs.length - bPrereqs.length;
-               return direction === 'asc' ? comparison : -comparison;
+               // For tasks with the same dependency status, sort by deadline using our robust date parsing
+               const dateA = createTaskDateTime(a);
+               const dateB = createTaskDateTime(b);
+               return direction === 'asc' ? dateA - dateB : dateB - dateA;
             });
             break;
 
          default:
-            // Default to deadline sorting
+            // Default to deadline sorting with robust parsing
             sortedTasks.sort((a, b) => {
-               const dateA = new Date(`${a.date} ${a.time}`);
-               const dateB = new Date(`${b.date} ${b.time}`);
+               const dateA = createTaskDateTime(a);
+               const dateB = createTaskDateTime(b);
+
+               // Always sort completed tasks to the end
+               if (a.completed !== b.completed) {
+                  return a.completed ? 1 : -1;
+               }
+
                const comparison = dateA - dateB;
                return direction === 'asc' ? comparison : -comparison;
             });
@@ -360,18 +391,9 @@ function TodoListParser() {
       return sortedTasks;
    };
 
-   // Handle search term change
-   const handleSearchChange = (term) => {
-      setSearchTerm(term);
-   };
-
-   // Handle filter changes
-   const handleFilterChange = (filters) => {
-      setActiveFilters(filters);
-   };
-
    // Handle sort changes
    const handleSortChange = (sortType, direction) => {
+      console.log(`Sorting by ${sortType} in ${direction} order`);
       setSortConfig({ type: sortType, direction });
    };
 
@@ -379,9 +401,62 @@ function TodoListParser() {
    const isDeadlineExceeded = (task) => {
       if (task.completed) return false;
 
-      const today = new Date();
-      const taskDate = new Date(`${task.date} ${task.time}`);
-      return taskDate < today;
+      try {
+         if (!task.date) return false;
+
+         // Handle DD/MM/YYYY format
+         let dateStr = task.date;
+         if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+               // Convert DD/MM/YYYY to YYYY-MM-DD
+               const day = parts[0].padStart(2, '0');
+               const month = parts[1].padStart(2, '0');
+               const year = parts[2];
+               dateStr = `${year}-${month}-${day}`;
+            }
+         }
+
+         // Handle time in HH:MM AM/PM format
+         let timeStr = task.time || '11:59 PM'; // Default to end of day
+
+         // Convert 12-hour format to 24-hour format for proper parsing
+         if (timeStr.includes('AM') || timeStr.includes('PM')) {
+            const timeParts = timeStr.split(' ');
+            const time = timeParts[0];
+            const period = timeParts[1];
+
+            const [hours, minutes] = time.split(':');
+            let hour24 = parseInt(hours, 10);
+
+            if (period === 'AM' && hour24 === 12) {
+               hour24 = 0;
+            } else if (period === 'PM' && hour24 !== 12) {
+               hour24 += 12;
+            }
+
+            timeStr = `${hour24.toString().padStart(2, '0')}:${minutes}:00`;
+         }
+
+         // Create the full ISO datetime string
+         const fullDateTimeStr = `${dateStr}T${timeStr}`;
+         const taskDate = new Date(fullDateTimeStr);
+
+         // Validate the created date
+         if (isNaN(taskDate.getTime())) {
+            console.warn(`Invalid date in isDeadlineExceeded for task: ${task.task}`, {
+               date: task.date,
+               time: task.time,
+            });
+            return false; // Don't mark as exceeded if we can't parse the date
+         }
+
+         const now = new Date();
+         return taskDate < now;
+      } catch (error) {
+         console.error(`Error checking deadline for task: ${task.task}`, error);
+         return false; // Don't mark as exceeded if there's an error
+      }
    };
 
    // Render loading state
@@ -410,16 +485,8 @@ function TodoListParser() {
 
    return (
       <div className="w-full">
-         {/* Search and filter UI */}
+         {/* Sort UI */}
          <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-lg mb-4">
-            <SearchBar
-               searchTerm={searchTerm}
-               onSearchChange={handleSearchChange}
-               onFilterToggle={() => setShowFilters(!showFilters)}
-            />
-
-            {showFilters && <TaskFilter onFilterChange={handleFilterChange} />}
-
             <ModernSortTabs onSortChange={handleSortChange} />
          </div>
 
@@ -427,7 +494,9 @@ function TodoListParser() {
          <div className="space-y-2">
             {filteredList.length === 0 ? (
                <div className="text-center p-8 bg-gray-100 rounded-lg">
-                  <p className="text-gray-500">No tasks found. Try adjusting your search or filters.</p>
+                  <p className="text-gray-500">
+                     {searchTerm ? `No tasks found for "${searchTerm}"` : 'No tasks found.'}
+                  </p>
                </div>
             ) : (
                filteredList.map((task) => (

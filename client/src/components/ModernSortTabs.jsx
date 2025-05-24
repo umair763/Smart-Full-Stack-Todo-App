@@ -5,19 +5,26 @@ import { FiLink, FiList, FiCalendar, FiChevronUp, FiChevronDown, FiStar } from '
 
 const ModernSortTabs = ({ onSortChange }) => {
    const [activeSort, setActiveSort] = useState('deadline');
-   const [sortDirection, setSortDirection] = useState('asc');
+   const [sortDirections, setSortDirections] = useState({
+      deadline: 'asc',
+      priority: 'asc',
+      alphabetical: 'asc',
+      dependencies: 'asc',
+   });
 
    const handleSortChange = (sortType) => {
       if (sortType === activeSort) {
          // Toggle direction if clicking the same tab
-         const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-         setSortDirection(newDirection);
+         const newDirection = sortDirections[sortType] === 'asc' ? 'desc' : 'asc';
+         setSortDirections((prev) => ({
+            ...prev,
+            [sortType]: newDirection,
+         }));
          onSortChange(sortType, newDirection);
       } else {
-         // Set new sort type with default direction
+         // Set new sort type with its current direction
          setActiveSort(sortType);
-         setSortDirection('asc');
-         onSortChange(sortType, 'asc');
+         onSortChange(sortType, sortDirections[sortType]);
       }
    };
 
@@ -38,29 +45,20 @@ const ModernSortTabs = ({ onSortChange }) => {
                   isActive={activeSort === 'alphabetical'}
                   onClick={() => handleSortChange('alphabetical')}
                />
-               <SortTab
+               <DeadlineSortTab
                   icon={<FiCalendar />}
                   label="Deadline"
                   isActive={activeSort === 'deadline'}
+                  direction={sortDirections.deadline}
                   onClick={() => handleSortChange('deadline')}
                />
-               <SortTab
+               <PrioritySortTab
                   icon={<FiStar />}
                   label="Priority"
                   isActive={activeSort === 'priority'}
+                  direction={sortDirections.priority}
                   onClick={() => handleSortChange('priority')}
                />
-               <button
-                  onClick={() => {
-                     const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                     setSortDirection(newDirection);
-                     onSortChange(activeSort, newDirection);
-                  }}
-                  className="p-2 bg-white/50 hover:bg-white/80 rounded-md transition-colors"
-                  title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
-               >
-                  {sortDirection === 'asc' ? <FiChevronUp /> : <FiChevronDown />}
-               </button>
             </div>
          </div>
       </div>
@@ -77,6 +75,38 @@ const SortTab = ({ icon, label, isActive, onClick }) => {
       >
          {icon}
          <span>{label}</span>
+      </button>
+   );
+};
+
+const DeadlineSortTab = ({ icon, label, isActive, direction, onClick }) => {
+   return (
+      <button
+         onClick={onClick}
+         className={`flex items-center space-x-1 px-3 py-1.5 rounded-md transition-colors ${
+            isActive ? 'bg-[#9406E6] text-white' : 'bg-white/50 text-gray-700 hover:bg-white/80'
+         }`}
+         title={direction === 'asc' ? 'Sort by earliest deadline first' : 'Sort by latest deadline first'}
+      >
+         {icon}
+         <span>{label}</span>
+         {isActive && (direction === 'asc' ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />)}
+      </button>
+   );
+};
+
+const PrioritySortTab = ({ icon, label, isActive, direction, onClick }) => {
+   return (
+      <button
+         onClick={onClick}
+         className={`flex items-center space-x-1 px-3 py-1.5 rounded-md transition-colors ${
+            isActive ? 'bg-[#9406E6] text-white' : 'bg-white/50 text-gray-700 hover:bg-white/80'
+         }`}
+         title={direction === 'asc' ? 'Sort by highest priority first' : 'Sort by lowest priority first'}
+      >
+         {icon}
+         <span>{label}</span>
+         {isActive && (direction === 'asc' ? <FiChevronUp className="ml-1" /> : <FiChevronDown className="ml-1" />)}
       </button>
    );
 };
