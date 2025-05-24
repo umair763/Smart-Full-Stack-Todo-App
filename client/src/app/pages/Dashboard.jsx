@@ -13,100 +13,114 @@ import ReminderModal from '../../components/ReminderModal';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Dashboard() {
+   const [tasks, setTasks] = useState([]);
    const [isAddFormVisible, setIsAddFormVisible] = useState(false);
    const [isDeleteFormVisible, setIsDeleteFormVisible] = useState(false);
-   const [tasks, setTasks] = useState([]);
-   const [sortby, setSortBy] = useState('sortby');
-   const [searchtask, setSearchTask] = useState('');
-   const [isexceeded, setIFexceeded] = useState(false);
-   const [apiError, setApiError] = useState(null);
    const [isLoading, setIsLoading] = useState(true);
+   const [apiError, setApiError] = useState('');
+   const [searchTerm, setSearchTerm] = useState('');
    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
    const [selectedTask, setSelectedTask] = useState(null);
 
    useEffect(() => {
-      const fetchTasks = async () => {
-         setIsLoading(true);
-         setApiError(null);
-
-         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-               throw new Error('No token found, please log in.');
-            }
-
-            const response = await fetch(`${API_BASE_URL}/api/tasks`, {
-               headers: {
-                  Authorization: `Bearer ${token}`,
-               },
-            });
-
-            if (!response.ok) {
-               throw new Error(`Server returned ${response.status}: ${await response.text()}`);
-            }
-
-            const data = await response.json();
-            if (Array.isArray(data)) {
-               setTasks(data);
-            } else {
-               console.error('Expected an array, but got:', data);
-               setTasks([]);
-            }
-         } catch (error) {
-            console.error('Error fetching tasks:', error);
-            setApiError(error.message);
-            setTasks([]);
-         } finally {
-            setIsLoading(false);
-         }
-      };
-
       fetchTasks();
    }, []);
 
+   const fetchTasks = async () => {
+      setIsLoading(true);
+      setApiError('');
+      try {
+         const token = localStorage.getItem('token');
+         if (!token) {
+            throw new Error('No authentication token found');
+         }
+
+         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
+            method: 'GET',
+            headers: {
+               Authorization: `Bearer ${token}`,
+               'Content-Type': 'application/json',
+            },
+         });
+
+         if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+         }
+
+         const data = await response.json();
+         setTasks(data);
+      } catch (error) {
+         console.error('Error fetching tasks:', error);
+         setApiError('Failed to fetch tasks. Please try again.');
+      } finally {
+         setIsLoading(false);
+      }
+   };
+
+   const isexceeded = (date, time) => {
+      const now = new Date();
+      const taskDate = new Date(`${date} ${time}`);
+      return taskDate < now;
+   };
+
    const handleisAddFormVisible = () => {
-      setIsAddFormVisible((prev) => !prev);
-      if (isDeleteFormVisible) setIsDeleteFormVisible(false);
+      setIsAddFormVisible(!isAddFormVisible);
    };
 
    const handleisDeleteFormVisible = () => {
-      setIsDeleteFormVisible((prev) => !prev);
-      if (isAddFormVisible) setIsAddFormVisible(false);
+      setIsDeleteFormVisible(!isDeleteFormVisible);
+   };
+
+   const handleSearchChange = (searchValue) => {
+      setSearchTerm(searchValue);
    };
 
    function handleAddNewTasks(task) {
-      setApiError(null);
-      const token = localStorage.getItem('token');
+      const newTask = {
+         ...task,
+         _id: Date.now(), // Temporary ID for optimistic update
+         completed: false,
+         createdAt: new Date().toISOString(),
+         userId: localStorage.getItem('userId'),
+      };
 
-      fetch(`${API_BASE_URL}/api/tasks`, {
-         method: 'POST',
-         headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-         },
-         body: JSON.stringify(task),
-      })
-         .then((res) => {
-            if (!res.ok) {
-               throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            return res.json();
-         })
-         .then((newTask) => {
-            setTasks([...tasks, newTask]);
-            setIsAddFormVisible(false); // Close the form after successful addition
-         })
-         .catch((err) => {
-            console.error('Error adding task:', err);
-            setApiError('Failed to add task. Please try again.');
-         });
+      // Add task optimistically
+      setTasks((prevTasks) => [...prevTasks, newTask]);
+      setIsAddFormVisible(false);
+
+      // Make the API call
+      addTask(task);
    }
 
-   const handleDeleteTask = async (taskId) => {
-      setApiError(null);
-      const token = localStorage.getItem('token');
-
+   const addTask = async (task) => {
       try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(task),
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to add task');
+         }
+
+         // Refresh tasks to get the actual task with server-generated ID
+         fetchTasks();
+      } catch (error) {
+         console.error('Error adding task:', error);
+         setApiError('Failed to add task. Please try again.');
+         // Remove the optimistically added task on error
+         setTasks((prevTasks) => prevTasks.filter((t) => t._id !== Date.now()));
+      }
+   };
+
+   const handleDeleteTask = async (taskId) => {
+      try {
+         const token = localStorage.getItem('token');
          const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
             method: 'DELETE',
             headers: {
@@ -115,8 +129,7 @@ function Dashboard() {
          });
 
          if (!response.ok) {
-            const errorMessage = await response.text();
-            throw new Error(`Failed to delete task: ${errorMessage}`);
+            throw new Error('Failed to delete task');
          }
 
          setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
@@ -126,109 +139,6 @@ function Dashboard() {
          setApiError('Failed to delete task. Please try again.');
       }
    };
-
-   // Convert date from dd/mm/yyyy format and time from hh:mm AM/PM to a Date object
-   function convertToComparableDateTime(date, time) {
-      const [day, month, year] = date.split('/');
-      let [hours, minutes, ampm] = time.match(/(\d+):(\d+)\s(AM|PM)/).slice(1, 4);
-
-      // Convert hours to 24-hour format
-      hours = Number.parseInt(hours);
-      if (ampm === 'PM' && hours < 12) hours += 12;
-      if (ampm === 'AM' && hours === 12) hours = 0; // Handle midnight
-
-      // Create a Date object with the converted values
-      return new Date(year, month - 1, day, hours, minutes);
-   }
-
-   function sortByDateTime(tasks) {
-      const now = new Date();
-
-      return tasks.sort((a, b) => {
-         // Convert task dates and times to comparable formats
-         const dateA = convertToComparableDateTime(a.date, a.time);
-         const dateB = convertToComparableDateTime(b.date, b.time);
-
-         // Compare by date (earlier date comes first)
-         if (dateA < now && dateB >= now) return -1; // A has exceeded, comes first
-         if (dateA >= now && dateB < now) return 1; // B has exceeded, comes first
-
-         if (dateA < dateB) return -1;
-         if (dateA > dateB) return 1;
-
-         // If dates are equal, compare by time
-         return dateA - dateB;
-      });
-   }
-
-   function sortByPriority(tasks) {
-      const priorityOrder = { high: 1, medium: 2, low: 3 };
-      return tasks.sort((a, b) => {
-         return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
-      });
-   }
-
-   function sortByStatus(tasks) {
-      return tasks.sort((a, b) => {
-         if (a.completed === b.completed) return 0;
-         return a.completed ? 1 : -1;
-      });
-   }
-
-   function sortByCreatedDate(tasks) {
-      return tasks.sort((a, b) => {
-         return new Date(b.createdAt) - new Date(a.createdAt);
-      });
-   }
-
-   const sorted = [...tasks];
-
-   if (sortby === 'Task') {
-      // Sort tasks alphabetically by task name
-      sorted.sort((a, b) => a.task.localeCompare(b.task));
-   } else if (sortby === 'Time') {
-      // Sort tasks by time
-      sortByDateTime(sorted);
-   } else if (sortby === 'Priority') {
-      // Sort tasks by priority
-      sortByPriority(sorted);
-   } else if (sortby === 'Status') {
-      // Sort tasks by status
-      sortByStatus(sorted);
-   } else if (sortby === 'Created') {
-      // Sort tasks by creation date
-      sortByCreatedDate(sorted);
-   }
-
-   let searched = sorted;
-   if (searchtask) {
-      searched = sorted.filter((task) => {
-         // Text search
-         const matchesText = task.task.toLowerCase().includes(searchtask.text.toLowerCase());
-
-         // Priority filter
-         const matchesPriority = !searchtask.priority || task.priority === searchtask.priority;
-
-         // Tags filter
-         const matchesTags =
-            !searchtask.tags ||
-            (task.tags && task.tags.some((tag) => tag.toLowerCase().includes(searchtask.tags.toLowerCase())));
-
-         // Due date filter
-         const matchesDueDate = !searchtask.dueDate || task.date === searchtask.dueDate;
-
-         // Status filter
-         const matchesStatus =
-            !searchtask.status ||
-            (searchtask.status === 'completed' && task.completed) ||
-            (searchtask.status === 'pending' && !task.completed) ||
-            (searchtask.status === 'overdue' &&
-               convertToComparableDateTime(task.date, task.time) < new Date() &&
-               !task.completed);
-
-         return matchesText && matchesPriority && matchesTags && matchesDueDate && matchesStatus;
-      });
-   }
 
    const handleSetReminder = async (reminderData) => {
       try {
@@ -272,8 +182,7 @@ function Dashboard() {
                <AddTask
                   SetisAddFormVisible={handleisAddFormVisible}
                   setisDeleteFormVisible={handleisDeleteFormVisible}
-                  setSort={setSortBy}
-                  setSearch={setSearchTask}
+                  onSearchChange={handleSearchChange}
                />
                {apiError && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 sm:px-4 sm:py-3 rounded text-sm sm:text-base">
@@ -287,7 +196,7 @@ function Dashboard() {
                   </div>
                ) : (
                   <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-6">
-                     <TodoListParser todolist={searched} setexceeded={isexceeded} settask={setTasks} />
+                     <TodoListParser searchTerm={searchTerm} />
                   </div>
                )}
             </div>
