@@ -49,6 +49,13 @@ const DependencyTree = ({ taskId, onClose }) => {
          return;
       }
 
+      // Optimistically update UI immediately
+      const previousDependencies = { ...dependencies };
+      setDependencies((prev) => ({
+         prerequisites: prev.prerequisites.filter((dep) => dep._id !== dependencyId),
+         dependents: prev.dependents.filter((dep) => dep._id !== dependencyId),
+      }));
+
       try {
          const token = localStorage.getItem('token');
          if (!token) {
@@ -67,10 +74,13 @@ const DependencyTree = ({ taskId, onClose }) => {
          }
 
          toast.success('Dependency removed successfully');
-         fetchDependencies(); // Refresh the dependencies
+         // Refresh the dependencies to ensure consistency
+         fetchDependencies();
       } catch (error) {
          console.error('Error deleting dependency:', error);
          toast.error('Failed to remove dependency');
+         // Revert UI changes on error
+         setDependencies(previousDependencies);
       }
    };
 

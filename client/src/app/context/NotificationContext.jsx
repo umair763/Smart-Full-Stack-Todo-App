@@ -52,18 +52,6 @@ export function NotificationProvider({ children }) {
    useEffect(() => {
       if (!socket) return;
 
-      // Listen for new notifications
-      const handleNewNotification = (notification) => {
-         // Add to temporary notifications
-         addTempNotification(notification);
-
-         // If it should be persistent, save to persistent notifications
-         if (notification.persistent) {
-            setPersistentNotifications((prev) => [notification, ...prev]);
-            setUnreadCount((prev) => prev + 1);
-         }
-      };
-
       // Listen for notification updates (read status, deletion, etc.)
       const handleNotificationUpdate = (data) => {
          if (data.type === 'delete') {
@@ -90,16 +78,38 @@ export function NotificationProvider({ children }) {
          setUnreadCount(count);
       };
 
+      // Listen for fresh notification creation (from server-side CRUD operations)
+      const handleNotificationCreated = (notification) => {
+         // Add to persistent notifications immediately
+         setPersistentNotifications((prev) => {
+            // Avoid duplicates
+            const exists = prev.some((n) => n._id === notification._id);
+            if (exists) return prev;
+            return [notification, ...prev];
+         });
+
+         // Increment unread count if notification is unread
+         if (!notification.read) {
+            setUnreadCount((prev) => prev + 1);
+         }
+
+         // Show as temporary notification for immediate visibility
+         addTempNotification({
+            ...notification,
+            persistent: true,
+         });
+      };
+
       // Set up socket event listeners
-      socket.on('notification', handleNewNotification);
       socket.on('notificationUpdate', handleNotificationUpdate);
       socket.on('notificationCount', handleNotificationCount);
+      socket.on('notificationCreated', handleNotificationCreated);
 
       // Clean up socket listeners
       return () => {
-         socket.off('notification', handleNewNotification);
          socket.off('notificationUpdate', handleNotificationUpdate);
          socket.off('notificationCount', handleNotificationCount);
+         socket.off('notificationCreated', handleNotificationCreated);
       };
    }, [socket]);
 
@@ -181,22 +191,33 @@ export function NotificationProvider({ children }) {
       try {
          const token = localStorage.getItem('token');
          if (!token) return;
+
+         // Optimistically update UI immediately
+         const notificationToRemove = persistentNotifications.find((n) => n._id === id);
+         setPersistentNotifications((prev) => prev.filter((n) => n._id !== id));
+         if (notificationToRemove && !notificationToRemove.read) {
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+         }
+
          const response = await fetch(`${API_BASE_URL}/api/notifications/${id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` },
             credentials: 'include',
          });
-         if (response.ok) {
-            setPersistentNotifications((prev) => prev.filter((n) => n._id !== id));
-            setUnreadCount((prev) => Math.max(0, prev - 1));
 
+         if (response.ok) {
             // Emit socket event for real-time update
             if (socket) {
                socket.emit('notificationDeleted', id);
             }
+         } else {
+            // If backend fails, revert optimistic update
+            fetchNotifications();
          }
       } catch (error) {
          console.error('Error removing notification:', error);
+         // Revert optimistic update on error
+         fetchNotifications();
       }
    };
 
@@ -205,22 +226,30 @@ export function NotificationProvider({ children }) {
       try {
          const token = localStorage.getItem('token');
          if (!token) return;
+
+         // Optimistically update UI immediately
+         setPersistentNotifications([]);
+         setUnreadCount(0);
+
          const response = await fetch(`${API_BASE_URL}/api/notifications`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` },
             credentials: 'include',
          });
-         if (response.ok) {
-            setPersistentNotifications([]);
-            setUnreadCount(0);
 
+         if (response.ok) {
             // Emit socket event for real-time update
             if (socket) {
                socket.emit('notificationsCleared');
             }
+         } else {
+            // If backend fails, revert optimistic update
+            fetchNotifications();
          }
       } catch (error) {
          console.error('Error clearing notifications:', error);
+         // Revert optimistic update on error
+         fetchNotifications();
       }
    };
 
@@ -229,22 +258,61 @@ export function NotificationProvider({ children }) {
       try {
          const token = localStorage.getItem('token');
          if (!token) return;
+
+         // Optimistically update UI immediately
+         setPersistentNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+         setUnreadCount(0);
+
          const response = await fetch(`${API_BASE_URL}/api/notifications/mark-all-read`, {
             method: 'PATCH',
             headers: { Authorization: `Bearer ${token}` },
             credentials: 'include',
          });
-         if (response.ok) {
-            setPersistentNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-            setUnreadCount(0);
 
+         if (response.ok) {
             // Emit socket event for real-time update
             if (socket) {
                socket.emit('notificationsMarkedAsRead');
             }
+         } else {
+            // If backend fails, revert optimistic update
+            fetchNotifications();
          }
       } catch (error) {
          console.error('Error marking all as read:', error);
+         // Revert optimistic update on error
+         fetchNotifications();
+      }
+   };
+
+   // Mark individual notification as read
+   const markAsRead = async (id) => {
+      try {
+         const token = localStorage.getItem('token');
+         if (!token) return;
+
+         // Optimistically update UI immediately
+         const notification = persistentNotifications.find((n) => n._id === id);
+         if (notification && !notification.read) {
+            setPersistentNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+
+            // Make API call to mark as read
+            const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+               method: 'PATCH',
+               headers: { Authorization: `Bearer ${token}` },
+               credentials: 'include',
+            });
+
+            if (!response.ok) {
+               // If backend fails, revert optimistic update
+               fetchNotifications();
+            }
+         }
+      } catch (error) {
+         console.error('Error marking notification as read:', error);
+         // Revert optimistic update on error
+         fetchNotifications();
       }
    };
 
@@ -399,6 +467,7 @@ export function NotificationProvider({ children }) {
       fetchNotifications,
       addScheduledReminder,
       removeReminderNotification,
+      markAsRead,
    };
 
    return <NotificationContext.Provider value={contextValue}>{children}</NotificationContext.Provider>;

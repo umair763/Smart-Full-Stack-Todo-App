@@ -51,7 +51,7 @@ export const createTask = async (req, res) => {
         await newTask.save();
 
         // Save notification to DB
-        await Notification.create({
+        const savedNotification = await Notification.create({
             userId: req.user._id,
             type: "create",
             message: `Task "${task}" created`,
@@ -62,20 +62,13 @@ export const createTask = async (req, res) => {
         const io = req.app.get("io");
         if (io && io.sendNotification) {
             io.sendNotification(req.user._id, {
+                ...savedNotification.toObject(),
                 type: "create",
                 message: `Task "${task}" created`,
-                data: { taskId: newTask._id },
                 persistent: true,
+                read: false,
             });
         }
-
-        // Emit dbEvents for legacy listeners
-        dbEvents.emit("db_change", {
-            operation: "create",
-            collection: "tasks",
-            message: `New task "${task}" created`,
-            type: "task",
-        });
 
         res.status(201).json(newTask);
     } catch (error) {
@@ -124,7 +117,7 @@ export const updateTask = async (req, res) => {
         }
 
         // Save notification to DB
-        await Notification.create({
+        const savedNotification = await Notification.create({
             userId: req.user._id,
             type: "update",
             message: `Task "${task}" updated`,
@@ -135,19 +128,13 @@ export const updateTask = async (req, res) => {
         const io = req.app.get("io");
         if (io && io.sendNotification) {
             io.sendNotification(req.user._id, {
+                ...savedNotification.toObject(),
                 type: "update",
                 message: `Task "${task}" updated`,
-                data: { taskId: updatedTask._id },
                 persistent: true,
+                read: false,
             });
         }
-
-        dbEvents.emit("db_change", {
-            operation: "update",
-            collection: "tasks",
-            message: `Task "${task}" updated`,
-            type: "task",
-        });
 
         res.json(updatedTask);
     } catch (error) {
@@ -166,7 +153,7 @@ export const deleteTask = async (req, res) => {
         }
 
         // Save notification to DB
-        await Notification.create({
+        const savedNotification = await Notification.create({
             userId: req.user._id,
             type: "delete",
             message: `Task "${deletedTask.task}" deleted`,
@@ -177,19 +164,13 @@ export const deleteTask = async (req, res) => {
         const io = req.app.get("io");
         if (io && io.sendNotification) {
             io.sendNotification(req.user._id, {
+                ...savedNotification.toObject(),
                 type: "delete",
                 message: `Task "${deletedTask.task}" deleted`,
-                data: { taskId: deletedTask._id },
                 persistent: true,
+                read: false,
             });
         }
-
-        dbEvents.emit("db_change", {
-            operation: "delete",
-            collection: "tasks",
-            message: `Task "${deletedTask.task}" deleted`,
-            type: "task",
-        });
 
         res.json({ message: "Task deleted" });
     } catch (error) {
@@ -239,14 +220,6 @@ export const updateTaskStatus = async (req, res) => {
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
         }
-
-        // Emit task status change event
-        dbEvents.emit("db_change", {
-            operation: "status_change",
-            collection: "tasks",
-            message: `Task "${task.task}" marked as ${completed ? "completed" : "incomplete"}`,
-            type: "task",
-        });
 
         res.json(task);
     } catch (error) {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { FiBell, FiX, FiAlertCircle, FiCheckCircle, FiInfo, FiTrash2 } from 'react-icons/fi';
 import { useNotification } from '../app/context/NotificationContext';
 import { useSocket } from '../app/context/SocketContext';
@@ -15,6 +16,7 @@ function NotificationBell() {
       removeReminderNotification,
       clearNotifications,
       markAllAsRead,
+      markAsRead,
       fetchNotifications,
    } = useNotification();
    const { socket } = useSocket();
@@ -22,7 +24,17 @@ function NotificationBell() {
    // Close dropdown when clicking outside
    useEffect(() => {
       function handleClickOutside(event) {
-         if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+         // Since we're using a portal, we need to check if the click is outside the notification tray
+         // by checking if the clicked element has the notification tray ID or is contained within it
+         const notificationTray = document.querySelector('[data-notification-tray="true"]');
+         const bellButton = dropdownRef.current;
+
+         if (
+            notificationTray &&
+            !notificationTray.contains(event.target) &&
+            bellButton &&
+            !bellButton.contains(event.target)
+         ) {
             setIsOpen(false);
          }
       }
@@ -84,6 +96,8 @@ function NotificationBell() {
             return <span className="h-5 w-5 text-yellow-500">🔔</span>;
          case 'delete':
             return <FiTrash2 className="h-5 w-5 text-red-500" />;
+         case 'dependency':
+            return <FiInfo className="h-5 w-5 text-indigo-500" />;
          default:
             return <FiInfo className="h-5 w-5 text-blue-500" />;
       }
@@ -107,69 +121,155 @@ function NotificationBell() {
       }
 
       return (
-         <div key={notification._id} className={`px-4 py-3 flex items-start ${notification.read ? '' : 'bg-blue-50'}`}>
-            <div className="flex-shrink-0 mt-0.5">{getIcon(notification.type)}</div>
-            <div className="ml-3 w-0 flex-1">
-               <p className="text-sm text-gray-800">{notification.message}</p>
-               <p className="mt-1 text-xs text-gray-500">
-                  {formatTime(notification.createdAt || notification.timestamp)}
-               </p>
+         <div
+            key={notification._id}
+            className={`px-4 sm:px-6 py-4 transition-all duration-200 hover:bg-gray-50 cursor-pointer ${
+               notification.read ? '' : 'bg-blue-50/50 border-l-4 border-l-blue-500'
+            }`}
+            onClick={(e) => {
+               e.stopPropagation();
+               if (!notification.read) {
+                  markAsRead(notification._id);
+               }
+            }}
+         >
+            <div className="flex items-start space-x-3">
+               {/* Icon with enhanced styling */}
+               <div className="flex-shrink-0 mt-1">
+                  <div className="bg-gray-100 p-2 rounded-lg">{getIcon(notification.type)}</div>
+               </div>
+
+               {/* Content */}
+               <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 leading-relaxed">{notification.message}</p>
+                  <div className="flex items-center justify-between mt-2">
+                     <p className="text-xs text-gray-500 flex items-center">
+                        <svg
+                           xmlns="http://www.w3.org/2000/svg"
+                           className="h-3 w-3 mr-1"
+                           fill="none"
+                           viewBox="0 0 24 24"
+                           stroke="currentColor"
+                        >
+                           <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                           />
+                        </svg>
+                        {formatTime(notification.createdAt || notification.timestamp)}
+                     </p>
+                     {!notification.read && <span className="bg-blue-500 h-2 w-2 rounded-full"></span>}
+                  </div>
+               </div>
+
+               {/* Remove button */}
+               <button
+                  onClick={(e) => {
+                     e.stopPropagation();
+                     handleRemoveNotification(notification);
+                  }}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 group"
+                  title="Remove notification"
+               >
+                  <FiX className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+               </button>
             </div>
-            <button
-               onClick={() => handleRemoveNotification(notification)}
-               className="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600"
-               title="Remove notification"
-            >
-               <FiX className="h-4 w-4" />
-            </button>
          </div>
       );
    };
 
    return (
       <div className="relative" ref={dropdownRef}>
-         {/* Bell icon with badge */}
+         {/* Bell icon with badge - Enhanced for header */}
          <button
             onClick={toggleDropdown}
-            className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+            className="relative p-2 text-white hover:text-white/80 focus:outline-none transition-all duration-200 hover:bg-white/10 rounded-lg group"
             aria-label="Notifications"
          >
-            <FiBell className="h-6 w-6" />
+            <FiBell className="h-5 w-5 lg:h-6 lg:w-6 group-hover:scale-110 transition-transform duration-200" />
             {unreadCount > 0 && (
-               <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg animate-pulse border-2 border-white">
                   {unreadCount > 9 ? '9+' : unreadCount}
                </span>
             )}
          </button>
 
-         {/* Dropdown menu */}
-         {isOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50 max-h-[80vh] overflow-y-auto">
-               <div className="px-4 py-2 border-b border-gray-200 flex justify-between items-center">
-                  <h3 className="text-sm font-medium text-gray-700">Notifications</h3>
-                  <div className="flex gap-2">
-                     {persistentNotifications.length > 0 && (
-                        <button onClick={markAllAsRead} className="text-xs text-blue-600 hover:text-blue-800">
-                           Mark all as read
-                        </button>
-                     )}
-                     {persistentNotifications.length > 0 && (
-                        <button onClick={clearNotifications} className="text-xs text-red-600 hover:text-red-800">
-                           Clear all
-                        </button>
+         {/* Enhanced Modern Dropdown menu */}
+         {isOpen &&
+            ReactDOM.createPortal(
+               <div
+                  data-notification-tray="true"
+                  className="fixed top-16 right-4 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-[85vh] overflow-hidden"
+                  style={{ zIndex: 2147483647 }}
+               >
+                  {/* Header Section */}
+                  <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                     <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2">
+                           <div className="bg-white/20 p-1.5 rounded-lg">
+                              <FiBell className="h-5 w-5" />
+                           </div>
+                           <div>
+                              <h3 className="text-base font-semibold">Notifications</h3>
+                              <p className="text-xs text-white/80">
+                                 {persistentNotifications.length === 0
+                                    ? 'All caught up!'
+                                    : `${persistentNotifications.length} notification${
+                                         persistentNotifications.length !== 1 ? 's' : ''
+                                      }`}
+                              </p>
+                           </div>
+                        </div>
+                        {persistentNotifications.length > 0 && (
+                           <div className="flex items-center space-x-2">
+                              <button
+                                 onClick={(e) => {
+                                    e.stopPropagation();
+                                    markAllAsRead();
+                                 }}
+                                 className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors"
+                                 title="Mark all as read"
+                              >
+                                 Mark Read
+                              </button>
+                              <button
+                                 onClick={(e) => {
+                                    e.stopPropagation();
+                                    clearNotifications();
+                                 }}
+                                 className="px-3 py-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-xs font-medium transition-colors"
+                                 title="Clear all notifications"
+                              >
+                                 Clear All
+                              </button>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+
+                  {/* Notification list */}
+                  <div className="max-h-[60vh] overflow-y-auto">
+                     {persistentNotifications.length === 0 ? (
+                        <div className="px-6 py-12 text-center">
+                           <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                              <FiBell className="h-8 w-8 text-gray-400" />
+                           </div>
+                           <h4 className="text-sm font-medium text-gray-900 mb-1">No notifications</h4>
+                           <p className="text-xs text-gray-500">
+                              You're all caught up! New notifications will appear here.
+                           </p>
+                        </div>
+                     ) : (
+                        <div className="divide-y divide-gray-100">
+                           {persistentNotifications.map(renderNotification)}
+                        </div>
                      )}
                   </div>
-               </div>
-               {/* Notification list */}
-               <div className="divide-y divide-gray-200">
-                  {persistentNotifications.length === 0 ? (
-                     <div className="px-4 py-6 text-center text-sm text-gray-500">No notifications</div>
-                  ) : (
-                     persistentNotifications.map(renderNotification)
-                  )}
-               </div>
-            </div>
-         )}
+               </div>,
+               document.body
+            )}
       </div>
    );
 }

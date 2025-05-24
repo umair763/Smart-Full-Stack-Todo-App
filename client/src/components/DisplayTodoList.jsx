@@ -722,120 +722,63 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
    return (
       <>
+         {/* Enhanced Mobile-First Card Design */}
          <div
-            className={`grid grid-cols-[30px,1fr,auto] w-[98%] max-[300px]:grid-cols-  px-4 py-2 mb-2 mt-2 rounded-lg text-[#1D1D1D] bg-[#C8F0F3]/90 items-center max-[300px]:grid-cols-[20px,1fr,auto] max-[300px]:text-[9px] min-[301px]:max-[340px]:grid-cols-[22px,1fr,auto] min-[301px]:max-[340px]:text-[10px] min-[341px]:max-[600px]:grid-cols-[25px,1fr,auto] min-[341px]:max-[600px]:text-[11px] min-[601px]:grid-cols-[28px,1fr,auto] min-[601px]:text-[12px] ${
-               hasDependencies ? 'border-l-4 border-[#9406E6]' : ''
+            className={`relative w-full mb-3 sm:mb-2 rounded-xl sm:rounded-lg bg-gradient-to-r from-white to-gray-50 shadow-md sm:shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-lg ${
+               hasDependencies ? 'border-l-4 border-l-[#9406E6]' : ''
             } ${getPriorityColorClass()}`}
          >
-            <input
-               type="radio"
-               className={`w-4 h-4 rounded-full cursor-pointer appearance-none ${
-                  list.color === 'red'
-                     ? 'bg-red-600 border-red-600'
-                     : list.color === 'yellow'
-                     ? 'bg-yellow-400 border-yellow-400'
-                     : 'bg-green-600 border-green-600'
-               }`}
-            />
-
-            <div className="flex flex-col">
-               <div className="flex items-center">
-                  {/* Expand/collapse button for subtasks */}
-                  {list.subtaskCount > 0 && (
-                     <button
-                        onClick={toggleSubtasks}
-                        className="mr-1 text-gray-600 hover:text-[#9406E6] transition-colors"
-                        title={showSubtasks ? 'Collapse subtasks' : 'Expand subtasks'}
-                     >
-                        {showSubtasks ? <FiChevronDown className="h-4 w-4" /> : <FiChevronRight className="h-4 w-4" />}
-                     </button>
-                  )}
-                  <p
-                     className={`${
-                        completed ? 'line-through text-gray-600' : ''
-                     } font-bold text-left sm:text-base lg:text-md transition-all`}
-                  >
-                     {list.task}
-                  </p>
-                  {/* Priority badge */}
-                  {list.priority && (
-                     <span
-                        className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                           list.priority.toLowerCase() === 'high'
-                              ? 'bg-red-100 text-red-800'
-                              : list.priority.toLowerCase() === 'medium'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-green-100 text-green-800'
+            {/* Mobile Layout (< 640px) - Card Style */}
+            <div className="sm:hidden p-4">
+               {/* Header Section - Task Name & Priority */}
+               <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start space-x-2 flex-1 min-w-0">
+                     {/* Priority Radio Button */}
+                     <input
+                        type="radio"
+                        className={`w-4 h-4 rounded-full cursor-pointer appearance-none flex-shrink-0 mt-1 ${
+                           list.color === 'red'
+                              ? 'bg-red-600 border-red-600'
+                              : list.color === 'yellow'
+                              ? 'bg-yellow-400 border-yellow-400'
+                              : 'bg-green-600 border-green-600'
                         }`}
-                     >
-                        {list.priority}
-                     </span>
-                  )}
-                  {/* Dependency indicator */}
-                  {hasDependencies && (
-                     <button
-                        onClick={handleViewDependencies}
-                        className="ml-2 text-[#9406E6] hover:text-[#7D05C3]"
-                        title="View dependencies"
-                     >
-                        <FiLink className="h-4 w-4" />
-                     </button>
-                  )}
-               </div>
+                     />
 
-               {/* Subtask progress indicator */}
-               {list.subtaskCount > 0 && (
-                  <div className="flex items-center text-xs text-gray-600 mt-1">
-                     <div className="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
-                        <div
-                           className="bg-[#9406E6] h-2.5 rounded-full"
-                           style={{ width: `${(list.completedSubtasks / list.subtaskCount) * 100}%` }}
-                        ></div>
+                     <div className="flex-1 min-w-0">
+                        {/* Task Name */}
+                        <h3
+                           className={`${
+                              completed ? 'line-through text-gray-500' : 'text-gray-900'
+                           } font-semibold text-base leading-tight mb-1 transition-all`}
+                        >
+                           {list.task}
+                        </h3>
+
+                        {/* Priority Badge */}
+                        {list.priority && (
+                           <span
+                              className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                                 list.priority.toLowerCase() === 'high'
+                                    ? 'bg-red-100 text-red-800 border border-red-200'
+                                    : list.priority.toLowerCase() === 'medium'
+                                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                    : 'bg-green-100 text-green-800 border border-green-200'
+                              }`}
+                           >
+                              {list.priority}
+                           </span>
+                        )}
                      </div>
-                     <span>
-                        {list.completedSubtasks}/{list.subtaskCount} completed
-                     </span>
                   </div>
-               )}
-            </div>
-            <div className="flex justify-between items-center gap-2">
-               <div className="flex flex-col items-start">
-                  <p
-                     className={`${
-                        completed ? 'line-through text-gray-600' : ''
-                     } font-bold text-left sm:text-base lg:text-md transition-all`}
-                  >
-                     {list.date}
-                  </p>
-                  <p className="font-bold text-left sm:text-base text-red-700 lg:text-md">
-                     {isexceeded && !completed ? 'Deadline exceeded' : ''}
-                  </p>
-               </div>
-               <p
-                  className={`${
-                     completed ? 'line-through text-gray-600' : ''
-                  } font-bold text-left sm:text-base lg:text-md transition-all`}
-               >
-                  {list.time}
-               </p>
 
-               {/* Action buttons */}
-               <div className="flex items-center space-x-2 ml-2">
-                  {/* Edit button */}
-                  <button onClick={handleEdit} className="text-blue-600 hover:text-blue-800" title="Edit task">
-                     <FiEdit2 className="h-5 w-5" />
-                  </button>
-
-                  {/* Delete button */}
-                  <button onClick={handleDelete} className="text-red-600 hover:text-red-800" title="Delete task">
-                     <FiTrash2 className="h-5 w-5" />
-                  </button>
-
-                  {/* Completion checkbox */}
+                  {/* Completion Status */}
                   <button
                      onClick={handleTaskStatusToggle}
-                     className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 ${
-                        completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
+                     className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                        completed
+                           ? 'bg-[#9406E6] text-white shadow-md'
+                           : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/10'
                      }`}
                      disabled={isUpdating}
                      title={completed ? 'Mark as incomplete' : 'Mark as complete'}
@@ -852,50 +795,94 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         </svg>
                      )}
                   </button>
+               </div>
 
-                  {/* View notes button */}
-                  <button
-                     onClick={() => setShowNoteView(!showNoteView)}
-                     className="text-yellow-600 hover:text-yellow-800"
-                     title="View notes"
-                  >
-                     <FiEye className="h-5 w-5" />
-                  </button>
+               {/* Subtask Progress */}
+               {list.subtaskCount > 0 && (
+                  <div className="mb-3">
+                     <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-600">Subtasks Progress</span>
+                        <span className="text-sm text-gray-500">
+                           {list.completedSubtasks}/{list.subtaskCount}
+                        </span>
+                     </div>
+                     <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                           className="bg-gradient-to-r from-[#9406E6] to-[#C724B1] h-2.5 rounded-full transition-all duration-300"
+                           style={{ width: `${(list.completedSubtasks / list.subtaskCount) * 100}%` }}
+                        ></div>
+                     </div>
+                  </div>
+               )}
 
-                  {/* Download attachment button - only show if attachments exist */}
-                  {hasAttachments && attachments.length > 0 && (
-                     <button
-                        onClick={() => handleDownloadAttachment(attachments[0]._id)}
-                        className="text-blue-600 hover:text-blue-800"
-                        title="Download attachment"
-                     >
-                        <FiDownload className="h-5 w-5" />
-                     </button>
-                  )}
-
-                  {/* More options (three dots) */}
-                  <div className="relative">
-                     <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="text-gray-600 hover:text-gray-800"
-                        title="More options"
-                     >
-                        <FiMoreVertical className="h-5 w-5" />
-                     </button>
-
-                     {/* Dropdown menu */}
-                     {isMenuOpen && (
-                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                           <button
-                              onClick={() => {
-                                 setIsReminderModalOpen(true);
-                                 setIsMenuOpen(false);
-                              }}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+               {/* Date & Time Section */}
+               <div className="mb-3">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center space-x-3">
+                        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-2 rounded-lg">
+                           <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
                            >
+                              <path
+                                 strokeLinecap="round"
+                                 strokeLinejoin="round"
+                                 strokeWidth={2}
+                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                           </svg>
+                        </div>
+                        <div>
+                           <p
+                              className={`${
+                                 completed ? 'line-through text-gray-500' : 'text-gray-900'
+                              } font-medium text-sm`}
+                           >
+                              {list.date}
+                           </p>
+                           <p className={`${completed ? 'line-through text-gray-500' : 'text-gray-600'} text-sm`}>
+                              {list.time}
+                           </p>
+                        </div>
+                     </div>
+
+                     {isexceeded && !completed && (
+                        <div className="bg-red-100 border border-red-200 text-red-800 px-2 py-1 rounded-lg">
+                           <p className="text-xs font-semibold">Overdue</p>
+                        </div>
+                     )}
+                  </div>
+               </div>
+
+               {/* Action Buttons Row */}
+               <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  {/* Left Actions */}
+                  <div className="flex items-center space-x-3">
+                     {/* Subtask Toggle */}
+                     {list.subtaskCount > 0 && (
+                        <button
+                           onClick={toggleSubtasks}
+                           className="flex items-center space-x-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                           title={showSubtasks ? 'Hide subtasks' : 'Show subtasks'}
+                        >
+                           <span>Subtasks</span>
+                           {showSubtasks ? (
                               <svg
                                  xmlns="http://www.w3.org/2000/svg"
-                                 className="h-5 w-5 mr-2"
+                                 className="h-4 w-4"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                              >
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                           ) : (
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 className="h-4 w-4"
                                  fill="none"
                                  viewBox="0 0 24 24"
                                  stroke="currentColor"
@@ -904,89 +891,661 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    d="M19 9l-7 7-7-7"
                                  />
                               </svg>
-                              Set Reminder
-                           </button>
-                           <button
-                              onClick={handleAddSubtask}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                           >
-                              <FiPlus className="mr-2 h-4 w-4" />
-                              Add Subtask
-                           </button>
-                           <button
-                              onClick={() => {
-                                 setShowNoteModal(true);
-                                 setIsMenuOpen(false);
-                              }}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                           >
-                              <FiPlus className="mr-2 h-4 w-4" />
-                              Add Note
-                           </button>
-                           <button
-                              onClick={() => {
-                                 setShowAttachmentModal(true);
-                                 setIsMenuOpen(false);
-                              }}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                           >
-                              <FiPlus className="mr-2 h-4 w-4" />
-                              Add Attachment
-                           </button>
-                           <button
-                              onClick={handleAddDependency}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                           >
-                              <FiLink className="mr-2 h-4 w-4" />
-                              Add Dependency
-                           </button>
-                           {hasDependencies && (
+                           )}
+                           <span className="bg-purple-200 text-purple-800 px-1.5 py-0.5 rounded-full text-xs font-semibold">
+                              {list.completedSubtasks}/{list.subtaskCount}
+                           </span>
+                        </button>
+                     )}
+
+                     {/* Dependency Indicator */}
+                     {hasDependencies && (
+                        <button
+                           onClick={handleViewDependencies}
+                           className="flex items-center space-x-1 px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-sm font-medium transition-colors"
+                           title="View dependencies"
+                        >
+                           <FiLink className="h-4 w-4" />
+                           <span>Deps</span>
+                        </button>
+                     )}
+                  </div>
+
+                  {/* Right Actions */}
+                  <div className="flex items-center space-x-2">
+                     {/* Edit */}
+                     <button
+                        onClick={handleEdit}
+                        className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
+                        title="Edit task"
+                     >
+                        <FiEdit2 className="h-4 w-4" />
+                     </button>
+
+                     {/* Delete */}
+                     <button
+                        onClick={handleDelete}
+                        className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                        title="Delete task"
+                     >
+                        <FiTrash2 className="h-4 w-4" />
+                     </button>
+
+                     {/* Notes */}
+                     <button
+                        onClick={() => setShowNoteView(!showNoteView)}
+                        className="p-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg transition-colors"
+                        title="View notes"
+                     >
+                        <FiEye className="h-4 w-4" />
+                     </button>
+
+                     {/* Download */}
+                     {hasAttachments && attachments.length > 0 && (
+                        <button
+                           onClick={() => handleDownloadAttachment(attachments[0]._id)}
+                           className="p-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
+                           title="Download attachment"
+                        >
+                           <FiDownload className="h-4 w-4" />
+                        </button>
+                     )}
+
+                     {/* More Options */}
+                     <div className="relative">
+                        <button
+                           onClick={() => setIsMenuOpen(!isMenuOpen)}
+                           className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                           title="More options"
+                        >
+                           <FiMoreVertical className="h-4 w-4" />
+                        </button>
+
+                        {/* Enhanced Mobile Dropdown */}
+                        {isMenuOpen && (
+                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-10 border border-gray-200">
                               <button
-                                 onClick={handleViewDependencies}
+                                 onClick={() => {
+                                    setIsReminderModalOpen(true);
+                                    setIsMenuOpen(false);
+                                 }}
+                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                              >
+                                 <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5 mr-3 text-blue-500"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                 >
+                                    <path
+                                       strokeLinecap="round"
+                                       strokeLinejoin="round"
+                                       strokeWidth={2}
+                                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                 </svg>
+                                 Set Reminder
+                              </button>
+                              <button
+                                 onClick={handleAddSubtask}
+                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                              >
+                                 <FiPlus className="mr-3 h-5 w-5 text-green-500" />
+                                 Add Subtask
+                              </button>
+                              <button
+                                 onClick={() => {
+                                    setShowNoteModal(true);
+                                    setIsMenuOpen(false);
+                                 }}
+                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                              >
+                                 <FiPlus className="mr-3 h-5 w-5 text-yellow-500" />
+                                 Add Note
+                              </button>
+                              <button
+                                 onClick={() => {
+                                    setShowAttachmentModal(true);
+                                    setIsMenuOpen(false);
+                                 }}
+                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                              >
+                                 <FiPlus className="mr-3 h-5 w-5 text-purple-500" />
+                                 Add Attachment
+                              </button>
+                              <button
+                                 onClick={handleAddDependency}
+                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                              >
+                                 <FiLink className="mr-3 h-5 w-5 text-indigo-500" />
+                                 Add Dependency
+                              </button>
+                              {hasDependencies && (
+                                 <button
+                                    onClick={handleViewDependencies}
+                                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                 >
+                                    <FiEye className="mr-3 h-5 w-5 text-gray-500" />
+                                    View Dependencies
+                                 </button>
+                              )}
+                           </div>
+                        )}
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            {/* Desktop Layout (>= 640px) - Original Grid Layout Enhanced */}
+            <div className="hidden sm:grid grid-cols-[25px,1fr,auto] md:grid-cols-[30px,1fr,auto] w-full px-3 md:px-4 py-3 items-center gap-3">
+               {/* Priority Radio Button */}
+               <input
+                  type="radio"
+                  className={`w-4 h-4 md:w-5 md:h-5 rounded-full cursor-pointer appearance-none flex-shrink-0 ${
+                     list.color === 'red'
+                        ? 'bg-red-600 border-red-600'
+                        : list.color === 'yellow'
+                        ? 'bg-yellow-400 border-yellow-400'
+                        : 'bg-green-600 border-green-600'
+                  }`}
+               />
+
+               {/* Main Content Section */}
+               <div className="flex flex-col min-w-0">
+                  <div className="flex items-center flex-wrap gap-2">
+                     {/* Expand/collapse button for subtasks */}
+                     {list.subtaskCount > 0 && (
+                        <button
+                           onClick={toggleSubtasks}
+                           className="text-gray-600 hover:text-[#9406E6] transition-colors flex-shrink-0"
+                           title={showSubtasks ? 'Collapse subtasks' : 'Expand subtasks'}
+                        >
+                           {showSubtasks ? (
+                              <FiChevronDown className="h-4 w-4" />
+                           ) : (
+                              <FiChevronRight className="h-4 w-4" />
+                           )}
+                        </button>
+                     )}
+
+                     {/* Task Name */}
+                     <p
+                        className={`${
+                           completed ? 'line-through text-gray-600' : ''
+                        } font-bold text-left text-sm md:text-base lg:text-lg transition-all truncate flex-1 min-w-0`}
+                     >
+                        {list.task}
+                     </p>
+
+                     {/* Priority badge */}
+                     {list.priority && (
+                        <span
+                           className={`px-2 py-0.5 text-xs rounded-full flex-shrink-0 ${
+                              list.priority.toLowerCase() === 'high'
+                                 ? 'bg-red-100 text-red-800'
+                                 : list.priority.toLowerCase() === 'medium'
+                                 ? 'bg-yellow-100 text-yellow-800'
+                                 : 'bg-green-100 text-green-800'
+                           }`}
+                        >
+                           {list.priority}
+                        </span>
+                     )}
+
+                     {/* Dependency indicator */}
+                     {hasDependencies && (
+                        <button
+                           onClick={handleViewDependencies}
+                           className="text-[#9406E6] hover:text-[#7D05C3] flex-shrink-0"
+                           title="View dependencies"
+                        >
+                           <FiLink className="h-4 w-4" />
+                        </button>
+                     )}
+                  </div>
+
+                  {/* Subtask progress indicator */}
+                  {list.subtaskCount > 0 && (
+                     <div className="flex items-center text-xs text-gray-600 mt-1 gap-2">
+                        <div className="w-20 md:w-24 bg-gray-200 rounded-full h-2 md:h-2.5 flex-shrink-0">
+                           <div
+                              className="bg-[#9406E6] h-full rounded-full transition-all duration-300"
+                              style={{ width: `${(list.completedSubtasks / list.subtaskCount) * 100}%` }}
+                           ></div>
+                        </div>
+                        <span className="whitespace-nowrap">
+                           {list.completedSubtasks}/{list.subtaskCount} done
+                        </span>
+                     </div>
+                  )}
+               </div>
+
+               {/* Right Section - Date, Time & Actions */}
+               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
+                  {/* Date and Time Section */}
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 text-right">
+                     <div className="flex flex-col items-end">
+                        <p
+                           className={`${
+                              completed ? 'line-through text-gray-600' : ''
+                           } font-bold text-xs md:text-sm transition-all whitespace-nowrap`}
+                        >
+                           {list.date}
+                        </p>
+                        {isexceeded && !completed && (
+                           <p className="font-bold text-[10px] md:text-xs text-red-700 whitespace-nowrap">
+                              Deadline exceeded
+                           </p>
+                        )}
+                     </div>
+                     <p
+                        className={`${
+                           completed ? 'line-through text-gray-600' : ''
+                        } font-bold text-xs md:text-sm transition-all whitespace-nowrap`}
+                     >
+                        {list.time}
+                     </p>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+                     {/* Edit button */}
+                     <button
+                        onClick={handleEdit}
+                        className="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors"
+                        title="Edit task"
+                     >
+                        <FiEdit2 className="h-4 w-4 md:h-5 md:w-5" />
+                     </button>
+
+                     {/* Delete button */}
+                     <button
+                        onClick={handleDelete}
+                        className="text-red-600 hover:text-red-800 p-1 rounded transition-colors"
+                        title="Delete task"
+                     >
+                        <FiTrash2 className="h-4 w-4 md:h-5 md:w-5" />
+                     </button>
+
+                     {/* Completion checkbox */}
+                     <button
+                        onClick={handleTaskStatusToggle}
+                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                           completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
+                        }`}
+                        disabled={isUpdating}
+                        title={completed ? 'Mark as incomplete' : 'Mark as complete'}
+                     >
+                        {completed && (
+                           <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-3 w-3 md:h-4 md:w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                           >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                           </svg>
+                        )}
+                     </button>
+
+                     {/* View notes button */}
+                     <button
+                        onClick={() => setShowNoteView(!showNoteView)}
+                        className="text-yellow-600 hover:text-yellow-800 p-1 rounded transition-colors"
+                        title="View notes"
+                     >
+                        <FiEye className="h-4 w-4 md:h-5 md:w-5" />
+                     </button>
+
+                     {/* Download attachment button - only show if attachments exist */}
+                     {hasAttachments && attachments.length > 0 && (
+                        <button
+                           onClick={() => handleDownloadAttachment(attachments[0]._id)}
+                           className="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors"
+                           title="Download attachment"
+                        >
+                           <FiDownload className="h-4 w-4 md:h-5 md:w-5" />
+                        </button>
+                     )}
+
+                     {/* More options (three dots) */}
+                     <div className="relative">
+                        <button
+                           onClick={() => setIsMenuOpen(!isMenuOpen)}
+                           className="text-gray-600 hover:text-gray-800 p-1 rounded transition-colors"
+                           title="More options"
+                        >
+                           <FiMoreVertical className="h-4 w-4 md:h-5 md:w-5" />
+                        </button>
+
+                        {/* Dropdown menu */}
+                        {isMenuOpen && (
+                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border">
+                              <button
+                                 onClick={() => {
+                                    setIsReminderModalOpen(true);
+                                    setIsMenuOpen(false);
+                                 }}
                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiEye className="mr-2 h-4 w-4" />
-                                 View Dependencies
+                                 <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5 mr-2"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                 >
+                                    <path
+                                       strokeLinecap="round"
+                                       strokeLinejoin="round"
+                                       strokeWidth={2}
+                                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                 </svg>
+                                 Set Reminder
                               </button>
-                           )}
-                        </div>
-                     )}
+                              <button
+                                 onClick={handleAddSubtask}
+                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                              >
+                                 <FiPlus className="mr-2 h-4 w-4" />
+                                 Add Subtask
+                              </button>
+                              <button
+                                 onClick={() => {
+                                    setShowNoteModal(true);
+                                    setIsMenuOpen(false);
+                                 }}
+                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                              >
+                                 <FiPlus className="mr-2 h-4 w-4" />
+                                 Add Note
+                              </button>
+                              <button
+                                 onClick={() => {
+                                    setShowAttachmentModal(true);
+                                    setIsMenuOpen(false);
+                                 }}
+                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                              >
+                                 <FiPlus className="mr-2 h-4 w-4" />
+                                 Add Attachment
+                              </button>
+                              <button
+                                 onClick={handleAddDependency}
+                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                              >
+                                 <FiLink className="mr-2 h-4 w-4" />
+                                 Add Dependency
+                              </button>
+                              {hasDependencies && (
+                                 <button
+                                    onClick={handleViewDependencies}
+                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                 >
+                                    <FiEye className="mr-2 h-4 w-4" />
+                                    View Dependencies
+                                 </button>
+                              )}
+                           </div>
+                        )}
+                     </div>
                   </div>
                </div>
             </div>
          </div>
 
-         {/* Subtasks section */}
+         {/* Enhanced Subtasks Section - Modern Tree Structure */}
          {showSubtasks && list.subtaskCount > 0 && (
-            <div className="relative pl-6 mb-2 group">
-               {/* Vertical connector from parent to first child */}
-               <div className="absolute left-[16px] top-[5px] bottom-2 w-[2px] bg-gray-300 group-hover:bg-[#9406E6] transition-colors z-0"></div>
-
-               {isLoadingSubtasks ? (
-                  <div className="text-center py-2 text-gray-400 italic">Loading subtasks...</div>
-               ) : subtasks.length > 0 ? (
-                  subtasks.map((subtask, index) => (
-                     <div key={subtask._id} className="relative ml-4 -mb-2 flex items-start">
-                        {/* Horizontal connector + arrow */}
-                        <div className="absolute left-[-24px] top-[33px] flex items-center z-10">
-                           <div className="w-[20px] h-[2px] bg-gray-300 group-hover:bg-[#9406E6] transition-all"></div>
-                           <div className="w-2 h-2 rotate-45 border-t-2 border-r-2 border-gray-300 group-hover:border-[#9406E6] ml-1 mt-[-1px]"></div>
+            <div className="w-full mb-3">
+               {/* Mobile Subtasks Layout (< 640px) */}
+               <div className="sm:hidden bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-xl p-3 ml-4 border-l-4 border-gradient-to-b from-purple-500 to-indigo-600 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                     <h4 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center">
+                        <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-2 shadow-sm">
+                           <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-3 w-3 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                           >
+                              <path
+                                 strokeLinecap="round"
+                                 strokeLinejoin="round"
+                                 strokeWidth={2.5}
+                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                              />
+                           </svg>
                         </div>
-                        {/* Subtask component */}
-                        <Subtask
-                           subtask={subtask}
-                           onDelete={handleDeleteSubtask}
-                           onUpdate={handleEditSubtask}
-                           onStatusChange={handleSubtaskStatusChange}
-                        />
+                        Subtasks Tree
+                     </h4>
+                     <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm border border-white/20">
+                        {list.completedSubtasks}/{list.subtaskCount}
                      </div>
-                  ))
-               ) : (
-                  <div className="text-center py-2 text-gray-400 italic">No subtasks found</div>
-               )}
+                  </div>
+
+                  {isLoadingSubtasks ? (
+                     <div className="flex items-center justify-center py-6">
+                        <div className="relative">
+                           <div className="animate-spin rounded-full h-8 w-8 border-4 border-purple-200"></div>
+                           <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-purple-600 absolute top-0 left-0"></div>
+                        </div>
+                        <span className="ml-3 text-purple-700 text-sm font-medium">Loading subtasks...</span>
+                     </div>
+                  ) : subtasks.length > 0 ? (
+                     <div className="space-y-3">
+                        {subtasks.map((subtask, index) => (
+                           <div
+                              key={subtask._id}
+                              className="relative bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:bg-white/90"
+                              style={{
+                                 animation: `fadeInUp 0.3s ease-out ${index * 0.1}s both`,
+                              }}
+                           >
+                              {/* Modern Tree Node Indicator */}
+                              <div className="absolute left-[-12px] top-1/2 transform -translate-y-1/2">
+                                 <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-full border-3 border-white shadow-sm flex items-center justify-center">
+                                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                                 </div>
+                              </div>
+                              <Subtask
+                                 subtask={subtask}
+                                 onDelete={handleDeleteSubtask}
+                                 onUpdate={handleEditSubtask}
+                                 onStatusChange={handleSubtaskStatusChange}
+                              />
+                           </div>
+                        ))}
+                     </div>
+                  ) : (
+                     <div className="text-center py-6 bg-white/60 backdrop-blur-sm rounded-xl border border-white/50">
+                        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-105 transition-transform duration-300">
+                           <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-10 w-10 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                           >
+                              <path
+                                 strokeLinecap="round"
+                                 strokeLinejoin="round"
+                                 strokeWidth={1.5}
+                                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                              />
+                           </svg>
+                           {/* Glow effect */}
+                           <div className="absolute inset-0 rounded-3xl bg-purple-400 animate-ping opacity-20"></div>
+                        </div>
+                        <h4 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-2">
+                           Empty Tree
+                        </h4>
+                        <p className="text-purple-600 text-sm font-medium mb-1">No subtasks in this branch</p>
+                        <p className="text-purple-500 text-xs">Build your task tree by adding subtasks!</p>
+                     </div>
+                  )}
+               </div>
+
+               {/* Desktop Subtasks Layout (>= 640px) - Modern Tree Structure */}
+               <div className="hidden sm:block relative pl-12 mb-4 group">
+                  {/* Modern Vertical Tree Trunk */}
+                  <div className="absolute left-[24px] top-0 bottom-6 w-[3px] bg-gradient-to-b from-purple-400 via-indigo-500 to-purple-600 rounded-full shadow-sm group-hover:shadow-md transition-all duration-300 group-hover:w-[4px]">
+                     {/* Animated pulse effect */}
+                     <div className="absolute inset-0 bg-gradient-to-b from-purple-300 to-indigo-400 rounded-full animate-pulse opacity-50"></div>
+                  </div>
+
+                  {/* Tree Header */}
+                  <div className="absolute left-[-8px] top-[-24px] flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-xl shadow-lg border border-white/20">
+                     <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
+                        <svg
+                           xmlns="http://www.w3.org/2000/svg"
+                           className="h-4 w-4"
+                           fill="none"
+                           viewBox="0 0 24 24"
+                           stroke="currentColor"
+                        >
+                           <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                           />
+                        </svg>
+                     </div>
+                     <span className="text-sm font-bold">Subtasks Tree</span>
+                     <div className="bg-white/20 px-2 py-1 rounded-full text-xs font-bold">
+                        {list.completedSubtasks}/{list.subtaskCount}
+                     </div>
+                  </div>
+
+                  {isLoadingSubtasks ? (
+                     <div className="flex items-center justify-center py-8 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl ml-8 border border-purple-200/50 shadow-inner">
+                        <div className="relative">
+                           <div className="animate-spin rounded-full h-10 w-10 border-4 border-purple-200"></div>
+                           <div className="animate-spin rounded-full h-10 w-10 border-t-4 border-purple-600 absolute top-0 left-0"></div>
+                           <div className="animate-ping absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-purple-600 rounded-full"></div>
+                        </div>
+                        <span className="ml-4 text-purple-700 text-sm font-medium">Loading tree structure...</span>
+                     </div>
+                  ) : subtasks.length > 0 ? (
+                     <div className="pt-6">
+                        {subtasks.map((subtask, index) => (
+                           <div
+                              key={subtask._id}
+                              className="relative mb-6 flex items-start group/item"
+                              style={{
+                                 animation: `slideInRight 0.4s ease-out ${index * 0.1}s both`,
+                              }}
+                           >
+                              {/* Modern Tree Branch Connection */}
+                              <div className="absolute left-[-36px] top-[20px] flex items-center z-20">
+                                 {/* Horizontal branch */}
+                                 <div className="w-[28px] h-[3px] bg-gradient-to-r from-purple-400 to-indigo-500 rounded-full shadow-sm group-hover/item:shadow-md transition-all duration-300 group-hover/item:w-[32px]">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-300 to-indigo-400 rounded-full animate-pulse opacity-50"></div>
+                                 </div>
+
+                                 {/* Modern Tree Node */}
+                                 <div className="relative ml-1">
+                                    <div className="w-4 h-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full border-2 border-white shadow-lg group-hover/item:scale-110 transition-transform duration-300 flex items-center justify-center">
+                                       <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                                    </div>
+                                    {/* Glowing effect */}
+                                    <div className="absolute inset-0 w-4 h-4 bg-purple-400 rounded-full animate-ping opacity-20"></div>
+                                 </div>
+
+                                 {/* Modern Arrow */}
+                                 <div className="ml-2 transform group-hover/item:translate-x-1 transition-transform duration-300">
+                                    <div className="w-0 h-0 border-l-[6px] border-l-gradient-to-r from-purple-500 to-indigo-600 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent shadow-sm"></div>
+                                    <div className="absolute top-0 left-0 w-0 h-0 border-l-[6px] border-l-purple-400 border-t-[4px] border-t-transparent border-b-[4px] border-b-transparent animate-pulse opacity-50"></div>
+                                 </div>
+                              </div>
+
+                              {/* Enhanced Subtask Container */}
+                              <div className="bg-gradient-to-br from-white via-purple-50/30 to-indigo-50/30 rounded-2xl p-3 border border-purple-200/50 w-full hover:shadow-xl transition-all duration-300 hover:border-purple-300 hover:bg-gradient-to-br hover:from-white hover:via-purple-50/50 hover:to-indigo-50/50 backdrop-blur-sm relative overflow-hidden group-hover/item:translate-x-2">
+                                 {/* Subtle background pattern */}
+                                 <div className="absolute inset-0 opacity-5">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-indigo-600"></div>
+                                    <div
+                                       className="absolute inset-0"
+                                       style={{
+                                          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.3) 1px, transparent 0)`,
+                                          backgroundSize: '20px 20px',
+                                       }}
+                                    ></div>
+                                 </div>
+
+                                 {/* Priority indicator line */}
+                                 <div
+                                    className={`absolute left-0 top-0 bottom-0 w-1 rounded-r-full ${
+                                       subtask.priority === 'High'
+                                          ? 'bg-gradient-to-b from-red-400 to-red-600'
+                                          : subtask.priority === 'Medium'
+                                          ? 'bg-gradient-to-b from-yellow-400 to-orange-500'
+                                          : 'bg-gradient-to-b from-green-400 to-green-600'
+                                    }`}
+                                 ></div>
+
+                                 <div className="relative z-10">
+                                    <Subtask
+                                       subtask={subtask}
+                                       onDelete={handleDeleteSubtask}
+                                       onUpdate={handleEditSubtask}
+                                       onStatusChange={handleSubtaskStatusChange}
+                                    />
+                                 </div>
+
+                                 {/* Hover glow effect */}
+                                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-400/0 via-purple-400/10 to-indigo-400/0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-300"></div>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  ) : (
+                     <div className="text-center py-8 bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-2xl ml-8 border border-purple-200/50 shadow-inner relative overflow-hidden">
+                        {/* Background decoration */}
+                        <div className="absolute inset-0 opacity-10">
+                           <div
+                              className="absolute inset-0"
+                              style={{
+                                 backgroundImage: `radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.3) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(99, 102, 241, 0.3) 0%, transparent 50%)`,
+                              }}
+                           ></div>
+                        </div>
+
+                        <div className="relative z-10">
+                           <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-xl transform hover:scale-105 transition-transform duration-300">
+                              <svg
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 className="h-10 w-10 text-white"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor"
+                              >
+                                 <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={1.5}
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                 />
+                              </svg>
+                              {/* Glow effect */}
+                              <div className="absolute inset-0 rounded-3xl bg-purple-400 animate-ping opacity-20"></div>
+                           </div>
+                           <h4 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 mb-2">
+                              Empty Tree
+                           </h4>
+                           <p className="text-purple-600 text-sm font-medium mb-1">No subtasks in this branch</p>
+                           <p className="text-purple-500 text-xs">Build your task tree by adding subtasks!</p>
+                        </div>
+                     </div>
+                  )}
+               </div>
             </div>
          )}
 
@@ -1031,29 +1590,29 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
          {/* Dependency Tree View */}
          {showDependencyTree && (
-            <div className="ml-8 mb-4 bg-purple-50 rounded-lg">
+            <div className="ml-6 sm:ml-8 mb-4 bg-purple-50 rounded-lg">
                <DependencyTree taskId={list._id} onClose={() => setShowDependencyTree(false)} />
             </div>
          )}
 
          {/* Notes View */}
          {showNoteView && (
-            <div className="ml-8 mb-4 bg-yellow-50 rounded-lg p-4">
+            <div className="ml-6 sm:ml-8 mb-4 bg-yellow-50 rounded-lg p-3 sm:p-4">
                <div className="mb-4">
-                  <h3 className="text-lg font-semibold mb-2">Notes</h3>
+                  <h3 className="text-base sm:text-lg font-semibold mb-2">Notes</h3>
                   {isLoadingNotes ? (
-                     <p className="text-gray-500">Loading notes...</p>
+                     <p className="text-gray-500 text-sm">Loading notes...</p>
                   ) : notes.length > 0 ? (
                      <div className="space-y-2">
                         {notes.map((note) => (
                            <div key={note._id} className="bg-white p-3 rounded shadow">
-                              <p className="text-gray-800">{note.content}</p>
+                              <p className="text-gray-800 text-sm">{note.content}</p>
                               <p className="text-xs text-gray-500 mt-1">{new Date(note.createdAt).toLocaleString()}</p>
                            </div>
                         ))}
                      </div>
                   ) : (
-                     <p className="text-gray-500">No notes yet</p>
+                     <p className="text-gray-500 text-sm">No notes yet</p>
                   )}
                </div>
             </div>

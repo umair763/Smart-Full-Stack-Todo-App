@@ -186,7 +186,7 @@ export const createDependency = async (req, res) => {
         await newDependency.populate("prerequisiteTaskId", "task date time priority completed");
 
         // Save notification to DB
-        await Notification.create({
+        const savedNotification = await Notification.create({
             userId: req.user._id,
             type: "dependency",
             message: `Dependency created: "${prerequisiteTask.task}" is now a prerequisite for "${dependentTask.task}"`,
@@ -201,24 +201,13 @@ export const createDependency = async (req, res) => {
         const io = req.app.get("io");
         if (io && io.sendNotification) {
             io.sendNotification(req.user._id, {
+                ...savedNotification.toObject(),
                 type: "dependency",
                 message: `Dependency created: "${prerequisiteTask.task}" is now a prerequisite for "${dependentTask.task}"`,
-                data: {
-                    dependencyId: newDependency._id,
-                    dependentTaskId,
-                    prerequisiteTaskId,
-                },
                 persistent: true,
+                read: false,
             });
         }
-
-        // Emit dbEvents for legacy listeners
-        dbEvents.emit("db_change", {
-            operation: "create",
-            collection: "dependencies",
-            message: `New dependency created: "${prerequisiteTask.task}" → "${dependentTask.task}"`,
-            type: "dependency",
-        });
 
         res.status(201).json(newDependency);
     } catch (error) {
@@ -282,7 +271,7 @@ export const deleteDependency = async (req, res) => {
         await Dependency.deleteOne({ _id: id });
 
         // Save notification to DB
-        await Notification.create({
+        const savedNotification = await Notification.create({
             userId: req.user._id,
             type: "dependency",
             message: `Dependency removed: "${prerequisiteTaskName}" is no longer a prerequisite for "${dependentTaskName}"`,
@@ -297,24 +286,13 @@ export const deleteDependency = async (req, res) => {
         const io = req.app.get("io");
         if (io && io.sendNotification) {
             io.sendNotification(req.user._id, {
+                ...savedNotification.toObject(),
                 type: "dependency",
                 message: `Dependency removed: "${prerequisiteTaskName}" is no longer a prerequisite for "${dependentTaskName}"`,
-                data: {
-                    dependencyId: id,
-                    dependentTaskId: dependency.dependentTaskId._id,
-                    prerequisiteTaskId: dependency.prerequisiteTaskId._id,
-                },
                 persistent: true,
+                read: false,
             });
         }
-
-        // Emit dbEvents for legacy listeners
-        dbEvents.emit("db_change", {
-            operation: "delete",
-            collection: "dependencies",
-            message: `Dependency deleted: "${prerequisiteTaskName}" → "${dependentTaskName}"`,
-            type: "dependency",
-        });
 
         res.json({ message: "Dependency deleted" });
     } catch (error) {

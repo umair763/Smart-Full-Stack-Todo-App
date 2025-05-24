@@ -485,18 +485,81 @@ function TodoListParser({ searchTerm = '' }) {
 
    return (
       <div className="w-full">
-         {/* Sort UI */}
-         <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-lg mb-4">
+         {/* Enhanced Sort UI */}
+         <div className="relative mb-6">
+            {/* Background with glassmorphism effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-indigo-600/20 backdrop-blur-xl rounded-2xl border border-white/30"></div>
+
+            {/* Content */}
+            <div className="relative p-4 sm:p-5 lg:p-6">
+               <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                     <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-2.5 rounded-xl shadow-lg">
+                        <svg
+                           xmlns="http://www.w3.org/2000/svg"
+                           className="h-6 w-6 text-white"
+                           fill="none"
+                           viewBox="0 0 24 24"
+                           stroke="currentColor"
+                        >
+                           <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                           />
+                        </svg>
+                     </div>
+                     <div>
+                        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Task Sorting</h2>
+                        <p className="text-sm text-white/80">Organize your tasks efficiently</p>
+                     </div>
+                  </div>
+
+                  {/* Task count badge */}
+                  <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30">
+                     <span className="text-sm font-semibold text-white">
+                        {filteredList.length} {filteredList.length === 1 ? 'Task' : 'Tasks'}
+                     </span>
+                  </div>
+               </div>
+
             <ModernSortTabs onSortChange={handleSortChange} />
+            </div>
          </div>
 
-         {/* Task list */}
-         <div className="space-y-2">
+         {/* Task list with enhanced styling */}
+         <div className="space-y-3">
             {filteredList.length === 0 ? (
-               <div className="text-center p-8 bg-gray-100 rounded-lg">
-                  <p className="text-gray-500">
-                     {searchTerm ? `No tasks found for "${searchTerm}"` : 'No tasks found.'}
-                  </p>
+               <div className="text-center p-8 sm:p-12 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-lg">
+                  <div className="flex flex-col items-center space-y-4">
+                     <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-full">
+                        <svg
+                           xmlns="http://www.w3.org/2000/svg"
+                           className="h-8 w-8 text-white"
+                           fill="none"
+                           viewBox="0 0 24 24"
+                           stroke="currentColor"
+                        >
+                           <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                           />
+                        </svg>
+                     </div>
+                     <div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                           {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
+                        </h3>
+                        <p className="text-gray-500 max-w-md">
+                           {searchTerm
+                              ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
+                              : 'Create your first task to get started with organizing your work!'}
+                        </p>
+                     </div>
+                  </div>
                </div>
             ) : (
                filteredList.map((task) => (

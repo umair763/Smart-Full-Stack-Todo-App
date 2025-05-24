@@ -131,11 +131,19 @@ io.on("connection", (socket) => {
 
 // Helper function to send notifications through socket
 io.sendNotification = (userId, notification) => {
+    // Send to specific user if connected
     if (connectedUsers.has(userId.toString())) {
         const socketId = connectedUsers.get(userId.toString());
-        io.to(socketId).emit("notification", notification);
+
+        // Emit notification created event to trigger UI updates
+        io.to(socketId).emit("notificationCreated", notification);
         return true;
+    } else {
+        // Even if user is not connected, emit a general notification
+        // This helps with cases where multiple tabs are open
+        io.emit("notificationCreated", notification);
     }
+
     return false;
 };
 
@@ -261,41 +269,4 @@ server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`API available at http://localhost:${PORT}/api`);
     console.log(`Socket.io running on ws://localhost:${PORT}/socket.io/`);
-});
-
-// Handle database changes
-dbEvents.on("db_change", (changeData) => {
-    // Enhanced notification with icons for different operation types
-    let icon = "🔔";
-    let type = "info";
-
-    switch (changeData.operation) {
-        case "create":
-            icon = "✨";
-            type = "success";
-            break;
-        case "update":
-            icon = "📝";
-            type = "info";
-            break;
-        case "delete":
-            icon = "🗑️";
-            type = "error";
-            break;
-        case "status_change":
-            icon = "✅";
-            type = "success";
-            break;
-        case "reminder":
-            icon = "⏰";
-            type = "reminder";
-            break;
-    }
-
-    // Emit a single notification event
-    io.emit("db_change", {
-        operation: changeData.operation,
-        message: `${icon} ${changeData.message}`,
-        type: type,
-    });
 });

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiPlus, FiTrash2, FiFilter, FiX } from 'react-icons/fi';
+import { HiSparkles, HiLightningBolt, HiViewGrid } from 'react-icons/hi';
 
 function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }) {
    const [searchTask, setSearchTask] = useState('');
@@ -22,39 +23,114 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }
       }
    }
 
-   return (
-      <div className="mb-6 bg-white/10 backdrop-blur-md p-4 rounded-xl shadow-lg">
-         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Search Area */}
-            <div className="relative w-full md:w-1/3 group">
-               <input
-                  type="text"
-                  value={searchTask}
-                  onChange={handleSearchTask}
-                  placeholder="Search tasks..."
-                  className="w-full h-12 pl-12 pr-4 py-2 bg-white/20 backdrop-blur-sm text-white placeholder-white/70 rounded-full border border-white/30 outline-none focus:ring-2 focus:ring-[#9406E6] transition-all duration-300"
-               />
-               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white">
-                  <FiSearch className="h-6 w-6" />
-               </div>
-            </div>
+   function clearSearch() {
+      setSearchTask('');
+      if (onSearchChange) {
+         onSearchChange('');
+      }
+   }
 
-            <div className="flex items-center gap-3 w-full md:w-auto">
-               {/* Action Buttons */}
-               <div className="flex gap-2">
-                  <button
-                     onClick={handleAddTask}
-                     className="h-12 px-6 bg-gradient-to-r from-[#9406E6] to-[#C724B1] text-white rounded-full hover:from-[#7A05BF] hover:to-[#A61D9A] transition-all duration-300 shadow-lg hover:shadow-xl"
-                  >
-                     Add Task
-                  </button>
-                  <button
-                     onClick={handleDeleteTask}
-                     className="h-12 px-6 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full hover:from-red-600 hover:to-red-700 transition-all duration-300 shadow-lg hover:shadow-xl"
-                  >
-                     Delete Task
-                  </button>
+   return (
+      <div className="mb-6">
+         {/* Enhanced Container with Glassmorphism */}
+         <div className="relative bg-white/15 backdrop-blur-lg border border-white/20 p-4 sm:p-5 lg:p-6 rounded-2xl shadow-xl">
+            {/* Background Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-indigo-500/10 rounded-2xl"></div>
+
+            {/* Content */}
+            <div className="relative">
+               {/* Header Section */}
+               <div className="flex items-center justify-between mb-4 sm:mb-5">
+                  <div className="flex items-center space-x-3">
+                     <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-2.5 rounded-xl shadow-lg">
+                        <HiViewGrid className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                     </div>
+                     <div>
+                        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Task Management</h2>
+                        <p className="text-xs sm:text-sm text-white/80">Search, create, and organize your tasks</p>
+                     </div>
+                  </div>
+
+                  {/* Quick Stats Badge */}
+                  <div className="hidden sm:flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30">
+                     <HiSparkles className="h-4 w-4 text-yellow-300" />
+                     <span className="text-sm font-semibold text-white">Quick Actions</span>
+                  </div>
                </div>
+
+               {/* Main Content Area */}
+               <div className="flex flex-col lg:flex-row gap-4 sm:gap-5 lg:items-end">
+                  {/* Enhanced Search Area */}
+                  <div className="flex-1 lg:flex-grow">
+                     <div className="relative group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+                        <div className="relative bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30 p-1">
+                           <div className="relative">
+                              <input
+                                 type="text"
+                                 value={searchTask}
+                                 onChange={handleSearchTask}
+                                 placeholder="Search tasks by name..."
+                                 className="w-full h-12 sm:h-14 pl-12 sm:pl-14 pr-12 sm:pr-14 py-3 sm:py-4 bg-transparent text-white placeholder-white/70 rounded-xl outline-none focus:ring-2 focus:ring-white/50 transition-all duration-300 text-sm sm:text-base"
+                              />
+
+                              {/* Search Icon */}
+                              <div className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-white/80">
+                                 <FiSearch className="h-5 w-5 sm:h-6 sm:w-6" />
+                              </div>
+
+                              {/* Clear Button */}
+                              {searchTask && (
+                                 <button
+                                    onClick={clearSearch}
+                                    className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-white/80 hover:text-white p-1 rounded-full hover:bg-white/20 transition-all duration-200"
+                                 >
+                                    <FiX className="h-4 w-4 sm:h-5 sm:w-5" />
+                                 </button>
+                              )}
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Enhanced Action Buttons - Always Horizontal */}
+                  <div className="flex flex-row gap-2 sm:gap-3 lg:gap-4 lg:flex-shrink-0 justify-center sm:justify-start">
+                     {/* Add Task Button */}
+                     <button
+                        onClick={handleAddTask}
+                        className="group relative overflow-hidden h-12 sm:h-14 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#9406E6] via-[#C724B1] to-[#9406E6] text-white rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0"
+                     >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                        <div className="relative flex items-center justify-center space-x-1 sm:space-x-2 lg:space-x-3">
+                           <FiPlus className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-90 transition-transform duration-300 flex-shrink-0" />
+                           <span className="text-xs sm:text-sm lg:text-base flex-shrink-0">Add Task</span>
+                           <HiLightningBolt className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-125 transition-transform duration-300 flex-shrink-0" />
+                        </div>
+                     </button>
+
+                     {/* Delete Task Button */}
+                     <button
+                        onClick={handleDeleteTask}
+                        className="group relative overflow-hidden h-12 sm:h-14 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-red-500 via-red-600 to-red-500 text-white rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0"
+                     >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+                        <div className="relative flex items-center justify-center space-x-1 sm:space-x-2 lg:space-x-3">
+                           <FiTrash2 className="h-4 w-4 sm:h-5 sm:w-5 group-hover:scale-110 transition-transform duration-300 flex-shrink-0" />
+                           <span className="text-xs sm:text-sm lg:text-base flex-shrink-0">Delete Task</span>
+                        </div>
+                     </button>
+                  </div>
+               </div>
+
+               {/* Search Results Indicator */}
+               {searchTask && (
+                  <div className="mt-4 flex items-center space-x-2 text-white/80">
+                     <FiFilter className="h-4 w-4" />
+                     <span className="text-sm">
+                        Filtering tasks by: <span className="font-semibold text-white">"{searchTask}"</span>
+                     </span>
+                  </div>
+               )}
             </div>
          </div>
       </div>

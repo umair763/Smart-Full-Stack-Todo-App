@@ -48,6 +48,13 @@ function TaskDependencyList({ taskId }) {
          return;
       }
 
+      // Optimistically update UI immediately
+      const previousDependencies = { ...dependencies };
+      setDependencies((prev) => ({
+         prerequisites: prev.prerequisites.filter((dep) => dep._id !== dependencyId),
+         dependents: prev.dependents.filter((dep) => dep._id !== dependencyId),
+      }));
+
       try {
          const token = localStorage.getItem('token');
          const response = await fetch(`${API_BASE_URL}/api/dependencies/${dependencyId}`, {
@@ -61,16 +68,14 @@ function TaskDependencyList({ taskId }) {
             throw new Error('Failed to delete dependency');
          }
 
-         // Update the UI by removing the deleted dependency
-         setDependencies((prev) => ({
-            prerequisites: prev.prerequisites.filter((dep) => dep._id !== dependencyId),
-            dependents: prev.dependents.filter((dep) => dep._id !== dependencyId),
-         }));
-
          toast.success('Dependency removed successfully');
+         // Refresh to ensure consistency
+         fetchDependencies();
       } catch (err) {
          console.error('Error deleting dependency:', err);
          toast.error('Failed to remove dependency');
+         // Revert UI changes on error
+         setDependencies(previousDependencies);
       }
    };
 

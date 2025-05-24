@@ -54,7 +54,7 @@ export const createSubtask = async (req, res) => {
         await task.save();
 
         // Save notification to DB
-        await Notification.create({
+        const savedNotification = await Notification.create({
             userId: req.user._id,
             type: "create",
             message: `Subtask "${title}" created for task "${task.task}"`,
@@ -65,20 +65,13 @@ export const createSubtask = async (req, res) => {
         const io = req.app.get("io");
         if (io && io.sendNotification) {
             io.sendNotification(req.user._id, {
+                ...savedNotification.toObject(),
                 type: "create",
                 message: `Subtask "${title}" created for task "${task.task}"`,
-                data: { subtaskId: newSubtask._id, taskId: task._id },
                 persistent: true,
+                read: false,
             });
         }
-
-        // Emit subtask creation event for legacy listeners
-        dbEvents.emit("db_change", {
-            operation: "create",
-            collection: "subtasks",
-            message: `New subtask "${title}" created for task "${task.task}"`,
-            type: "subtask",
-        });
 
         res.status(201).json(newSubtask);
     } catch (error) {
@@ -113,7 +106,7 @@ export const updateSubtask = async (req, res) => {
         await subtask.save();
 
         // Save notification to DB
-        await Notification.create({
+        const savedNotification = await Notification.create({
             userId: req.user._id,
             type: "update",
             message: `Subtask "${subtask.title}" updated for task "${task.task}"`,
@@ -124,19 +117,13 @@ export const updateSubtask = async (req, res) => {
         const io = req.app.get("io");
         if (io && io.sendNotification) {
             io.sendNotification(req.user._id, {
+                ...savedNotification.toObject(),
                 type: "update",
                 message: `Subtask "${subtask.title}" updated for task "${task.task}"`,
-                data: { subtaskId: subtask._id, taskId: task._id },
                 persistent: true,
+                read: false,
             });
         }
-
-        dbEvents.emit("db_change", {
-            operation: "update",
-            collection: "subtasks",
-            message: `Subtask "${subtask.title}" updated for task "${task.task}"`,
-            type: "subtask",
-        });
 
         res.json(subtask);
     } catch (error) {
@@ -166,7 +153,7 @@ export const deleteSubtask = async (req, res) => {
         await task.save();
 
         // Save notification to DB
-        await Notification.create({
+        const savedNotification = await Notification.create({
             userId: req.user._id,
             type: "delete",
             message: `Subtask "${subtask.title}" deleted from task "${task.task}"`,
@@ -177,19 +164,13 @@ export const deleteSubtask = async (req, res) => {
         const io = req.app.get("io");
         if (io && io.sendNotification) {
             io.sendNotification(req.user._id, {
+                ...savedNotification.toObject(),
                 type: "delete",
                 message: `Subtask "${subtask.title}" deleted from task "${task.task}"`,
-                data: { subtaskId: subtask._id, taskId: task._id },
                 persistent: true,
+                read: false,
             });
         }
-
-        dbEvents.emit("db_change", {
-            operation: "delete",
-            collection: "subtasks",
-            message: `Subtask "${subtask.title}" deleted from task "${task.task}"`,
-            type: "subtask",
-        });
 
         res.json({ message: "Subtask deleted" });
     } catch (error) {
@@ -224,22 +205,6 @@ export const updateSubtaskStatus = async (req, res) => {
         // Calculate new completion counts
         const subtaskCount = task.subtasks.length;
         const completedSubtasks = task.subtasks.filter((st) => (st._id.toString() === subtaskId ? status : st.status)).length;
-
-        // Emit subtask status change event with updated counts
-        dbEvents.emit("db_change", {
-            operation: "status_change",
-            collection: "subtasks",
-            message: `Subtask "${subtask.title}" marked as ${status ? "completed" : "incomplete"} for task "${task.task}"`,
-            type: "subtask",
-            data: {
-                subtaskId,
-                taskId: task._id,
-                status,
-                subtaskCount,
-                completedSubtasks,
-                parentTaskId: task._id,
-            },
-        });
 
         res.json({
             ...updatedSubtask.toObject(),
