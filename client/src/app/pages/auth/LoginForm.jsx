@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
 
 // Use the consistent API base URL
@@ -121,10 +122,10 @@ function LoginForm() {
 
    if (loading) {
       return (
-         <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] flex justify-center items-center">
-            <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
+         <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 flex justify-center items-center">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl w-full max-w-md">
                <div className="flex justify-center items-center h-40">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6]"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6] dark:border-purple-400"></div>
                </div>
             </div>
          </div>
@@ -132,17 +133,24 @@ function LoginForm() {
    }
 
    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] flex justify-center items-center p-4">
-         <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md">
-            <h2 className="text-3xl font-bold text-center text-[#9406E6] mb-6">Welcome Back</h2>
+      <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 flex justify-center items-center p-4">
+         {/* Theme Toggle in top-right corner */}
+         <div className="absolute top-4 right-4 z-10">
+            <ThemeToggle variant="floating" size="medium" />
+         </div>
+
+         <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700">
+            <h2 className="text-3xl font-bold text-center text-[#9406E6] dark:text-purple-400 mb-6">Welcome Back</h2>
 
             {error && (
-               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>
+               <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
+                  {error}
+               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
                <div>
-                  <label htmlFor="email" className="block text-gray-700 font-medium mb-1">
+                  <label htmlFor="email" className="block text-gray-700 dark:text-gray-300 font-medium mb-1">
                      Email
                   </label>
                   <input
@@ -151,13 +159,13 @@ function LoginForm() {
                      name="email"
                      value={formData.email}
                      onChange={handleChange}
-                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
+                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] dark:focus:ring-purple-400"
                      placeholder="Enter your email"
                   />
                </div>
 
                <div>
-                  <label htmlFor="password" className="block text-gray-700 font-medium mb-1">
+                  <label htmlFor="password" className="block text-gray-700 dark:text-gray-300 font-medium mb-1">
                      Password
                   </label>
                   <div className="relative">
@@ -167,13 +175,13 @@ function LoginForm() {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] dark:focus:ring-purple-400"
                         placeholder="Enter your password"
                      />
                      <button
                         type="button"
                         onClick={togglePasswordVisibility}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                      >
                         {isPasswordVisible ? 'Hide' : 'Show'}
                      </button>
@@ -184,7 +192,7 @@ function LoginForm() {
                   <button
                      type="submit"
                      disabled={isLoggingIn}
-                     className={`w-full bg-[#9406E6] text-white font-bold py-3 rounded-lg hover:bg-[#7d05c3] transition-colors ${
+                     className={`w-full bg-[#9406E6] dark:bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-[#7d05c3] dark:hover:bg-purple-700 transition-colors ${
                         isLoggingIn ? 'opacity-70 cursor-not-allowed' : ''
                      }`}
                   >
@@ -192,16 +200,19 @@ function LoginForm() {
                   </button>
 
                   <div className="text-center">
-                     <p className="text-gray-600">Or sign in with</p>
+                     <p className="text-gray-600 dark:text-gray-400">Or sign in with</p>
                      <div className="flex justify-center mt-2">
                         <GoogleSignIn />
                      </div>
                   </div>
 
                   <div className="text-center mt-4">
-                     <p className="text-gray-600">
+                     <p className="text-gray-600 dark:text-gray-400">
                         Don't have an account?{' '}
-                        <Link to="/register" className="text-[#9406E6] font-medium hover:underline">
+                        <Link
+                           to="/register"
+                           className="text-[#9406E6] dark:text-purple-400 font-medium hover:underline"
+                        >
                            Register
                         </Link>
                      </p>

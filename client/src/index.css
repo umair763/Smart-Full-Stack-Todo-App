@@ -175,22 +175,26 @@
 }
 
 /* Custom scrollbar for modern look */
+.custom-scrollbar {
+   scrollbar-width: thin;
+   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
    width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-   background: #f1f5f9;
-   border-radius: 10px;
+   background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-   background: linear-gradient(to bottom, #8b5cf6, #6366f1);
-   border-radius: 10px;
+   background: rgba(255, 255, 255, 0.2);
+   border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-   background: linear-gradient(to bottom, #7c3aed, #4f46e5);
+   background: rgba(255, 255, 255, 0.3);
 }
 
 /* Backdrop blur for better glass morphism */
@@ -273,4 +277,19 @@ body {
 
 code {
    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Utility classes */
+.line-clamp-1 {
+   display: -webkit-box;
+   -webkit-line-clamp: 1;
+   -webkit-box-orient: vertical;
+   overflow: hidden;
+}
+
+.line-clamp-2 {
+   display: -webkit-box;
+   -webkit-line-clamp: 2;
+   -webkit-box-orient: vertical;
+   overflow: hidden;
 }
