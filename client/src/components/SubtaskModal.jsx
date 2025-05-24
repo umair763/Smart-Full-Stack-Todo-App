@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
+import { FiX, FiPlus, FiCalendar, FiClock, FiList, FiFlag } from 'react-icons/fi';
+import Modal from './Modal';
 
 function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subtask = null }) {
    const [title, setTitle] = useState('');
@@ -72,7 +73,7 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
 
       // Add empty cells for days before the first day of month
       for (let i = 0; i < firstDayOfMonth; i++) {
-         days.push(<div key={`empty-${i}`} className="h-8 w-8"></div>);
+         days.push(<div key={`empty-${i}`} className="h-6 w-6"></div>);
       }
 
       // Add days of month
@@ -87,7 +88,7 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                key={day}
                type="button"
                onClick={() => handleDateSelect(dateString)}
-               className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+               className={`h-6 w-6 rounded-lg flex items-center justify-center transition-colors text-xs font-medium ${
                   isToday ? 'bg-[#9406E6] text-white' : 'hover:bg-purple-200 text-gray-700'
                }`}
             >
@@ -108,7 +109,7 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                key={i}
                type="button"
                onClick={() => setSelectedHour(i)}
-               className={`h-10 w-10 rounded-full flex items-center justify-center ${
+               className={`h-7 w-7 rounded-lg flex items-center justify-center text-xs font-medium ${
                   selectedHour === i ? 'bg-[#9406E6] text-white' : 'hover:bg-purple-200 text-gray-700'
                }`}
             >
@@ -128,7 +129,7 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                key={i}
                type="button"
                onClick={() => setSelectedMinute(i)}
-               className={`h-10 w-10 rounded-full flex items-center justify-center ${
+               className={`h-7 w-7 rounded-lg flex items-center justify-center text-xs font-medium ${
                   selectedMinute === i ? 'bg-[#9406E6] text-white' : 'hover:bg-purple-200 text-gray-700'
                }`}
             >
@@ -220,73 +221,116 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
    };
 
-   if (!isOpen) return null;
+   const priorityOptions = [
+      { value: 'Low', label: 'Low', color: 'green', icon: '🟢' },
+      { value: 'Medium', label: 'Medium', color: 'yellow', icon: '🟡' },
+      { value: 'High', label: 'High', color: 'red', icon: '🔴' },
+   ];
 
    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-         <div className="bg-white rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto p-6 m-4 relative">
+      <Modal isOpen={isOpen} onClose={onClose} size="md">
+         <div className="p-3 sm:p-4 lg:p-5">
+            {/* Compact Header */}
+            <div className="flex items-center justify-between mb-4">
+               <div className="flex items-center space-x-2">
+                  <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                     {subtask ? <FiList className="h-4 w-4 text-white" /> : <FiPlus className="h-4 w-4 text-white" />}
+                  </div>
+                  <div>
+                     <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                        {subtask ? 'Edit Subtask' : 'Create Subtask'}
+                     </h2>
+                     <p className="text-xs text-gray-600">{subtask ? 'Update details' : 'Break down your task'}</p>
+                  </div>
+               </div>
             <button
                onClick={onClose}
-               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
+                  className="p-1.5 hover:bg-red-100 rounded-lg transition-all duration-200 group"
             >
-               <FiX className="h-6 w-6" />
+                  <FiX className="h-4 w-4 text-gray-400 group-hover:text-red-500" />
             </button>
+            </div>
 
-            <h2 className="text-xl font-bold mb-5 text-gray-800">{subtask ? 'Edit Subtask' : 'Add New Subtask'}</h2>
+            {/* Compact Parent Task Info */}
+            {parentTask && (
+               <div className="bg-gradient-to-r from-indigo-100/60 to-purple-100/60 backdrop-blur-sm rounded-xl p-3 border border-indigo-200/50 mb-4">
+                  <div className="flex items-center space-x-2">
+                     <div className="w-7 h-7 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <FiList className="h-3 w-3 text-white" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{parentTask.task}</p>
+                        <p className="text-xs text-gray-600">
+                           Due: {parentTask.date} at {parentTask.time}
+                        </p>
+                     </div>
+                  </div>
+               </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-               <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Subtask Title</label>
+               {/* Title Input */}
+               <div className="space-y-1">
+                  <label className="block text-gray-900 text-sm font-semibold">Subtask Title</label>
                   <input
                      type="text"
                      value={title}
                      onChange={(e) => setTitle(e.target.value)}
-                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
-                     placeholder="Enter subtask title"
+                     className="w-full px-3 py-2.5 bg-white/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-sm"
+                     placeholder="Enter subtask title..."
                      required
                   />
                </div>
 
-               <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Description (Optional)</label>
+               {/* Description Input */}
+               <div className="space-y-1">
+                  <label className="block text-gray-900 text-sm font-semibold">
+                     Description <span className="text-gray-500 font-normal text-xs">(Optional)</span>
+                  </label>
                   <textarea
                      value={description}
                      onChange={(e) => setDescription(e.target.value)}
-                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
-                     placeholder="Enter description"
+                     className="w-full px-3 py-2.5 bg-white/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 resize-none text-sm"
+                     placeholder="Add details or notes..."
                      rows="2"
                   />
                </div>
 
-               <div className="relative">
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Date (DD/MM/YYYY)</label>
+               {/* Date and Time Section */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Date Input */}
+                  <div className="space-y-1">
+                     <label className="block text-gray-900 text-sm font-semibold flex items-center space-x-1">
+                        <FiCalendar className="h-3 w-3 text-indigo-500" />
+                        <span>Due Date</span>
+                     </label>
                   <div className="relative">
                      <input
                         type="text"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
                         onFocus={() => setShowDatePicker(true)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
+                           className="w-full px-3 py-2.5 bg-white/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-sm"
                         placeholder="DD/MM/YYYY"
                         required
                      />
                      {showDatePicker && (
-                        <div className="absolute z-10 mt-2 p-2 bg-white rounded-lg shadow-lg border border-gray-200">
+                           <div className="absolute z-20 mt-1 p-3 bg-white rounded-xl shadow-2xl border border-gray-200 backdrop-blur-xl max-w-[280px]">
                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-medium text-gray-800">
-                                 {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                 <h4 className="font-semibold text-gray-900 text-sm">
+                                    {new Date().toLocaleString('default', { month: 'short', year: 'numeric' })}
                               </h4>
                               <button
                                  type="button"
                                  onClick={() => setShowDatePicker(false)}
-                                 className="text-gray-600 hover:text-gray-800"
+                                    className="p-1 hover:bg-gray-100 rounded-md transition-colors"
                               >
-                                 <FiX className="h-5 w-5" />
+                                    <FiX className="h-3 w-3 text-gray-600" />
                               </button>
                            </div>
-                           <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                              <div className="grid grid-cols-7 gap-1 text-center mb-1">
                               {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                                 <div key={day} className="text-xs font-medium text-gray-500">
+                                    <div key={day} className="text-xs font-medium text-gray-500 py-1">
                                     {day}
                                  </div>
                               ))}
@@ -297,49 +341,57 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                   </div>
                </div>
 
-               <div className="relative">
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Time (HH:MM AM/PM)</label>
+                  {/* Time Input */}
+                  <div className="space-y-1">
+                     <label className="block text-gray-900 text-sm font-semibold flex items-center space-x-1">
+                        <FiClock className="h-3 w-3 text-indigo-500" />
+                        <span>Due Time</span>
+                     </label>
                   <div className="relative">
                      <input
                         type="text"
                         value={time}
                         onChange={(e) => setTime(e.target.value)}
                         onFocus={() => setShowTimePicker(true)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6] transition-all"
+                           className="w-full px-3 py-2.5 bg-white/80 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-sm"
                         placeholder="HH:MM AM/PM"
                         required
                      />
                      {showTimePicker && (
-                        <div className="absolute z-10 mt-2 p-2 bg-white rounded-lg shadow-lg border border-gray-200">
+                           <div className="absolute z-20 mt-1 p-3 bg-white rounded-xl shadow-2xl border border-gray-200 backdrop-blur-xl">
                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-medium text-gray-800">Select Time</h4>
+                                 <h4 className="font-semibold text-gray-900 text-sm">Select Time</h4>
                               <button
                                  type="button"
                                  onClick={() => setShowTimePicker(false)}
-                                 className="text-gray-600 hover:text-gray-800"
+                                    className="p-1 hover:bg-gray-100 rounded-md transition-colors"
                               >
-                                 <FiX className="h-5 w-5" />
+                                    <FiX className="h-3 w-3 text-gray-600" />
                               </button>
-                           </div>
-                           <div className="flex gap-4">
-                              <div>
-                                 <p className="text-xs font-medium text-gray-500 mb-1">Hour</p>
-                                 <div className="grid grid-cols-4 gap-1">{generateHourSelector()}</div>
+                              </div>
+                              <div className="flex gap-3">
+                                 <div>
+                                    <p className="text-xs font-medium text-gray-700 mb-1">Hour</p>
+                                    <div className="grid grid-cols-3 gap-1 max-h-24 overflow-y-auto">
+                                       {generateHourSelector()}
+                                    </div>
                               </div>
                               <div>
-                                 <p className="text-xs font-medium text-gray-500 mb-1">Minute</p>
-                                 <div className="grid grid-cols-4 gap-1">{generateMinuteSelector()}</div>
+                                    <p className="text-xs font-medium text-gray-700 mb-1">Min</p>
+                                    <div className="grid grid-cols-3 gap-1 max-h-24 overflow-y-auto">
+                                       {generateMinuteSelector()}
+                                    </div>
                               </div>
                               <div>
-                                 <p className="text-xs font-medium text-gray-500 mb-1">AM/PM</p>
+                                    <p className="text-xs font-medium text-gray-700 mb-1">Period</p>
                                  <div className="flex flex-col gap-1">
                                     <button
                                        type="button"
                                        onClick={() => setSelectedAmPm('AM')}
-                                       className={`h-10 w-14 rounded-lg flex items-center justify-center ${
+                                          className={`h-7 w-10 rounded-lg flex items-center justify-center font-medium transition-all text-xs ${
                                           selectedAmPm === 'AM'
-                                             ? 'bg-[#9406E6] text-white'
-                                             : 'hover:bg-purple-200 text-gray-700'
+                                                ? 'bg-indigo-500 text-white shadow-md'
+                                                : 'hover:bg-indigo-100 text-gray-700 border border-gray-200'
                                        }`}
                                     >
                                        AM
@@ -347,10 +399,10 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                                     <button
                                        type="button"
                                        onClick={() => setSelectedAmPm('PM')}
-                                       className={`h-10 w-14 rounded-lg flex items-center justify-center ${
+                                          className={`h-7 w-10 rounded-lg flex items-center justify-center font-medium transition-all text-xs ${
                                           selectedAmPm === 'PM'
-                                             ? 'bg-[#9406E6] text-white'
-                                             : 'hover:bg-purple-200 text-gray-700'
+                                                ? 'bg-indigo-500 text-white shadow-md'
+                                                : 'hover:bg-indigo-100 text-gray-700 border border-gray-200'
                                        }`}
                                     >
                                        PM
@@ -361,72 +413,82 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                            <button
                               type="button"
                               onClick={handleTimeSelect}
-                              className="mt-3 w-full bg-[#9406E6] text-white py-2 rounded-lg hover:bg-[#7D05C3] transition-colors"
+                                 className="mt-2 w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-1.5 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 font-semibold text-sm"
                            >
                               Set Time
                            </button>
                         </div>
                      )}
+                     </div>
                   </div>
                </div>
 
-               <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Priority</label>
-                  <div className="flex gap-2">
+               {/* Compact Priority Selection */}
+               <div className="space-y-2">
+                  <label className="block text-gray-900 text-sm font-semibold flex items-center space-x-1">
+                     <FiFlag className="h-3 w-3 text-indigo-500" />
+                     <span>Priority</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                     {priorityOptions.map((option) => (
                      <button
+                           key={option.value}
                         type="button"
-                        onClick={() => setPriority('Low')}
-                        className={`flex-1 py-2 px-4 rounded-lg border ${
-                           priority === 'Low'
-                              ? 'bg-green-100 border-green-500 text-green-800'
-                              : 'border-gray-300 hover:bg-green-50 text-gray-700'
-                        }`}
-                     >
-                        Low
+                           onClick={() => setPriority(option.value)}
+                           className={`
+                              p-2 rounded-lg border-2 transition-all duration-300 hover:shadow-sm text-center
+                              ${
+                                 priority === option.value
+                                    ? option.color === 'green'
+                                       ? 'bg-green-50 border-green-400 shadow-sm'
+                                       : option.color === 'yellow'
+                                       ? 'bg-yellow-50 border-yellow-400 shadow-sm'
+                                       : 'bg-red-50 border-red-400 shadow-sm'
+                                    : 'bg-white border-gray-200 hover:border-gray-300'
+                              }
+                           `}
+                        >
+                           <div className="flex flex-col items-center space-y-1">
+                              <span className="text-lg">{option.icon}</span>
+                              <span
+                                 className={`font-medium text-xs ${
+                                    priority === option.value
+                                       ? option.color === 'green'
+                                          ? 'text-green-800'
+                                          : option.color === 'yellow'
+                                          ? 'text-yellow-800'
+                                          : 'text-red-800'
+                                       : 'text-gray-700'
+                                 }`}
+                              >
+                                 {option.label}
+                              </span>
+                           </div>
                      </button>
-                     <button
-                        type="button"
-                        onClick={() => setPriority('Medium')}
-                        className={`flex-1 py-2 px-4 rounded-lg border ${
-                           priority === 'Medium'
-                              ? 'bg-yellow-100 border-yellow-500 text-yellow-800'
-                              : 'border-gray-300 hover:bg-yellow-50 text-gray-700'
-                        }`}
-                     >
-                        Medium
-                     </button>
-                     <button
-                        type="button"
-                        onClick={() => setPriority('High')}
-                        className={`flex-1 py-2 px-4 rounded-lg border ${
-                           priority === 'High'
-                              ? 'bg-red-100 border-red-500 text-red-800'
-                              : 'border-gray-300 hover:bg-red-50 text-gray-700'
-                        }`}
-                     >
-                        High
-                     </button>
+                     ))}
                   </div>
                </div>
 
-               <div className="flex justify-end pt-4">
+               {/* Compact Action Buttons */}
+               <div className="flex flex-col sm:flex-row gap-2 pt-3">
                   <button
                      type="button"
                      onClick={onClose}
-                     className="px-4 py-2 border border-gray-300 rounded-lg mr-2 hover:bg-gray-100 transition-colors"
+                     className="w-full sm:w-auto px-4 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200 font-medium text-sm"
                   >
                      Cancel
                   </button>
                   <button
                      type="submit"
-                     className="px-4 py-2 bg-[#9406E6] text-white rounded-lg hover:bg-[#7D05C3] transition-colors"
+                     className="w-full sm:flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center space-x-2 text-sm"
                   >
-                     {subtask ? 'Update Subtask' : 'Add Subtask'}
+                     {subtask ? <FiList className="h-4 w-4" /> : <FiPlus className="h-4 w-4" />}
+                     <span>{subtask ? 'Update' : 'Create'}</span>
                   </button>
                </div>
             </form>
          </div>
-      </div>
+      </Modal>
    );
 }
 

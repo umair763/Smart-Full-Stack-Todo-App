@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
 import { toast } from 'react-hot-toast';
+import { FiClock, FiCalendar, FiBell, FiX, FiCheck } from 'react-icons/fi';
 
 const ReminderModal = ({ isOpen, onClose, task, onSetReminder }) => {
    const [selectedOption, setSelectedOption] = useState('10min');
@@ -67,53 +68,99 @@ const ReminderModal = ({ isOpen, onClose, task, onSetReminder }) => {
       onClose();
    };
 
+   const reminderOptions = [
+      {
+         value: '10min',
+         label: '10 minutes from now',
+         icon: <FiClock className="h-5 w-5" />,
+         description: 'Quick reminder',
+      },
+      {
+         value: '1hour',
+         label: '1 hour from now',
+         icon: <FiClock className="h-5 w-5" />,
+         description: 'Plan ahead',
+      },
+      {
+         value: '1day',
+         label: '1 day from now',
+         icon: <FiCalendar className="h-5 w-5" />,
+         description: 'Daily reminder',
+      },
+      {
+         value: 'attime',
+         label: 'At time of task',
+         icon: <FiBell className="h-5 w-5" />,
+         description: 'Perfect timing',
+      },
+      {
+         value: 'custom',
+         label: 'Custom date and time',
+         icon: <FiCalendar className="h-5 w-5" />,
+         description: 'Set your own',
+      },
+   ];
+
    return (
-      <Modal isOpen={isOpen} onClose={onClose}>
-         <div className="bg-white/20 backdrop-blur-md p-3 sm:p-6 rounded-xl shadow-lg">
-            <div className="flex justify-between items-center mb-4 sm:mb-5">
-               <h2 className="text-lg sm:text-xl font-bold text-white">Set Reminder</h2>
-               <button onClick={onClose} className="text-white hover:text-red-300 transition-colors">
-                  <svg
-                     xmlns="http://www.w3.org/2000/svg"
-                     className="h-5 w-5 sm:h-6 sm:w-6"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor"
-                  >
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+         <div className="p-4 sm:p-6 lg:p-8">
+            {/* Modern Header */}
+            <div className="flex items-center justify-between mb-6 sm:mb-8">
+               <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                     <FiBell className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Set Reminder</h2>
+                     <p className="text-sm text-gray-600 mt-1">Never miss an important task</p>
+                  </div>
+               </div>
+               <button onClick={onClose} className="p-2 hover:bg-red-100 rounded-xl transition-all duration-200 group">
+                  <FiX className="h-5 w-5 text-gray-400 group-hover:text-red-500" />
                </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-               {/* Task Information */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+               {/* Enhanced Task Information Card */}
                {task && (
-                  <div className="p-3 bg-white/10 rounded-lg">
-                     <p className="text-white font-medium">Task: {task.task}</p>
-                     <p className="text-white/80 text-sm mt-1">
-                        Due: {task.date} at {task.time}
-                     </p>
+                  <div className="bg-gradient-to-r from-purple-100/60 to-indigo-100/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-purple-200/50">
+                     <div className="flex items-start space-x-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                           <FiCheck className="h-5 w-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                           <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-2">{task.task}</h3>
+                           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0">
+                              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                 <FiCalendar className="h-4 w-4" />
+                                 <span>{task.date}</span>
+                              </div>
+                              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                                 <FiClock className="h-4 w-4" />
+                                 <span>{task.time}</span>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
                   </div>
                )}
 
-               {/* Preset Reminders */}
+               {/* Modern Reminder Options */}
                <div>
-                  <label className="block text-white text-sm font-medium mb-2">When to remind you?</label>
-                  <div className="space-y-2">
-                     {[
-                        { value: '10min', label: '10 minutes from now' },
-                        { value: '1hour', label: '1 hour from now' },
-                        { value: '1day', label: '1 day from now' },
-                        { value: 'attime', label: 'At time of task' },
-                        { value: 'custom', label: 'Custom date and time' },
-                     ].map((option) => (
+                  <label className="block text-gray-900 text-lg font-semibold mb-4">When should we remind you?</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                     {reminderOptions.map((option) => (
                         <label
                            key={option.value}
-                           className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer transition-all ${
-                              selectedOption === option.value
-                                 ? 'bg-[#9406E6]/30 border border-[#9406E6]'
-                                 : 'hover:bg-white/10'
-                           }`}
+                           className={`
+                              relative flex items-center p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-300
+                              border-2 hover:shadow-lg group
+                              ${
+                                 selectedOption === option.value
+                                    ? 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-400 shadow-md'
+                                    : 'bg-white/60 border-gray-200 hover:border-purple-300 hover:bg-purple-50/50'
+                              }
+                           `}
                         >
                            <input
                               type="radio"
@@ -121,42 +168,91 @@ const ReminderModal = ({ isOpen, onClose, task, onSetReminder }) => {
                               value={option.value}
                               checked={selectedOption === option.value}
                               onChange={() => setSelectedOption(option.value)}
-                              className="w-4 h-4 text-[#9406E6] focus:ring-[#9406E6]"
+                              className="sr-only"
                            />
-                           <span className="text-white">{option.label}</span>
+
+                           {/* Custom radio button */}
+                           <div
+                              className={`
+                              w-5 h-5 rounded-full border-2 flex items-center justify-center mr-4 transition-all duration-200
+                              ${
+                                 selectedOption === option.value
+                                    ? 'border-purple-500 bg-purple-500'
+                                    : 'border-gray-300 group-hover:border-purple-400'
+                              }
+                           `}
+                           >
+                              {selectedOption === option.value && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                           </div>
+
+                           <div
+                              className={`
+                              flex items-center justify-center w-10 h-10 rounded-xl mr-4 transition-all duration-200
+                              ${
+                                 selectedOption === option.value
+                                    ? 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-600 group-hover:bg-purple-100 group-hover:text-purple-600'
+                              }
+                           `}
+                           >
+                              {option.icon}
+                           </div>
+
+                           <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-900 text-sm sm:text-base">{option.label}</div>
+                              <div className="text-xs sm:text-sm text-gray-500 mt-1">{option.description}</div>
+                           </div>
+
+                           {/* Selection indicator */}
+                           {selectedOption === option.value && (
+                              <div className="absolute top-3 right-3">
+                                 <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center">
+                                    <FiCheck className="h-3 w-3 text-white" />
+                                 </div>
+                              </div>
+                           )}
                         </label>
                      ))}
                   </div>
                </div>
 
-               {/* Custom Date/Time Picker (only visible when custom option is selected) */}
+               {/* Enhanced Custom Date/Time Picker */}
                {selectedOption === 'custom' && (
-                  <div className="p-3 bg-white/10 rounded-lg">
-                     <label className="block text-white text-sm font-medium mb-2">Set custom date and time</label>
+                  <div className="bg-gradient-to-br from-blue-50/60 to-indigo-50/60 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-blue-200/50">
+                     <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                           <FiCalendar className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                           <label className="block text-gray-900 text-lg font-semibold">Set custom date and time</label>
+                           <p className="text-sm text-gray-600">Choose the perfect moment for your reminder</p>
+                        </div>
+                     </div>
                      <input
                         type="datetime-local"
                         value={customDateTime}
                         onChange={(e) => setCustomDateTime(e.target.value)}
-                        className="w-full px-3 py-2 bg-white/10 text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9406E6]"
+                        className="w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900"
                         required
                      />
                   </div>
                )}
 
-               {/* Action Buttons */}
-               <div className="flex justify-end gap-2 pt-4">
+               {/* Enhanced Action Buttons */}
+               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6">
                   <button
                      type="button"
                      onClick={onClose}
-                     className="px-4 py-2 text-white/80 hover:text-white transition-colors"
+                     className="w-full sm:w-auto px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-all duration-200 font-medium"
                   >
                      Cancel
                   </button>
                   <button
                      type="submit"
-                     className="px-4 py-2 bg-[#9406E6] text-white rounded-lg hover:bg-[#7D05C3] transition-colors"
+                     className="w-full sm:flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center space-x-2"
                   >
-                     Set Reminder
+                     <FiBell className="h-5 w-5" />
+                     <span>Set Reminder</span>
                   </button>
                </div>
             </form>
