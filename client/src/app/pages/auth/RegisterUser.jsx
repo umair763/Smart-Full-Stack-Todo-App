@@ -132,6 +132,16 @@ function RegisterUser() {
             <ThemeToggle variant="floating" size="medium" />
          </div>
 
+         {/* Back to Home link */}
+         <div className="absolute top-4 left-4 z-10">
+            <Link
+               to="/"
+               className="text-white hover:text-gray-200 transition-colors flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg"
+            >
+               <span>← Back to Home</span>
+            </Link>
+         </div>
+
          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-6">Create Account</h2>
 
@@ -270,7 +280,9 @@ function RegisterUser() {
                </div>
 
                <div>
-                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">Confirm Password</label>
+                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">
+                     Confirm Password
+                  </label>
                   <input
                      type={isPasswordVisible ? 'text' : 'password'}
                      name="confirmPassword"
@@ -303,7 +315,10 @@ function RegisterUser() {
                   <div className="text-center mt-4">
                      <p className="text-gray-600 dark:text-gray-400">
                         Already have an account?{' '}
-                        <Link to="/" className="text-[#9406E6] dark:text-purple-400 font-medium hover:underline">
+                        <Link
+                           to="/auth/login"
+                           className="text-[#9406E6] dark:text-purple-400 font-medium hover:underline"
+                        >
                            Login
                         </Link>
                      </p>

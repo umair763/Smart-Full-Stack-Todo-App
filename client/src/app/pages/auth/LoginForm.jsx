@@ -139,6 +139,16 @@ function LoginForm() {
             <ThemeToggle variant="floating" size="medium" />
          </div>
 
+         {/* Back to Home link */}
+         <div className="absolute top-4 left-4 z-10">
+            <Link
+               to="/"
+               className="text-white hover:text-gray-200 transition-colors flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg"
+            >
+               <span>← Back to Home</span>
+            </Link>
+         </div>
+
          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl w-full max-w-md border border-gray-200 dark:border-gray-700">
             <h2 className="text-3xl font-bold text-center text-[#9406E6] dark:text-purple-400 mb-6">Welcome Back</h2>
 
@@ -210,7 +220,7 @@ function LoginForm() {
                      <p className="text-gray-600 dark:text-gray-400">
                         Don't have an account?{' '}
                         <Link
-                           to="/register"
+                           to="/auth/register"
                            className="text-[#9406E6] dark:text-purple-400 font-medium hover:underline"
                         >
                            Register
