@@ -5,6 +5,7 @@ import DisplayTodoList from './DisplayTodoList';
 import { useSocket } from '../app/context/SocketContext';
 import { useNotification } from '../app/context/NotificationContext';
 import ModernSortTabs from './ModernSortTabs';
+import CascadeDeleteModal from './CascadeDeleteModal';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -15,9 +16,18 @@ function TodoListParser({ searchTerm = '' }) {
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState(null);
    const { socket } = useSocket();
-   const { showNotification } = useNotification();
+   const { createSuccessNotification, createErrorNotification } = useNotification();
    const [dependencies, setDependencies] = useState([]);
    const [isLoadingDependencies, setIsLoadingDependencies] = useState(false);
+
+   // Cascade delete modal state
+   const [cascadeDeleteModal, setCascadeDeleteModal] = useState({
+      isOpen: false,
+      taskId: null,
+      taskName: '',
+      dependentTasks: [],
+      isDeleting: false,
+   });
 
    const [sortConfig, setSortConfig] = useState({
       type: 'deadline',
@@ -152,24 +162,96 @@ function TodoListParser({ searchTerm = '' }) {
             throw new Error('Authentication required');
          }
 
+         // First attempt to delete without confirmation
          const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
+               'Content-Type': 'application/json',
             },
          });
 
-         if (!response.ok) {
-            throw new Error('Failed to delete task');
+         if (response.status === 409) {
+            // Task has dependents, show modal for confirmation
+            const errorData = await response.json();
+            const taskToDelete = todoList.find((task) => task._id === taskId);
+
+            setCascadeDeleteModal({
+               isOpen: true,
+               taskId: taskId,
+               taskName: taskToDelete?.task || 'Unknown Task',
+               dependentTasks: errorData.dependentTasks,
+               isDeleting: false,
+            });
+            return; // Exit early, modal will handle the rest
          }
 
-         // Remove the task from the local state
+         if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to delete task');
+         }
+
+         // Regular deletion (no dependents)
          setTodoList((prevList) => prevList.filter((task) => task._id !== taskId));
-         showNotification('Task deleted successfully', 'success');
+         createSuccessNotification('Task deleted successfully');
       } catch (error) {
          console.error('Error deleting task:', error);
-         showNotification('Failed to delete task', 'error');
+         createErrorNotification(error.message || 'Failed to delete task');
       }
+   };
+
+   // Handle cascade delete confirmation
+   const handleCascadeDeleteConfirm = async () => {
+      setCascadeDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${cascadeDeleteModal.taskId}`, {
+            method: 'DELETE',
+            headers: {
+               Authorization: `Bearer ${token}`,
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ confirmCascade: true }),
+         });
+
+         if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to delete task');
+         }
+
+         const result = await response.json();
+
+         // Remove the task and its dependents from local state
+         const dependentIds = cascadeDeleteModal.dependentTasks.map((dep) => dep.id);
+         setTodoList((prevList) =>
+            prevList.filter((task) => task._id !== cascadeDeleteModal.taskId && !dependentIds.includes(task._id))
+         );
+
+         createSuccessNotification(result.message || 'Tasks deleted successfully');
+         setCascadeDeleteModal({
+            isOpen: false,
+            taskId: null,
+            taskName: '',
+            dependentTasks: [],
+            isDeleting: false,
+         });
+      } catch (error) {
+         console.error('Error deleting task:', error);
+         createErrorNotification(error.message || 'Failed to delete task');
+         setCascadeDeleteModal((prev) => ({ ...prev, isDeleting: false }));
+      }
+   };
+
+   // Handle cascade delete cancel
+   const handleCascadeDeleteCancel = () => {
+      setCascadeDeleteModal({
+         isOpen: false,
+         taskId: null,
+         taskName: '',
+         dependentTasks: [],
+         isDeleting: false,
+      });
    };
 
    // Handle task update
@@ -190,26 +272,27 @@ function TodoListParser({ searchTerm = '' }) {
          });
 
          if (!response.ok) {
-            throw new Error('Failed to update task');
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update task');
          }
 
          const data = await response.json();
 
          // Update the task in the local state
          setTodoList((prevList) => prevList.map((task) => (task._id === taskId ? data : task)));
-         showNotification('Task updated successfully', 'success');
+         createSuccessNotification('Task updated successfully');
       } catch (error) {
          console.error('Error updating task:', error);
-         showNotification('Failed to update task', 'error');
+         createErrorNotification(error.message || 'Failed to update task');
       }
    };
 
    // Handle task status change
    const handleTaskStatusChange = async (taskId, currentStatus, errorMessage) => {
       if (errorMessage) {
-         showNotification(errorMessage, 'error');
+         createErrorNotification(errorMessage);
       } else {
-         showNotification(`Task marked as ${currentStatus ? 'incomplete' : 'complete'}`, 'success');
+         createSuccessNotification(`Task marked as ${currentStatus ? 'incomplete' : 'complete'}`);
       }
    };
 
@@ -524,7 +607,7 @@ function TodoListParser({ searchTerm = '' }) {
                   </div>
                </div>
 
-            <ModernSortTabs onSortChange={handleSortChange} />
+               <ModernSortTabs onSortChange={handleSortChange} />
             </div>
          </div>
 
@@ -576,6 +659,16 @@ function TodoListParser({ searchTerm = '' }) {
                ))
             )}
          </div>
+
+         {/* Cascade Delete Modal */}
+         <CascadeDeleteModal
+            isOpen={cascadeDeleteModal.isOpen}
+            onClose={handleCascadeDeleteCancel}
+            onConfirm={handleCascadeDeleteConfirm}
+            taskName={cascadeDeleteModal.taskName}
+            dependentTasks={cascadeDeleteModal.dependentTasks}
+            isLoading={cascadeDeleteModal.isDeleting}
+         />
       </div>
    );
 }

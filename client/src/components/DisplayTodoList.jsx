@@ -321,9 +321,8 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
    }
 
    function handleDelete() {
-      if (window.confirm('Are you sure you want to delete this task?')) {
-         onDelete(list._id);
-      }
+      // Let the parent component handle the deletion confirmation
+      onDelete(list._id);
    }
 
    function handleSaveTask(updatedTask) {

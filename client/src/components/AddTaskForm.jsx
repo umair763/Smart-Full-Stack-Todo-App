@@ -85,7 +85,7 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
    function handleSubmit(e) {
       e.preventDefault();
       if (!task || !date || !time) {
-         alert('Please fill in all required fields');
+         // Form validation is handled by HTML5 required attributes
          return;
       }
 

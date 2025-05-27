@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { FiAlertTriangle, FiCalendar, FiClock, FiLink, FiArrowRight, FiInfo } from 'react-icons/fi';
+import { FiAlertTriangle, FiCalendar, FiClock, FiLink, FiArrowRight, FiInfo, FiCheckCircle } from 'react-icons/fi';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -13,7 +13,6 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
    const [isLoading, setIsLoading] = useState(false);
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [error, setError] = useState(null);
-   const [dependencyType, setDependencyType] = useState('prerequisite');
    const [dependencies, setDependencies] = useState({ prerequisites: [], dependents: [] });
    const [isLoadingDeps, setIsLoadingDeps] = useState(false);
 
@@ -23,7 +22,6 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
          fetchDependencies();
          setSelectedTaskId('');
          setError(null);
-         setDependencyType('prerequisite');
       }
    }, [isOpen, task._id]);
 
@@ -46,9 +44,19 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
          }
 
          const data = await response.json();
-         // Filter out the current task and completed tasks, sort by date
+         // Filter out the current task and completed tasks
+         // Show tasks that can depend on the current task (tasks with same or earlier deadlines)
+         const currentTaskDate = new Date(task.date.split('/').reverse().join('-') + ' ' + task.time);
+
          const filteredTasks = data
-            .filter((t) => t._id !== task._id && !t.completed)
+            .filter((t) => {
+               if (t._id === task._id || t.completed) return false;
+
+               // Show tasks that have the same or earlier deadline than the current task
+               // This means these tasks can depend on the current task (independent task)
+               const taskDate = new Date(t.date.split('/').reverse().join('-') + ' ' + t.time);
+               return taskDate <= currentTaskDate;
+            })
             .sort((a, b) => {
                const dateA = new Date(a.date.split('/').reverse().join('-'));
                const dateB = new Date(b.date.split('/').reverse().join('-'));
@@ -98,18 +106,9 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
             throw new Error('Authentication required');
          }
 
-         // Determine which task is the prerequisite and which is the dependent
-         let prerequisiteTaskId, dependentTaskId;
-
-         if (dependencyType === 'prerequisite') {
-            // The selected task is a prerequisite for the current task
-            prerequisiteTaskId = selectedTaskId;
-            dependentTaskId = task._id;
-         } else {
-            // The current task is a prerequisite for the selected task
-            prerequisiteTaskId = task._id;
-            dependentTaskId = selectedTaskId;
-         }
+         // Clear logic: Current task becomes prerequisite, selected task becomes dependent
+         const prerequisiteTaskId = task._id;
+         const dependentTaskId = selectedTaskId;
 
          const response = await fetch(`${API_BASE_URL}/api/dependencies`, {
             method: 'POST',
@@ -129,7 +128,7 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
             throw new Error(data.message || 'Failed to create dependency');
          }
 
-         toast.success('Dependency added successfully');
+         toast.success('Dependency created successfully!');
          if (onAddDependency) {
             onAddDependency(data);
          }
@@ -148,9 +147,9 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
 
    return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-         <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
+         <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b px-6 py-4">
-               <h3 className="text-xl font-semibold text-gray-900">Add Task Dependency</h3>
+               <h3 className="text-xl font-semibold text-gray-900">Create Task Dependency</h3>
                <button onClick={onClose} className="text-gray-400 hover:text-gray-500 focus:outline-none">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -159,168 +158,127 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
             </div>
 
             <div className="px-6 py-4">
-               {/* Info about dependencies */}
-               <div className="mb-4 p-3 bg-blue-50 rounded flex items-start text-blue-800 text-sm">
-                  <FiInfo className="mr-2 mt-0.5 flex-shrink-0" />
-                  <span>
-                     <b>What is a dependency?</b> A dependency means one task must be completed before another can
-                     start. You can set this task as a prerequisite for another, or require another task to be completed
-                     first.
-                  </span>
+               {/* Clear explanation */}
+               <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-start">
+                     <FiInfo className="mr-3 mt-0.5 flex-shrink-0 text-blue-600" />
+                     <div>
+                        <h4 className="font-semibold text-blue-900 mb-2">How Dependencies Work</h4>
+                        <p className="text-blue-800 text-sm mb-2">
+                           You're about to make <strong>"{task.task}"</strong> an independent task that other tasks
+                           depend on.
+                        </p>
+                        <p className="text-blue-700 text-sm">
+                           The selected dependent task must be completed within the timeframe of{' '}
+                           <strong>"{task.task}"</strong>.
+                        </p>
+                     </div>
+                  </div>
                </div>
-               {/* Dependency summary */}
-               <div className="mb-4">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                     <div className="flex-1 bg-gray-50 rounded p-2 border">
-                        <div className="font-semibold text-xs text-gray-700 mb-1">Prerequisites</div>
+
+               {/* Current task display */}
+               <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center mb-2">
+                     <FiCheckCircle className="mr-2 text-green-600" />
+                     <h4 className="font-semibold text-green-900">Prerequisite Task (Must be completed first)</h4>
+                  </div>
+                  <div className="bg-white rounded-md p-3 border border-green-200">
+                     <p className="font-semibold text-gray-800">{task.task}</p>
+                     <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <FiCalendar className="mr-1" />
+                        <span className="mr-3">{task.date}</span>
+                        <FiClock className="mr-1" />
+                        <span>{task.time}</span>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Current dependencies summary */}
+               <div className="mb-6">
+                  <h4 className="font-semibold text-gray-700 mb-3">Current Dependencies</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="bg-gray-50 rounded-lg p-3 border">
+                        <div className="font-medium text-sm text-gray-700 mb-2">This task depends on:</div>
                         {isLoadingDeps ? (
-                           <div className="text-xs text-gray-400">Loading...</div>
+                           <div className="text-sm text-gray-400">Loading...</div>
                         ) : dependencies.prerequisites.length === 0 ? (
-                           <div className="text-xs text-gray-400">None</div>
+                           <div className="text-sm text-gray-500 italic">No prerequisites</div>
                         ) : (
-                           <ul className="text-xs text-gray-700 list-disc ml-4">
+                           <ul className="text-sm text-gray-700 space-y-1">
                               {dependencies.prerequisites.map((dep) => (
-                                 <li key={dep._id}>{dep.prerequisiteTaskId?.task || 'Unknown Task'}</li>
+                                 <li key={dep._id} className="flex items-center">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                                    {dep.prerequisiteTaskId?.task || 'Unknown Task'}
+                                 </li>
                               ))}
                            </ul>
                         )}
                      </div>
-                     <div className="flex-1 bg-gray-50 rounded p-2 border">
-                        <div className="font-semibold text-xs text-gray-700 mb-1">Dependents</div>
+                     <div className="bg-gray-50 rounded-lg p-3 border">
+                        <div className="font-medium text-sm text-gray-700 mb-2">Other tasks depend on this:</div>
                         {isLoadingDeps ? (
-                           <div className="text-xs text-gray-400">Loading...</div>
+                           <div className="text-sm text-gray-400">Loading...</div>
                         ) : dependencies.dependents.length === 0 ? (
-                           <div className="text-xs text-gray-400">None</div>
+                           <div className="text-sm text-gray-500 italic">No dependents</div>
                         ) : (
-                           <ul className="text-xs text-gray-700 list-disc ml-4">
+                           <ul className="text-sm text-gray-700 space-y-1">
                               {dependencies.dependents.map((dep) => (
-                                 <li key={dep._id}>{dep.dependentTaskId?.task || 'Unknown Task'}</li>
+                                 <li key={dep._id} className="flex items-center">
+                                    <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                                    {dep.dependentTaskId?.task || 'Unknown Task'}
+                                 </li>
                               ))}
                            </ul>
                         )}
                      </div>
-                  </div>
-               </div>
-
-               {/* Current Task Display */}
-               <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <p className="text-sm font-medium text-purple-900 mb-1">Current Task</p>
-                  <p className="font-semibold text-gray-800">{task.task}</p>
-                  <div className="flex items-center text-sm text-gray-600 mt-1">
-                     <FiCalendar className="mr-1" /> {task.date} <FiClock className="ml-3 mr-1" /> {task.time}
-                  </div>
-               </div>
-
-               {/* Simplified Dependency Type Selection */}
-               <div className="mb-4">
-                  <label className="block text-gray-700 font-medium mb-3">What type of dependency?</label>
-                  <div className="grid grid-cols-1 gap-3">
-                     <label className="cursor-pointer">
-                        <input
-                           type="radio"
-                           name="dependencyType"
-                           value="prerequisite"
-                           checked={dependencyType === 'prerequisite'}
-                           onChange={() => setDependencyType('prerequisite')}
-                           className="sr-only"
-                        />
-                        <div
-                           className={`p-4 border-2 rounded-lg transition-all ${
-                              dependencyType === 'prerequisite'
-                                 ? 'border-purple-500 bg-purple-50 shadow-md'
-                                 : 'border-gray-200 hover:border-gray-300'
-                           }`}
-                        >
-                           <div className="flex items-center justify-between">
-                              <div>
-                                 <p className="font-medium text-gray-900">This task needs another task first</p>
-                                 <p className="text-sm text-gray-600">
-                                    Selected task must be completed before this one
-                                 </p>
-                              </div>
-                              <div className="flex items-center text-purple-600">
-                                 <span className="text-xs bg-purple-100 px-2 py-1 rounded">Selected</span>
-                                 <FiArrowRight className="ml-2" />
-                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">
-                                    Current
-                                 </span>
-                              </div>
-                           </div>
-                        </div>
-                     </label>
-
-                     <label className="cursor-pointer">
-                        <input
-                           type="radio"
-                           name="dependencyType"
-                           value="dependent"
-                           checked={dependencyType === 'dependent'}
-                           onChange={() => setDependencyType('dependent')}
-                           className="sr-only"
-                        />
-                        <div
-                           className={`p-4 border-2 rounded-lg transition-all ${
-                              dependencyType === 'dependent'
-                                 ? 'border-purple-500 bg-purple-50 shadow-md'
-                                 : 'border-gray-200 hover:border-gray-300'
-                           }`}
-                        >
-                           <div className="flex items-center justify-between">
-                              <div>
-                                 <p className="font-medium text-gray-900">Another task needs this task first</p>
-                                 <p className="text-sm text-gray-600">
-                                    This task must be completed before the selected one
-                                 </p>
-                              </div>
-                              <div className="flex items-center text-purple-600">
-                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Current</span>
-                                 <FiArrowRight className="ml-2" />
-                                 <span className="text-xs bg-purple-100 px-2 py-1 rounded ml-2">Selected</span>
-                              </div>
-                           </div>
-                        </div>
-                     </label>
                   </div>
                </div>
 
                {/* Error Display */}
                {error && (
-                  <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md flex items-start">
+                  <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md flex items-start border border-red-200">
                      <FiAlertTriangle className="mr-2 mt-0.5 flex-shrink-0" />
-                     <span>{error}</span>
+                     <span className="text-sm">{error}</span>
                   </div>
                )}
 
                <form onSubmit={handleSubmit}>
                   <div className="mb-6">
-                     <label htmlFor="taskSelect" className="block text-gray-700 font-medium mb-2">
-                        Select Task
+                     <label htmlFor="taskSelect" className="block text-gray-700 font-medium mb-3">
+                        Select a task that should depend on "{task.task}"
                      </label>
+                     <p className="text-sm text-gray-600 mb-4">
+                        Only tasks with deadlines on or before {task.date} {task.time} are shown, as dependent tasks
+                        must be completed within the timeframe of the independent task.
+                     </p>
+
                      {isLoading ? (
                         <div className="flex items-center justify-center py-8">
-                           <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-purple-700"></div>
+                           <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-600"></div>
                            <span className="ml-3 text-gray-600">Loading available tasks...</span>
                         </div>
                      ) : availableTasks.length === 0 ? (
-                        <div className="text-center py-8">
+                        <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
                            <div className="text-gray-400 mb-2">
                               <FiLink className="h-8 w-8 mx-auto" />
                            </div>
-                           <p className="text-gray-500 font-medium">No available tasks found</p>
-                           <p className="text-sm text-gray-400">Create more tasks to set up dependencies</p>
+                           <p className="text-gray-600 font-medium mb-2">No suitable tasks found</p>
+                           <p className="text-sm text-gray-500">
+                              Create tasks with deadlines on or before {task.date} {task.time} to set up dependencies.
+                           </p>
                         </div>
                      ) : (
                         <select
                            id="taskSelect"
                            value={selectedTaskId}
                            onChange={(e) => setSelectedTaskId(e.target.value)}
-                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-800"
+                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
                            required
                         >
-                           <option value="">-- Choose a task --</option>
+                           <option value="">-- Choose a task that will depend on "{task.task}" --</option>
                            {availableTasks.map((t) => (
                               <option key={t._id} value={t._id}>
-                                 {t.task} • {t.date} {t.time} • {t.priority}
+                                 {t.task} • Due: {t.date} {t.time} • Priority: {t.priority}
                               </option>
                            ))}
                         </select>
@@ -329,34 +287,42 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
 
                   {/* Visual Preview */}
                   {selectedTask && (
-                     <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Dependency Preview:</p>
-                        <div className="flex items-center justify-center space-x-3">
-                           <div
-                              className={`px-3 py-2 rounded text-sm font-medium ${
-                                 dependencyType === 'prerequisite'
-                                    ? 'bg-purple-100 text-purple-800'
-                                    : 'bg-blue-100 text-blue-800'
-                              }`}
-                           >
-                              {dependencyType === 'prerequisite' ? selectedTask.task : task.task}
+                     <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-gray-200">
+                        <p className="text-sm font-medium text-gray-700 mb-3">Dependency Preview:</p>
+                        <div className="flex items-center justify-center space-x-4">
+                           <div className="flex-1 text-center">
+                              <div className="bg-green-100 border border-green-300 rounded-lg p-3 mb-2">
+                                 <p className="font-semibold text-green-800">{task.task}</p>
+                                 <p className="text-sm text-green-600">
+                                    Due: {task.date} {task.time}
+                                 </p>
+                              </div>
+                              <p className="text-xs text-green-700 font-medium">PREREQUISITE</p>
+                              <p className="text-xs text-green-600">Must complete first</p>
                            </div>
-                           <FiArrowRight className="text-gray-400" />
-                           <div
-                              className={`px-3 py-2 rounded text-sm font-medium ${
-                                 dependencyType === 'prerequisite'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-purple-100 text-purple-800'
-                              }`}
-                           >
-                              {dependencyType === 'prerequisite' ? task.task : selectedTask.task}
+
+                           <div className="flex flex-col items-center">
+                              <FiArrowRight className="text-gray-400 text-xl mb-1" />
+                              <p className="text-xs text-gray-500 font-medium">THEN</p>
+                           </div>
+
+                           <div className="flex-1 text-center">
+                              <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-2">
+                                 <p className="font-semibold text-blue-800">{selectedTask.task}</p>
+                                 <p className="text-sm text-blue-600">
+                                    Due: {selectedTask.date} {selectedTask.time}
+                                 </p>
+                              </div>
+                              <p className="text-xs text-blue-700 font-medium">DEPENDENT</p>
+                              <p className="text-xs text-blue-600">Can start after prerequisite</p>
                            </div>
                         </div>
-                        <p className="text-xs text-gray-500 text-center mt-2">
-                           {dependencyType === 'prerequisite'
-                              ? 'Must be completed first → Can then be started'
-                              : 'Can be started → Must be completed first'}
-                        </p>
+                        <div className="mt-3 p-2 bg-white rounded border border-gray-200">
+                           <p className="text-xs text-gray-600 text-center">
+                              <strong>Result:</strong> "{selectedTask.task}" cannot be started until "{task.task}" is
+                              marked as complete.
+                           </p>
+                        </div>
                      </div>
                   )}
 
@@ -371,17 +337,17 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
                      <button
                         type="submit"
                         disabled={isSubmitting || isLoading || !selectedTaskId}
-                        className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
                      >
                         {isSubmitting ? (
                            <>
                               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                              Adding Dependency...
+                              Creating Dependency...
                            </>
                         ) : (
                            <>
                               <FiLink className="mr-2" />
-                              Add Dependency
+                              Create Dependency
                            </>
                         )}
                      </button>

@@ -72,11 +72,12 @@ const validateDeadlineConstraints = async (dependentTaskId, prerequisiteTaskId) 
     const dependentDate = convertToDate(dependentTask.date, dependentTask.time);
     const prerequisiteDate = convertToDate(prerequisiteTask.date, prerequisiteTask.time);
 
-    // The dependent task's deadline should not be earlier than the prerequisite task's deadline
-    if (dependentDate < prerequisiteDate) {
+    // CORRECT LOGIC: The dependent task's due date must not be later than the independent task's due date
+    // This ensures the dependent task can be completed within the timeframe of the independent task
+    if (dependentDate > prerequisiteDate) {
         return {
             valid: false,
-            message: "The dependent task's deadline cannot be earlier than the prerequisite task's deadline",
+            message: `Invalid dependency: "${dependentTask.task}" (due ${dependentTask.date} ${dependentTask.time}) cannot depend on "${prerequisiteTask.task}" (due ${prerequisiteTask.date} ${prerequisiteTask.time}) because the dependent task has a later due date. The dependent task must be due before or at the same time as the independent task.`,
             dependentTask,
             prerequisiteTask,
         };
