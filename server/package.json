@@ -7,7 +7,10 @@
     "scripts": {
         "start": "node index.js",
         "dev": "nodemon index.js",
-        "test": "jest"
+        "test": "jest",
+        "seed": "node scripts/seedData.js",
+        "create-test-user": "node scripts/createTestUser.js",
+        "setup-test-data": "node scripts/setupTestData.js"
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
