@@ -123,7 +123,7 @@ function NotificationBell() {
       return (
          <div
             key={notification._id}
-            className={`px-4 sm:px-6 py-4  transition-all duration-200 hover:bg-gray-50 cursor-pointer ${
+            className={`px-3 sm:px-4 lg:px-6 py-3 sm:py-4 transition-all duration-200 hover:bg-gray-50 cursor-pointer ${
                notification.read ? '' : 'bg-blue-50/50 border-l-4 border-l-blue-500'
             }`}
             onClick={(e) => {
@@ -133,20 +133,20 @@ function NotificationBell() {
                }
             }}
          >
-            <div className="flex items-start space-x-3">
+            <div className="flex items-start space-x-2 sm:space-x-3">
                {/* Icon with enhanced styling */}
                <div className="flex-shrink-0 mt-1">
-                  <div className="bg-gray-100 p-2 rounded-lg">{getIcon(notification.type)}</div>
+                  <div className="bg-gray-100 p-1.5 sm:p-2 rounded-lg">{getIcon(notification.type)}</div>
                </div>
 
                {/* Content */}
                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 leading-relaxed">{notification.message}</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-900 leading-relaxed">{notification.message}</p>
                   <div className="flex items-center justify-between mt-2">
                      <p className="text-xs text-gray-500 flex items-center">
                         <svg
                            xmlns="http://www.w3.org/2000/svg"
-                           className="h-3 w-3 mr-1"
+                           className="h-3 w-3 mr-1 flex-shrink-0"
                            fill="none"
                            viewBox="0 0 24 24"
                            stroke="currentColor"
@@ -158,9 +158,9 @@ function NotificationBell() {
                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                            />
                         </svg>
-                        {formatTime(notification.createdAt || notification.timestamp)}
+                        <span className="truncate">{formatTime(notification.createdAt || notification.timestamp)}</span>
                      </p>
-                     {!notification.read && <span className="bg-blue-500 h-2 w-2 rounded-full"></span>}
+                     {!notification.read && <span className="bg-blue-500 h-2 w-2 rounded-full flex-shrink-0"></span>}
                   </div>
                </div>
 
@@ -170,10 +170,10 @@ function NotificationBell() {
                      e.stopPropagation();
                      handleRemoveNotification(notification);
                   }}
-                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 group"
+                  className="flex-shrink-0 p-1 sm:p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 group"
                   title="Remove notification"
                >
-                  <FiX className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                  <FiX className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform duration-200" />
                </button>
             </div>
          </div>
@@ -201,18 +201,18 @@ function NotificationBell() {
             ReactDOM.createPortal(
                <div
                   data-notification-tray="true"
-                  className="fixed top-16 right-4 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-[85vh] overflow-hidden"
+                  className="fixed top-12 sm:top-16 right-2 sm:right-4 w-72 sm:w-80 lg:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-[85vh] overflow-hidden"
                   style={{ zIndex: 2147483647 }}
                >
                   {/* Header Section */}
-                  <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+                  <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
                      <div className="flex justify-between items-center">
                         <div className="flex items-center space-x-2">
-                           <div className="bg-white/20 p-1.5 rounded-lg">
-                              <FiBell className="h-5 w-5" />
+                           <div className="bg-white/20 p-1 sm:p-1.5 rounded-lg">
+                              <FiBell className="h-4 w-4 sm:h-5 sm:w-5" />
                            </div>
                            <div>
-                              <h3 className="text-base font-semibold">Notifications</h3>
+                              <h3 className="text-sm sm:text-base font-semibold">Notifications</h3>
                               <p className="text-xs text-white/80">
                                  {persistentNotifications.length === 0
                                     ? 'All caught up!'
@@ -223,26 +223,28 @@ function NotificationBell() {
                            </div>
                         </div>
                         {persistentNotifications.length > 0 && (
-                           <div className="flex items-center space-x-2">
+                           <div className="flex items-center space-x-1 sm:space-x-2">
                               <button
                                  onClick={(e) => {
                                     e.stopPropagation();
                                     markAllAsRead();
                                  }}
-                                 className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors"
+                                 className="px-2 sm:px-3 py-1 sm:py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors"
                                  title="Mark all as read"
                               >
-                                 Mark Read
+                                 <span className="hidden sm:inline">Mark Read</span>
+                                 <span className="sm:hidden">Read</span>
                               </button>
                               <button
                                  onClick={(e) => {
                                     e.stopPropagation();
                                     clearNotifications();
                                  }}
-                                 className="px-3 py-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-xs font-medium transition-colors"
+                                 className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-xs font-medium transition-colors"
                                  title="Clear all notifications"
                               >
-                                 Clear All
+                                 <span className="hidden sm:inline">Clear All</span>
+                                 <span className="sm:hidden">Clear</span>
                               </button>
                            </div>
                         )}
@@ -252,9 +254,9 @@ function NotificationBell() {
                   {/* Notification list */}
                   <div className="max-h-[60vh] overflow-y-auto">
                      {persistentNotifications.length === 0 ? (
-                        <div className="px-6 py-12 text-center">
-                           <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                              <FiBell className="h-8 w-8 text-gray-400" />
+                        <div className="px-4 sm:px-6 py-8 sm:py-12 text-center">
+                           <div className="bg-gray-100 rounded-full p-3 sm:p-4 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 flex items-center justify-center">
+                              <FiBell className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
                            </div>
                            <h4 className="text-sm font-medium text-gray-900 mb-1">No notifications</h4>
                            <p className="text-xs text-gray-500">

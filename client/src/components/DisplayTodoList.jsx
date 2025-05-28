@@ -12,6 +12,7 @@ import {
    FiDownload,
    FiLink,
 } from 'react-icons/fi';
+import { HiCalendar, HiClock, HiCheck, HiChevronUp, HiChevronDown as HiChevronDownIcon } from 'react-icons/hi';
 import EditTaskModal from './EditTaskModal';
 import Subtask from './Subtask';
 import SubtaskModal from './SubtaskModal';
@@ -798,17 +799,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      disabled={isUpdating}
                      title={completed ? 'Mark as incomplete' : 'Mark as complete'}
                   >
-                     {completed && (
-                        <svg
-                           xmlns="http://www.w3.org/2000/svg"
-                           className="h-4 w-4"
-                           fill="none"
-                           viewBox="0 0 24 24"
-                           stroke="currentColor"
-                        >
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                     )}
+                     {completed && <HiCheck className="h-4 w-4" />}
                   </button>
                </div>
 
@@ -835,20 +826,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                   <div className="flex items-center justify-between">
                      <div className="flex items-center space-x-3">
                         <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-2 rounded-lg">
-                           <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 text-white"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                           >
-                              <path
-                                 strokeLinecap="round"
-                                 strokeLinejoin="round"
-                                 strokeWidth={2}
-                                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                           </svg>
+                           <HiCalendar className="h-4 w-4 text-white" />
                         </div>
                         <div>
                            <p
@@ -875,42 +853,22 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                {/* Action Buttons Row */}
                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                   {/* Left Actions */}
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-1 sm:space-x-2 flex-wrap gap-1">
                      {/* Subtask Toggle */}
                      {list.subtaskCount > 0 && (
                         <button
                            onClick={toggleSubtasks}
-                           className="flex items-center space-x-2 px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                           className="flex items-center space-x-1 px-2 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-xs font-medium transition-colors shadow-sm"
                            title={showSubtasks ? 'Hide subtasks' : 'Show subtasks'}
                         >
-                           <span>Subtasks</span>
+                           <span className="hidden xs:inline">Subtasks</span>
+                           <span className="xs:hidden">Sub</span>
                            {showSubtasks ? (
-                              <svg
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 className="h-4 w-4"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor"
-                              >
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
+                              <HiChevronUp className="h-3 w-3" />
                            ) : (
-                              <svg
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 className="h-4 w-4"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor"
-                              >
-                                 <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M19 9l-7 7-7-7"
-                                 />
-                              </svg>
+                              <HiChevronDownIcon className="h-3 w-3" />
                            )}
-                           <span className="bg-purple-200 text-purple-800 px-1.5 py-0.5 rounded-full text-xs font-semibold">
+                           <span className="bg-purple-200 text-purple-800 px-1 py-0.5 rounded-full text-xs font-semibold">
                               {list.completedSubtasks}/{list.subtaskCount}
                            </span>
                         </button>
@@ -920,39 +878,39 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      {hasDependencies && (
                         <button
                            onClick={handleViewDependencies}
-                           className="flex items-center space-x-1 px-3 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-sm font-medium transition-colors"
+                           className="flex items-center space-x-1 px-2 py-1.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-xs font-medium transition-colors"
                            title="View dependencies"
                         >
-                           <FiLink className="h-4 w-4" />
-                           <span>Deps</span>
+                           <FiLink className="h-3 w-3" />
+                           <span className="hidden xs:inline">Deps</span>
                         </button>
                      )}
                   </div>
 
                   {/* Right Actions */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
                      {/* Edit */}
                      <button
                         onClick={handleEdit}
-                        className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
+                        className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
                         title="Edit task"
                      >
-                        <FiEdit2 className="h-4 w-4" />
+                        <FiEdit2 className="h-3 w-3" />
                      </button>
 
                      {/* Delete */}
                      <button
                         onClick={handleDelete}
-                        className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                        className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
                         title="Delete task"
                      >
-                        <FiTrash2 className="h-4 w-4" />
+                        <FiTrash2 className="h-3 w-3" />
                      </button>
 
                      {/* Notes */}
                      <button
                         onClick={toggleNoteView}
-                        className={`group relative p-2 rounded-lg transition-all duration-300 ease-out ${
+                        className={`group relative p-1.5 rounded-lg transition-all duration-300 ease-out ${
                            showNoteView
                               ? 'bg-yellow-100 text-yellow-800 shadow-lg scale-105'
                               : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-600 hover:text-yellow-700 hover:scale-105 hover:shadow-md'
@@ -961,13 +919,13 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      >
                         <div className="relative">
                            <FiEye
-                              className={`h-4 w-4 transition-all duration-300 ease-out ${
+                              className={`h-3 w-3 transition-all duration-300 ease-out ${
                                  showNoteView ? 'scale-110' : 'group-hover:scale-110'
                               }`}
                            />
                            {notes.length > 0 && (
                               <div
-                                 className={`absolute -top-1 -right-1 w-2 h-2 rounded-full transition-all duration-300 ${
+                                 className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                                     showNoteView ? 'bg-yellow-600 scale-125' : 'bg-yellow-500 group-hover:scale-110'
                                  }`}
                               ></div>
@@ -979,10 +937,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      {hasAttachments && attachments.length > 0 && (
                         <button
                            onClick={() => handleDownloadAttachment(attachments[0]._id)}
-                           className="p-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
+                           className="p-1.5 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors"
                            title="Download attachment"
                         >
-                           <FiDownload className="h-4 w-4" />
+                           <FiDownload className="h-3 w-3" />
                         </button>
                      )}
 
@@ -990,79 +948,66 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      <div className="relative">
                         <button
                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                           className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                           className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
                            title="More options"
                         >
-                           <FiMoreVertical className="h-4 w-4" />
+                           <FiMoreVertical className="h-3 w-3" />
                         </button>
 
                         {/* Enhanced Mobile Dropdown */}
                         {isMenuOpen && (
-                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-10 border border-gray-200">
+                           <div className="absolute right-0 mt-1 w-40 sm:w-48 bg-white rounded-xl shadow-lg py-1 z-10 border border-gray-200 max-h-64 overflow-y-auto">
                               <button
                                  onClick={() => {
                                     setIsReminderModalOpen(true);
                                     setIsMenuOpen(false);
                                  }}
-                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5 mr-3 text-blue-500"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                 >
-                                    <path
-                                       strokeLinecap="round"
-                                       strokeLinejoin="round"
-                                       strokeWidth={2}
-                                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                 </svg>
-                                 Set Reminder
+                                 <HiClock className="h-4 w-4 mr-2 flex-shrink-0" />
+                                 <span className="truncate">Set Reminder</span>
                               </button>
                               <button
                                  onClick={handleAddSubtask}
-                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiPlus className="mr-3 h-5 w-5 text-green-500" />
-                                 Add Subtask
+                                 <FiPlus className="mr-2 h-4 w-4 flex-shrink-0" />
+                                 <span className="truncate">Add Subtask</span>
                               </button>
                               <button
                                  onClick={() => {
                                     setShowNoteModal(true);
                                     setIsMenuOpen(false);
                                  }}
-                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiPlus className="mr-3 h-5 w-5 text-yellow-500" />
-                                 Add Note
+                                 <FiPlus className="mr-2 h-4 w-4 flex-shrink-0" />
+                                 <span className="truncate">Add Note</span>
                               </button>
                               <button
                                  onClick={() => {
                                     setShowAttachmentModal(true);
                                     setIsMenuOpen(false);
                                  }}
-                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiPlus className="mr-3 h-5 w-5 text-purple-500" />
-                                 Add Attachment
+                                 <FiPlus className="mr-2 h-4 w-4 flex-shrink-0" />
+                                 <span className="truncate">Add Attachment</span>
                               </button>
                               <button
                                  onClick={handleAddDependency}
-                                 className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiLink className="mr-3 h-5 w-5 text-indigo-500" />
-                                 Add Dependency
+                                 <FiLink className="mr-2 h-4 w-4 flex-shrink-0" />
+                                 <span className="truncate">Add Dependency</span>
                               </button>
                               {hasDependencies && (
                                  <button
                                     onClick={handleViewDependencies}
-                                    className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 w-full text-left transition-colors"
+                                    className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                  >
-                                    <FiEye className="mr-3 h-5 w-5 text-gray-500" />
-                                    View Dependencies
+                                    <FiEye className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">View Dependencies</span>
                                  </button>
                               )}
                            </div>
@@ -1097,9 +1042,9 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                            title={showSubtasks ? 'Collapse subtasks' : 'Expand subtasks'}
                         >
                            {showSubtasks ? (
-                              <FiChevronDown className="h-4 w-4" />
+                              <HiChevronUp className="h-4 w-4" />
                            ) : (
-                              <FiChevronRight className="h-4 w-4" />
+                              <HiChevronDownIcon className="h-4 w-4" />
                            )}
                         </button>
                      )}
@@ -1212,17 +1157,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         disabled={isUpdating}
                         title={completed ? 'Mark as incomplete' : 'Mark as complete'}
                      >
-                        {completed && (
-                           <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3 w-3 md:h-4 md:w-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                           >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                           </svg>
-                        )}
+                        {completed && <HiCheck className="h-4 w-4" />}
                      </button>
 
                      {/* View notes button */}
@@ -1274,71 +1209,58 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
                         {/* Dropdown menu */}
                         {isMenuOpen && (
-                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border">
+                           <div className="absolute right-0 mt-2 w-40 sm:w-48 bg-white rounded-md shadow-lg py-1 z-10 border max-h-64 overflow-y-auto">
                               <button
                                  onClick={() => {
                                     setIsReminderModalOpen(true);
                                     setIsMenuOpen(false);
                                  }}
-                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5 mr-2"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                 >
-                                    <path
-                                       strokeLinecap="round"
-                                       strokeLinejoin="round"
-                                       strokeWidth={2}
-                                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                 </svg>
-                                 Set Reminder
+                                 <HiClock className="h-4 w-4 mr-2 flex-shrink-0" />
+                                 <span className="truncate">Set Reminder</span>
                               </button>
                               <button
                                  onClick={handleAddSubtask}
-                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiPlus className="mr-2 h-4 w-4" />
-                                 Add Subtask
+                                 <FiPlus className="mr-2 h-4 w-4 flex-shrink-0" />
+                                 <span className="truncate">Add Subtask</span>
                               </button>
                               <button
                                  onClick={() => {
                                     setShowNoteModal(true);
                                     setIsMenuOpen(false);
                                  }}
-                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiPlus className="mr-2 h-4 w-4" />
-                                 Add Note
+                                 <FiPlus className="mr-2 h-4 w-4 flex-shrink-0" />
+                                 <span className="truncate">Add Note</span>
                               </button>
                               <button
                                  onClick={() => {
                                     setShowAttachmentModal(true);
                                     setIsMenuOpen(false);
                                  }}
-                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiPlus className="mr-2 h-4 w-4" />
-                                 Add Attachment
+                                 <FiPlus className="mr-2 h-4 w-4 flex-shrink-0" />
+                                 <span className="truncate">Add Attachment</span>
                               </button>
                               <button
                                  onClick={handleAddDependency}
-                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                 className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                               >
-                                 <FiLink className="mr-2 h-4 w-4" />
-                                 Add Dependency
+                                 <FiLink className="mr-2 h-4 w-4 flex-shrink-0" />
+                                 <span className="truncate">Add Dependency</span>
                               </button>
                               {hasDependencies && (
                                  <button
                                     onClick={handleViewDependencies}
-                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                                    className="flex items-center px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                  >
-                                    <FiEye className="mr-2 h-4 w-4" />
-                                    View Dependencies
+                                    <FiEye className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">View Dependencies</span>
                                  </button>
                               )}
                            </div>
