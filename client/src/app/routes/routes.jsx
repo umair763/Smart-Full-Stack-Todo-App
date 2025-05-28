@@ -1,7 +1,6 @@
 'use client';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import LoginForm from '../pages/auth/LoginForm';
-import RegisterUser from '../pages/auth/RegisterUser';
+import AuthPage from '../pages/auth/AuthPage';
 import Layout from '../layout/Layout';
 import LandingPageLayout from '../layout/LandingPageLayout';
 import LandingPage from '../pages/LandingPage';
@@ -36,8 +35,8 @@ const AppRoutes = () => {
 
          {!isLoggedIn ? (
             <>
-               <Route path="/auth/login" element={<LoginForm />} />
-               <Route path="/auth/register" element={<RegisterUser />} />
+               <Route path="/auth/login" element={<AuthPage />} />
+               <Route path="/auth/register" element={<AuthPage />} />
                <Route path="*" element={<Navigate to="/" />} />
             </>
          ) : (
