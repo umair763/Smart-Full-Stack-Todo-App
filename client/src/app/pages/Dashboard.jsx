@@ -230,7 +230,7 @@ function Dashboard() {
    };
 
    return (
-      <div className="w-full sm:w-11/12 md:w-10/12 lg:w-11/12 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 p-1 sm:p-2 md:p-3 lg:p-4 xl:p-6">
+      <div className="w-full sm:w-11/12 md:w-10/12 lg:w-11/12 dark:from-gray-900 dark:to-gray-800 p-1 sm:p-2 md:p-3 lg:p-4 xl:p-6">
          <div className="max-w-7xl mx-auto px-1 sm:px-2 md:px-4 lg:px-6">
             {/* Main Content */}
             <div className="space-y-2 sm:space-y-4 md:space-y-6">
