@@ -299,7 +299,7 @@ function AuthPage() {
                      >
                         <div className="w-full max-w-md">
                            <div className="text-center mb-8">
-                              <h2 className="text-4xl font-bold text-slate-800 mb-2">Welcome Back</h2>
+                              <h2 className="text-4xl font-bold text-slate-800 mb-2 font-proza">Welcome Back</h2>
                               <p className="text-slate-600">Sign in to your account to continue</p>
                            </div>
 
@@ -381,7 +381,7 @@ function AuthPage() {
                         className="w-1/2 flex items-center justify-center p-12 bg-gradient-to-br from-purple-600 to-purple-800"
                      >
                         <div className="text-center text-white max-w-md">
-                           <h1 className="text-5xl font-bold mb-6">Smart Todo</h1>
+                           <h1 className="text-5xl font-bold mb-6 font-proza">Smart Todo</h1>
                            <p className="text-xl mb-8 text-purple-100">
                               Organize your life with intelligent task management, dependencies, and real-time
                               collaboration.
@@ -429,7 +429,7 @@ function AuthPage() {
                         className="w-1/2 flex items-center justify-center p-12 bg-gradient-to-br from-purple-600 to-purple-800"
                      >
                         <div className="text-center text-white max-w-md">
-                           <h1 className="text-5xl font-bold mb-6">Join Smart Todo</h1>
+                           <h1 className="text-5xl font-bold mb-6 font-proza">Join Smart Todo</h1>
                            <p className="text-xl mb-8 text-purple-100">
                               Start your journey to better productivity. Create an account and experience the future of
                               task management.
@@ -468,7 +468,7 @@ function AuthPage() {
                      >
                         <div className="w-full max-w-md">
                            <div className="text-center mb-4">
-                              <h2 className="text-3xl font-bold text-slate-800 mb-1">Create Account</h2>
+                              <h2 className="text-3xl font-bold text-slate-800 mb-1 font-proza">Create Account</h2>
                               <p className="text-slate-600 text-sm">Join thousands of productive users</p>
                            </div>
 
@@ -651,7 +651,7 @@ function AuthPage() {
                         className="w-full max-w-sm"
                      >
                         <div className="text-center mb-8">
-                           <h2 className="text-3xl font-bold text-slate-800 mb-2">Welcome Back</h2>
+                           <h2 className="text-3xl font-bold text-slate-800 mb-2 font-proza">Welcome Back</h2>
                            <p className="text-slate-600">Sign in to your account</p>
                         </div>
 
@@ -741,7 +741,7 @@ function AuthPage() {
                         className="w-full max-w-sm"
                      >
                         <div className="text-center mb-4">
-                           <h2 className="text-2xl font-bold text-slate-800 mb-1">Create Account</h2>
+                           <h2 className="text-2xl font-bold text-slate-800 mb-1 font-proza">Create Account</h2>
                            <p className="text-slate-600 text-sm">Join Smart Todo today</p>
                         </div>
 

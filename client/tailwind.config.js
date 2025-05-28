@@ -14,6 +14,10 @@ export default {
       extend: {
          fontFamily: {
             'caros-light': ['"Caros Light"', 'sans-serif'],
+            'proza': ['"Proza Libre"', 'serif'],
+            'linotte': ['"Linotte"', 'sans-serif'],
+            'sans': ['"Linotte"', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', '"Noto Sans"', 'sans-serif'],
+            'serif': ['"Proza Libre"', 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
          },
          colors: {
             primary: {

@@ -7,7 +7,7 @@ import AddTaskForm from '../../components/AddTaskForm';
 import DeleteTaskForm from '../../components/DeleteTaskForm';
 import Modal from '../../components/Modal';
 import ReminderModal from '../../components/ReminderModal';
-import CascadeDeleteModal from '../../components/CascadeDeleteModal';
+import DeleteTaskModal from '../../components/DeleteTaskModal';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -22,12 +22,11 @@ function Dashboard() {
    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
    const [selectedTask, setSelectedTask] = useState(null);
 
-   // Cascade delete modal state
-   const [cascadeDeleteModal, setCascadeDeleteModal] = useState({
+   // Simple delete modal state
+   const [deleteModal, setDeleteModal] = useState({
       isOpen: false,
       taskId: null,
       taskName: '',
-      dependentTasks: [],
       isDeleting: false,
    });
 
@@ -128,11 +127,27 @@ function Dashboard() {
    };
 
    const handleDeleteTask = async (taskId) => {
+      // Find the task to get its name for the modal
+      const taskToDelete = tasks.find((task) => task._id === taskId);
+
+      // Show confirmation modal first
+      setDeleteModal({
+         isOpen: true,
+         taskId: taskId,
+         taskName: taskToDelete?.task || 'Unknown Task',
+         isDeleting: false,
+      });
+   };
+
+   // Handle simple delete confirmation
+   const handleDeleteConfirm = async () => {
+      setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+
       try {
          const token = localStorage.getItem('token');
 
          // First attempt to delete without confirmation
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -141,86 +156,52 @@ function Dashboard() {
          });
 
          if (response.status === 409) {
-            // Task has dependents, show modal for confirmation
-            const errorData = await response.json();
-            const taskToDelete = tasks.find((task) => task._id === taskId);
-
-            setCascadeDeleteModal({
-               isOpen: true,
-               taskId: taskId,
-               taskName: taskToDelete?.task || 'Unknown Task',
-               dependentTasks: errorData.dependentTasks,
-               isDeleting: false,
+            // Task has dependents, force delete with cascade
+            const cascadeResponse = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
+               method: 'DELETE',
+               headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+               },
+               body: JSON.stringify({ confirmCascade: true }),
             });
-            return; // Exit early, modal will handle the rest
-         }
 
-         if (!response.ok) {
+            if (!cascadeResponse.ok) {
+               const errorData = await cascadeResponse.json();
+               throw new Error(errorData.message || 'Failed to delete task');
+            }
+         } else if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message || 'Failed to delete task');
          }
 
-         // Regular deletion (no dependents)
-         setTasks((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
+         // Regular deletion (no dependents) - Remove the task from local state
+         setTasks((prevTasks) => prevTasks.filter((task) => task._id !== deleteModal.taskId));
          setIsDeleteFormVisible(false); // Close the form after successful deletion
          setApiError('');
-      } catch (error) {
-         console.error('Error deleting task:', error);
-         setApiError(error.message || 'Failed to delete task. Please try again.');
-      }
-   };
 
-   // Handle cascade delete confirmation
-   const handleCascadeDeleteConfirm = async () => {
-      setCascadeDeleteModal((prev) => ({ ...prev, isDeleting: true }));
-
-      try {
-         const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${cascadeDeleteModal.taskId}`, {
-            method: 'DELETE',
-            headers: {
-               Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ confirmCascade: true }),
-         });
-
-         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to delete task');
-         }
-
-         const result = await response.json();
-
-         // Remove the task and its dependents from local state
-         const dependentIds = cascadeDeleteModal.dependentTasks.map((dep) => dep.id);
-         setTasks((prevTasks) =>
-            prevTasks.filter((task) => task._id !== cascadeDeleteModal.taskId && !dependentIds.includes(task._id))
-         );
-
-         setIsDeleteFormVisible(false);
-         setApiError('');
-         setCascadeDeleteModal({
+         // Close the modal
+         setDeleteModal({
             isOpen: false,
             taskId: null,
             taskName: '',
-            dependentTasks: [],
             isDeleting: false,
          });
+
+         // Note: We don't create a success notification here because the backend already sends one
       } catch (error) {
          console.error('Error deleting task:', error);
          setApiError(error.message || 'Failed to delete task. Please try again.');
-         setCascadeDeleteModal((prev) => ({ ...prev, isDeleting: false }));
+         setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
       }
    };
 
-   // Handle cascade delete cancel
-   const handleCascadeDeleteCancel = () => {
-      setCascadeDeleteModal({
+   // Handle simple delete cancel
+   const handleDeleteCancel = () => {
+      setDeleteModal({
          isOpen: false,
          taskId: null,
          taskName: '',
-         dependentTasks: [],
          isDeleting: false,
       });
    };
@@ -296,13 +277,12 @@ function Dashboard() {
             task={selectedTask}
             onSetReminder={handleSetReminder}
          />
-         <CascadeDeleteModal
-            isOpen={cascadeDeleteModal.isOpen}
-            onClose={handleCascadeDeleteCancel}
-            onConfirm={handleCascadeDeleteConfirm}
-            taskName={cascadeDeleteModal.taskName}
-            dependentTasks={cascadeDeleteModal.dependentTasks}
-            isLoading={cascadeDeleteModal.isDeleting}
+         <DeleteTaskModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleDeleteCancel}
+            onConfirm={handleDeleteConfirm}
+            taskName={deleteModal.taskName}
+            isDeleting={deleteModal.isDeleting}
          />
       </div>
    );

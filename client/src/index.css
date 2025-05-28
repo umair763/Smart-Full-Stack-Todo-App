@@ -1,6 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Proza+Libre:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Linotte:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global Font Styles */
+@layer base {
+   /* Set Linotte as default for all text */
+   * {
+      font-family: 'Linotte', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+         'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+   }
+
+   /* Set Proza for all heading tags */
+   h1,
+   h2,
+   h3,
+   h4,
+   h5,
+   h6 {
+      font-family: 'Proza Libre', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif !important;
+      font-weight: 600;
+      line-height: 1.2;
+   }
+
+   /* Specific heading sizes and weights with responsive design */
+   h1 {
+      font-size: 1.875rem; /* 30px */
+      font-weight: 700;
+      line-height: 1.1;
+   }
+
+   @media (min-width: 640px) {
+      h1 {
+         font-size: 2.25rem; /* 36px */
+      }
+   }
+
+   @media (min-width: 1024px) {
+      h1 {
+         font-size: 3rem; /* 48px */
+      }
+   }
+
+   h2 {
+      font-size: 1.5rem; /* 24px */
+      font-weight: 700;
+      line-height: 1.15;
+   }
+
+   @media (min-width: 640px) {
+      h2 {
+         font-size: 1.875rem; /* 30px */
+      }
+   }
+
+   @media (min-width: 1024px) {
+      h2 {
+         font-size: 2.25rem; /* 36px */
+      }
+   }
+
+   h3 {
+      font-size: 1.25rem; /* 20px */
+      font-weight: 600;
+      line-height: 1.2;
+   }
+
+   @media (min-width: 640px) {
+      h3 {
+         font-size: 1.5rem; /* 24px */
+      }
+   }
+
+   h4 {
+      font-size: 1.125rem; /* 18px */
+      font-weight: 600;
+      line-height: 1.25;
+   }
+
+   @media (min-width: 640px) {
+      h4 {
+         font-size: 1.25rem; /* 20px */
+      }
+   }
+
+   h5 {
+      font-size: 1rem; /* 16px */
+      font-weight: 600;
+      line-height: 1.3;
+   }
+
+   @media (min-width: 640px) {
+      h5 {
+         font-size: 1.125rem; /* 18px */
+      }
+   }
+
+   h6 {
+      font-size: 0.875rem; /* 14px */
+      font-weight: 600;
+      line-height: 1.35;
+   }
+
+   @media (min-width: 640px) {
+      h6 {
+         font-size: 1rem; /* 16px */
+      }
+   }
+
+   /* Ensure body text uses Linotte */
+   body,
+   p,
+   span,
+   div,
+   a,
+   button,
+   input,
+   textarea,
+   select,
+   label,
+   li,
+   td,
+   th {
+      font-family: 'Linotte', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+         'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+   }
+
+   /* Override for elements that should use Proza (titles, headings) */
+   .title,
+   .heading,
+   [class*='title'],
+   [class*='heading'],
+   [role='heading'] {
+      font-family: 'Proza Libre', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif !important;
+   }
+
+   /* Ensure large text sizes use Proza for titles */
+   .text-xl,
+   .text-2xl,
+   .text-3xl,
+   .text-4xl,
+   .text-5xl,
+   .text-6xl {
+      font-family: 'Proza Libre', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+   }
+
+   /* Force Proza for font-bold elements that are likely titles */
+   .font-bold.text-lg,
+   .font-bold.text-xl,
+   .font-bold.text-2xl,
+   .font-bold.text-3xl,
+   .font-bold.text-4xl,
+   .font-bold.text-5xl,
+   .font-bold.text-6xl {
+      font-family: 'Proza Libre', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif !important;
+   }
+
+   /* Force Proza for semibold elements that are likely titles */
+   .font-semibold.text-lg,
+   .font-semibold.text-xl,
+   .font-semibold.text-2xl,
+   .font-semibold.text-3xl,
+   .font-semibold.text-4xl,
+   .font-semibold.text-5xl,
+   .font-semibold.text-6xl {
+      font-family: 'Proza Libre', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif !important;
+   }
+}
 
 @font-face {
    font-family: 'Caros Light';
@@ -526,16 +694,18 @@ body {
 }
 
 body {
-   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
-      'Droid Sans', 'Helvetica Neue', sans-serif;
    -webkit-font-smoothing: antialiased;
    -moz-osx-font-smoothing: grayscale;
+   font-family: 'Linotte', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 }
 
 #root {
    width: 100%;
    height: 100%;
    overflow-x: hidden;
+   font-family: 'Linotte', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 }
 
 code {
@@ -555,4 +725,55 @@ code {
    -webkit-line-clamp: 2;
    -webkit-box-orient: vertical;
    overflow: hidden;
+}
+
+/* Comprehensive Font Utility Classes */
+.font-proza {
+   font-family: 'Proza Libre', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif !important;
+}
+
+.font-linotte {
+   font-family: 'Linotte', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif !important;
+}
+
+/* Force Proza for all title-like elements */
+.font-title,
+.title,
+.heading,
+[role='heading'] {
+   font-family: 'Proza Libre', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif !important;
+}
+
+/* Force Linotte for all body text elements */
+.font-body,
+.body-text {
+   font-family: 'Linotte', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif !important;
+}
+
+/* Additional overrides for common UI elements */
+button,
+input,
+textarea,
+select {
+   font-family: 'Linotte', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif !important;
+}
+
+/* Ensure headings in components use Proza */
+[class*='text-xl'],
+[class*='text-2xl'],
+[class*='text-3xl'],
+[class*='text-4xl'],
+[class*='text-5xl'],
+[class*='text-6xl'] {
+   font-family: 'Proza Libre', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+}
+
+/* Override for elements that should definitely use Linotte */
+.font-sans,
+[class*='font-sans'] {
+   font-family: 'Linotte', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      'Helvetica Neue', Arial, 'Noto Sans', sans-serif !important;
 }

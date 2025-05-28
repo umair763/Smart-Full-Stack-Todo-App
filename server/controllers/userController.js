@@ -7,6 +7,7 @@ import Attachment from "../models/Attachment.js";
 import Dependency from "../models/Dependency.js";
 import Reminder from "../models/Reminder.js";
 import Notification from "../models/Notification.js";
+import Streak from "../models/Streak.js";
 import { OAuth2Client } from "google-auth-library";
 import multer from "multer";
 
@@ -254,11 +255,84 @@ export const updateProfileImage = async (req, res) => {
 // Delete account
 export const deleteAccount = async (req, res) => {
     try {
-        await User.findByIdAndDelete(req.user._id);
-        res.json({ message: "Account deleted successfully" });
+        const userId = req.user._id;
+        
+        console.log(`Starting account deletion for user: ${userId}`);
+
+        // Get all user's tasks first (needed for dependencies)
+        const userTasks = await Task.find({ userId }).select('_id');
+        const taskIds = userTasks.map(task => task._id);
+
+        // Delete all associated data in the correct order to handle dependencies
+        const deletionPromises = [
+            // Delete streaks
+            Streak.deleteMany({ userId }),
+            
+            // Delete notifications
+            Notification.deleteMany({ userId }),
+            
+            // Delete reminders
+            Reminder.deleteMany({ userId }),
+            
+            // Delete attachments
+            Attachment.deleteMany({ userId }),
+            
+            // Delete notes
+            Note.deleteMany({ userId }),
+            
+            // Delete subtasks
+            Subtask.deleteMany({ userId }),
+            
+            // Delete dependencies (both where user's tasks are dependent or prerequisite)
+            Dependency.deleteMany({
+                $or: [
+                    { dependentTaskId: { $in: taskIds } },
+                    { prerequisiteTaskId: { $in: taskIds } }
+                ]
+            }),
+            
+            // Delete tasks
+            Task.deleteMany({ userId }),
+        ];
+
+        // Execute all deletions
+        const results = await Promise.all(deletionPromises);
+        
+        console.log('Deletion results:', {
+            streaks: results[0].deletedCount,
+            notifications: results[1].deletedCount,
+            reminders: results[2].deletedCount,
+            attachments: results[3].deletedCount,
+            notes: results[4].deletedCount,
+            subtasks: results[5].deletedCount,
+            dependencies: results[6].deletedCount,
+            tasks: results[7].deletedCount,
+        });
+
+        // Finally, delete the user account
+        await User.findByIdAndDelete(userId);
+        
+        console.log(`Account deletion completed for user: ${userId}`);
+
+        res.json({ 
+            message: "Account and all associated data deleted successfully",
+            deletedData: {
+                streaks: results[0].deletedCount,
+                notifications: results[1].deletedCount,
+                reminders: results[2].deletedCount,
+                attachments: results[3].deletedCount,
+                notes: results[4].deletedCount,
+                subtasks: results[5].deletedCount,
+                dependencies: results[6].deletedCount,
+                tasks: results[7].deletedCount,
+            }
+        });
     } catch (error) {
         console.error("Delete account error:", error);
-        res.status(500).json({ message: "Error deleting account" });
+        res.status(500).json({ 
+            message: "Error deleting account",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 

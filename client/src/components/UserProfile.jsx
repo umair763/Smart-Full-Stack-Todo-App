@@ -190,7 +190,7 @@ function UserProfile() {
 
                {/* User info card */}
                <div className="mt-6 bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/10">
-                  <h2 className="text-2xl font-bold text-white text-center mb-6">{userDetails.username}</h2>
+                  <h2 className="text-2xl font-bold text-white text-center mb-6 font-proza">{userDetails.username}</h2>
 
                   <div className="space-y-4">
                      <div className="flex items-center gap-3 p-3 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10 transition-all hover:bg-white/10">
