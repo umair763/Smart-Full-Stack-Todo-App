@@ -43,6 +43,169 @@
    animation: slideOut 0.3s ease-in forwards;
 }
 
+/* Enhanced animations for insights page */
+@keyframes chartFadeIn {
+   0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+   }
+   100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+   }
+}
+
+@keyframes statCountUp {
+   0% {
+      opacity: 0;
+      transform: scale(0.5);
+   }
+   50% {
+      opacity: 0.8;
+      transform: scale(1.1);
+   }
+   100% {
+      opacity: 1;
+      transform: scale(1);
+   }
+}
+
+@keyframes progressFill {
+   0% {
+      width: 0%;
+   }
+   100% {
+      width: var(--progress-width);
+   }
+}
+
+@keyframes pulseGlow {
+   0%,
+   100% {
+      box-shadow: 0 0 5px rgba(148, 6, 230, 0.3);
+   }
+   50% {
+      box-shadow: 0 0 20px rgba(148, 6, 230, 0.6), 0 0 30px rgba(148, 6, 230, 0.4);
+   }
+}
+
+@keyframes cardHover {
+   0% {
+      transform: translateY(0) scale(1);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+   }
+   100% {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+   }
+}
+
+@keyframes iconSpin {
+   0% {
+      transform: rotate(0deg);
+   }
+   100% {
+      transform: rotate(360deg);
+   }
+}
+
+@keyframes iconBounce {
+   0%,
+   20%,
+   53%,
+   80%,
+   100% {
+      transform: translate3d(0, 0, 0);
+   }
+   40%,
+   43% {
+      transform: translate3d(0, -8px, 0);
+   }
+   70% {
+      transform: translate3d(0, -4px, 0);
+   }
+   90% {
+      transform: translate3d(0, -2px, 0);
+   }
+}
+
+.animate-chart-fade-in {
+   animation: chartFadeIn 0.6s ease-out forwards;
+}
+
+.animate-stat-count-up {
+   animation: statCountUp 0.8s ease-out forwards;
+}
+
+.animate-progress-fill {
+   animation: progressFill 1.5s ease-out forwards;
+}
+
+.animate-pulse-glow {
+   animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-card-hover {
+   animation: cardHover 0.3s ease-out forwards;
+}
+
+.animate-icon-spin {
+   animation: iconSpin 1s linear infinite;
+}
+
+.animate-icon-bounce {
+   animation: iconBounce 1s ease-in-out infinite;
+}
+
+/* Chart container styles */
+.chart-container {
+   position: relative;
+   overflow: hidden;
+   border-radius: 1rem;
+   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+   backdrop-filter: blur(10px);
+   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chart-container::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: -100%;
+   width: 100%;
+   height: 100%;
+   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+   animation: shimmer 2s infinite;
+}
+
+/* Stat card enhancements */
+.stat-card {
+   position: relative;
+   overflow: hidden;
+   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:hover {
+   transform: translateY(-4px) scale(1.02);
+   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.stat-card::after {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+   transform: translateX(-100%);
+   transition: transform 0.6s;
+}
+
+.stat-card:hover::after {
+   transform: translateX(100%);
+}
+
 /* Make sure notifications are responsive */
 @media (max-width: 640px) {
    .fixed.top-4.right-4 {

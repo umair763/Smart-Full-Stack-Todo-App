@@ -191,32 +191,32 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
             className={`hidden sm:grid grid-cols-[20px,1fr,auto] w-full px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg border-l-4 ${getPriorityColorClass()} items-center gap-2 sm:gap-3`}
          >
             {/* Priority Radio Button */}
-            <input
-               type="radio"
+         <input
+            type="radio"
                className="w-3 h-3 sm:w-4 sm:h-4 rounded-full cursor-pointer appearance-none flex-shrink-0 bg-purple-500 border-purple-500"
-            />
+         />
 
             {/* Main Content Section */}
             <div className="flex flex-col min-w-0">
                <div className="flex items-center flex-wrap gap-1 sm:gap-2">
                   {/* Subtask Title */}
-                  <p
-                     className={`${
+            <p
+               className={`${
                         completed ? 'line-through text-gray-600' : 'text-gray-900'
                      } font-medium text-sm sm:text-base transition-all truncate flex-1 min-w-0`}
-                  >
-                     {subtask.title}
-                  </p>
+            >
+               {subtask.title}
+            </p>
 
                   {/* Priority badge */}
                   {renderPriorityBadge()}
                </div>
 
                {/* Description */}
-               {subtask.description && (
+            {subtask.description && (
                   <p className="text-xs sm:text-sm text-gray-600 line-clamp-1 mt-1">{subtask.description}</p>
-               )}
-            </div>
+            )}
+         </div>
 
             {/* Right Section - Date, Time & Actions */}
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -229,51 +229,51 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                   >
                      {subtask.date}
                   </p>
-                  <p
-                     className={`${
+               <p
+                  className={`${
                         completed ? 'line-through text-gray-600' : 'text-gray-600'
                      } text-xs sm:text-sm transition-all whitespace-nowrap`}
-                  >
-                     {subtask.time}
-                  </p>
-               </div>
+               >
+                  {subtask.time}
+               </p>
+            </div>
 
-               {/* Action buttons */}
+            {/* Action buttons */}
                <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-                  {/* Edit button */}
-                  <button
-                     onClick={handleEdit}
+               {/* Edit button */}
+               <button
+                  onClick={handleEdit}
                      className="text-blue-600 hover:text-blue-800 p-0.5 sm:p-1 rounded transition-colors"
-                     title="Edit subtask"
-                  >
+                  title="Edit subtask"
+               >
                      <FiEdit2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </button>
+               </button>
 
-                  {/* Delete button */}
-                  <button
-                     onClick={handleDelete}
+               {/* Delete button */}
+               <button
+                  onClick={handleDelete}
                      className="text-red-600 hover:text-red-800 p-0.5 sm:p-1 rounded transition-colors"
-                     title="Delete subtask"
-                  >
+                  title="Delete subtask"
+               >
                      <FiTrash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </button>
+               </button>
 
-                  {/* Completion checkbox */}
-                  <button
-                     onClick={handleSubtaskStatusToggle}
+               {/* Completion checkbox */}
+               <button
+                  onClick={handleSubtaskStatusToggle}
                      className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
-                        completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
-                     }`}
-                     disabled={isUpdating}
-                     title={completed ? 'Mark as incomplete' : 'Mark as complete'}
-                  >
-                     {completed && (
+                     completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
+                  }`}
+                  disabled={isUpdating}
+                  title={completed ? 'Mark as incomplete' : 'Mark as complete'}
+               >
+                  {completed && (
                         <HiCheck className="h-3 w-3" />
-                     )}
-                  </button>
-               </div>
+                  )}
+               </button>
             </div>
          </div>
+      </div>
       </>
    );
 }
