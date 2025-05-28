@@ -83,7 +83,7 @@ function Insights() {
       if (isRefresh) {
          setRefreshing(true);
       } else {
-         setLoading(true);
+      setLoading(true);
       }
       setError('');
 
@@ -94,8 +94,8 @@ function Insights() {
          }
 
          const headers = {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
+               'Content-Type': 'application/json',
          };
 
          // Fetch all data in parallel
@@ -308,7 +308,7 @@ function Insights() {
                   </div>
                   <div className="text-white text-lg font-medium">Loading insights...</div>
                   <div className="text-white/60 text-sm">Analyzing your productivity data</div>
-               </div>
+         </div>
             </div>
          </div>
       );
@@ -320,7 +320,7 @@ function Insights() {
             {/* Compact Header Section */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 flex-shrink-0">
                <div className="space-y-1">
-                  <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-2">
+                  <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-2 font-proza">
                      <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
                         <HiChartBar className="h-6 w-6 text-white" />
                      </div>
@@ -345,19 +345,19 @@ function Insights() {
                            {mode}
                         </button>
                      ))}
-                  </div>
+            </div>
 
                   {/* Time Filter */}
-                  <div className="relative">
-                     <select
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
+            <div className="relative">
+               <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
                         className="mt-1 appearance-none bg-white/40 backdrop-blur-sm text-gray-950 px-3 py-1.5 pr-8 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer text-xs"
-                     >
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                     </select>
+               >
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+               </select>
                      <HiFilter className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70 pointer-events-none" />
                   </div>
 
@@ -381,7 +381,7 @@ function Insights() {
                      <div>
                         <div className="font-medium text-sm">Error loading data</div>
                         <div className="text-xs text-red-200">{error}</div>
-                     </div>
+         </div>
                   </div>
                </div>
             )}
@@ -429,7 +429,7 @@ function Insights() {
                         {/* Task Completion Trend */}
                         <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                            <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                              <h3 className="text-lg font-bold text-white flex items-center gap-2 font-proza">
                                  <HiTrendingUp className="h-5 w-5 text-purple-400" />
                                  Completion Trends
                               </h3>
@@ -482,12 +482,12 @@ function Insights() {
                                  </AreaChart>
                               </ResponsiveContainer>
                            </div>
-                        </div>
+            </div>
 
                         {/* Priority Distribution */}
                         <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                            <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                              <h3 className="text-lg font-bold text-white flex items-center gap-2 font-proza">
                                  <HiChartPie className="h-5 w-5 text-indigo-400" />
                                  Priority Distribution
                               </h3>
@@ -532,7 +532,7 @@ function Insights() {
                                  <HiLightningBolt className="h-5 w-5 text-white" />
                               </div>
                               <div>
-                                 <h3 className="text-lg font-bold text-white">Productivity Score</h3>
+                                 <h3 className="text-lg font-bold text-white font-proza">Productivity Score</h3>
                                  <p className="text-white/60 text-xs">Weekly avg × 40% + Monthly avg × 30% + Bonuses</p>
                               </div>
                            </div>
@@ -551,17 +551,17 @@ function Insights() {
                                  <HiStar className="h-5 w-5 text-white" />
                               </div>
                               <div>
-                                 <h3 className="text-lg font-bold text-white">Current Streak</h3>
+                                 <h3 className="text-lg font-bold text-white font-proza">Current Streak</h3>
                                  <p className="text-white/60 text-xs">Consecutive days with ≥50% completion</p>
-                              </div>
-                           </div>
+                  </div>
+               </div>
                            <div className="text-3xl font-bold text-white">{streakData.current}</div>
                            <div className="text-white/60 text-xs">
                               {streakData.isActive
                                  ? 'Active streak'
                                  : `${streakData.daysSinceLastActivity || 0} days ago`}
-                           </div>
-                        </div>
+               </div>
+            </div>
 
                         <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                            <div className="flex items-center gap-2 mb-3">
@@ -569,14 +569,14 @@ function Insights() {
                                  <HiStar className="h-5 w-5 text-white" />
                               </div>
                               <div>
-                                 <h3 className="text-lg font-bold text-white">Longest Streak</h3>
+                                 <h3 className="text-lg font-bold text-white font-proza">Longest Streak</h3>
                                  <p className="text-white/60 text-xs">Personal best record</p>
                               </div>
                            </div>
                            <div className="text-3xl font-bold text-white">{streakData.longest}</div>
                            <div className="text-white/60 text-xs">days</div>
-                        </div>
-                     </div>
+                  </div>
+               </div>
                   </>
                )}
 
@@ -585,7 +585,7 @@ function Insights() {
                   <div className="space-y-4">
                      {/* Detailed Bar Chart */}
                      <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 font-proza">
                            <HiChartBar className="h-5 w-5 text-blue-400" />
                            Detailed Task Analysis
                         </h3>
@@ -614,8 +614,8 @@ function Insights() {
                                  <Bar dataKey="pending" fill={COLORS.warning} name="Pending" radius={[4, 4, 0, 0]} />
                               </BarChart>
                            </ResponsiveContainer>
-                        </div>
-                     </div>
+            </div>
+         </div>
 
                      {/* Priority Breakdown */}
                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -652,36 +652,36 @@ function Insights() {
                   <div className="space-y-4">
                      {/* Weekly Productivity Trends */}
                      <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 font-proza">
                            <HiTrendingUp className="h-5 w-5 text-green-400" />
                            Productivity Trends
                         </h3>
                         <div className="h-64">
-                           <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={weeklyTrends}>
-                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.7)" fontSize={10} />
                                  <YAxis stroke="rgba(255,255,255,0.7)" fontSize={10} />
                                  <Tooltip content={<CustomTooltip />} />
-                                 <Legend />
-                                 <Line
-                                    type="monotone"
+                        <Legend />
+                        <Line
+                           type="monotone"
                                     dataKey="productivity"
                                     stroke={COLORS.secondary}
                                     strokeWidth={3}
                                     dot={{ fill: COLORS.secondary, strokeWidth: 2, r: 4 }}
                                     activeDot={{ r: 6, stroke: COLORS.secondary, strokeWidth: 2 }}
                                     name="Productivity %"
-                                 />
-                              </LineChart>
-                           </ResponsiveContainer>
+                        />
+                     </LineChart>
+                  </ResponsiveContainer>
                         </div>
                      </div>
 
                      {/* Streak Metrics */}
                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <h4 className="text-white font-semibold mb-3">Streak Statistics</h4>
+                           <h4 className="text-white font-semibold mb-3 font-proza">Streak Statistics</h4>
                            <div className="space-y-2">
                               <div className="flex justify-between">
                                  <span className="text-white/70 text-sm">Total Active Days:</span>
@@ -703,7 +703,7 @@ function Insights() {
                         </div>
 
                         <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <h4 className="text-white font-semibold mb-3">Calculation Formulas</h4>
+                           <h4 className="text-white font-semibold mb-3 font-proza">Calculation Formulas</h4>
                            <div className="space-y-2 text-xs text-white/60">
                               <div>
                                  • <strong>Active Day:</strong> ≥1 task + ≥50% completion
@@ -723,8 +723,8 @@ function Insights() {
                            </div>
                         </div>
                      </div>
-                  </div>
-               )}
+               </div>
+            )}
             </div>
          </div>
       </div>

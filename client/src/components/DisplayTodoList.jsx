@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-   FiEdit2,
    FiTrash2,
    FiMoreVertical,
    FiChevronDown,
@@ -12,7 +11,7 @@ import {
    FiDownload,
    FiLink,
 } from 'react-icons/fi';
-import { HiCalendar, HiClock, HiCheck, HiChevronUp, HiChevronDown as HiChevronDownIcon } from 'react-icons/hi';
+import { HiCalendar, HiClock, HiCheck, HiChevronUp, HiChevronDown as HiChevronDownIcon, HiPencilAlt } from 'react-icons/hi';
 import EditTaskModal from './EditTaskModal';
 import Subtask from './Subtask';
 import SubtaskModal from './SubtaskModal';
@@ -99,27 +98,44 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
       // Handle subtask created event
       const handleSubtaskCreated = (data) => {
-         if (data.taskId === list._id) {
+         const currentUserId = localStorage.getItem('userId');
+         if (data.parentTaskId === list._id && data.userId === currentUserId) {
+            console.log('Handling subtask created event:', data);
+
             setSubtasks((prev) => {
+               // Check if subtask already exists to prevent duplicates
+               const exists = prev.some((st) => st._id === data.subtask._id);
+               if (exists) {
+                  console.log('Subtask already exists, skipping duplicate');
+                  return prev;
+               }
+
                const newSubtasks = [...prev, data.subtask];
                return sortSubtasksByPriority(newSubtasks);
             });
+
             // Update parent task counts
             onUpdate(list._id, {
                ...list,
                subtaskCount: (list.subtaskCount || 0) + 1,
                completedSubtasks: list.completedSubtasks || 0,
             });
+
+            // Show subtasks if they were hidden
+            setShowSubtasks(true);
          }
       };
 
       // Handle subtask status changed event
       const handleSubtaskStatusChanged = (data) => {
-         if (data.data && data.data.parentTaskId === list._id) {
+         const currentUserId = localStorage.getItem('userId');
+         if (data.parentTaskId === list._id && data.userId === currentUserId) {
+            console.log('Handling subtask status changed event:', data);
+
             // Update the subtask in local state
             setSubtasks((prev) => {
                const updatedSubtasks = prev.map((st) =>
-                  st._id === data.data.subtaskId ? { ...st, status: data.data.status } : st
+                  st._id === data.subtaskId ? { ...st, status: data.status } : st
                );
                return sortSubtasksByPriority(updatedSubtasks);
             });
@@ -127,15 +143,18 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             // Update parent task with new completion counts
             onUpdate(list._id, {
                ...list,
-               subtaskCount: data.data.subtaskCount,
-               completedSubtasks: data.data.completedSubtasks,
+               subtaskCount: data.subtaskCount,
+               completedSubtasks: data.completedSubtasks,
             });
          }
       };
 
       // Handle subtask updated event
       const handleSubtaskUpdated = (data) => {
-         if (data.subtask && data.subtask.taskId === list._id) {
+         const currentUserId = localStorage.getItem('userId');
+         if (data.parentTaskId === list._id && data.userId === currentUserId) {
+            console.log('Handling subtask updated event:', data);
+
             setSubtasks((prev) => {
                const updatedSubtasks = prev.map((st) => (st._id === data.subtask._id ? data.subtask : st));
                return sortSubtasksByPriority(updatedSubtasks);
@@ -145,11 +164,15 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
       // Handle subtask deleted event
       const handleSubtaskDeleted = (data) => {
-         if (data.parentTaskId === list._id) {
+         const currentUserId = localStorage.getItem('userId');
+         if (data.parentTaskId === list._id && data.userId === currentUserId) {
+            console.log('Handling subtask deleted event:', data);
+
             setSubtasks((prev) => {
                const filteredSubtasks = prev.filter((st) => st._id !== data.subtaskId);
                return sortSubtasksByPriority(filteredSubtasks);
             });
+
             // Update parent task counts
             onUpdate(list._id, {
                ...list,
@@ -421,20 +444,31 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
          const data = await response.json();
 
-         if (subtaskId) {
-            // Update the subtask in the local state
-            const updatedSubtasks = subtasks.map((st) => (st._id === subtaskId ? data : st));
-            setSubtasks(sortSubtasksByPriority(updatedSubtasks));
-         } else {
-            // Add the new subtask to the local state and re-sort
-            const newSubtasks = [...subtasks, data];
-            setSubtasks(sortSubtasksByPriority(newSubtasks));
-            // Show subtasks if they were hidden
+         // Don't update state directly here - let socket events handle it
+         // This prevents race conditions and duplicate updates
+
+         // For new subtasks, show the subtasks section if it was hidden
+         if (!subtaskId) {
             setShowSubtasks(true);
          }
 
          // Close the modal
          setShowSubtaskModal(false);
+
+         // Show success message only (socket events will handle state updates)
+         toast.success(subtaskId ? 'Subtask updated successfully' : 'Subtask created successfully');
+
+         // Fallback: If socket events don't update the UI within 2 seconds, refetch data
+         setTimeout(() => {
+            if (!subtaskId) {
+               // Check if the new subtask was added to the list
+               const subtaskExists = subtasks.some((st) => st._id === data._id);
+               if (!subtaskExists) {
+                  console.log('Socket event may have failed, refetching subtasks...');
+                  fetchSubtasks();
+               }
+            }
+         }, 2000);
       } catch (error) {
          console.error('Error saving subtask:', error);
          toast.error(error.message || 'Failed to save subtask');
@@ -449,7 +483,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/subtasks/${subtaskId}`, {
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/subtasks/${subtaskId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -764,9 +798,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      <div className="flex-1 min-w-0">
                         {/* Task Name */}
                         <h3
-                           className={`${
-                              completed ? 'line-through text-gray-500' : 'text-gray-900'
-                           } font-semibold text-base leading-tight mb-1 transition-all`}
+                           className={`text-sm sm:text-base font-semibold truncate transition-colors duration-200 font-proza ${
+                              list.completed ? 'line-through text-gray-500' : 'text-gray-800'
+                           }`}
+                           title={list.task}
                         >
                            {list.task}
                         </h3>
@@ -895,7 +930,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
                         title="Edit task"
                      >
-                        <FiEdit2 className="h-3 w-3" />
+                        <HiPencilAlt className="h-3 w-3" />
                      </button>
 
                      {/* Delete */}
@@ -1136,7 +1171,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         className="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors"
                         title="Edit task"
                      >
-                        <FiEdit2 className="h-4 w-4 md:h-5 md:w-5" />
+                        <HiPencilAlt className="h-4 w-4 md:h-5 md:w-5" />
                      </button>
 
                      {/* Delete button */}
@@ -1462,7 +1497,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
          {/* Edit Task Modal */}
          {showEditModal && (
-            <EditTaskModal task={list} onClose={() => setShowEditModal(false)} onSave={handleSaveTask} />
+            <EditTaskModal
+               isOpen={showEditModal}
+               task={list}
+               onClose={() => setShowEditModal(false)}
+               onSave={handleSaveTask}
+            />
          )}
 
          {/* Subtask Modal */}

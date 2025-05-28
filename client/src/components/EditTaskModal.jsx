@@ -1,493 +1,232 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
+import { HiX, HiPencilAlt } from 'react-icons/hi';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 
-function EditTaskModal({ task, onClose, onSave }) {
-   const [editedTask, setEditedTask] = useState({
-      _id: task._id,
-      task: task.task,
-      date: task.date,
-      time: task.time,
-      color: task.color,
-      completed: task.completed,
-      priority: task.priority,
+function EditTaskModal({ isOpen, onClose, onSave, task }) {
+   const [formData, setFormData] = useState({
+      title: '',
+      date: '',
+      time: '',
+      priority: 'Medium',
    });
-   const [showDatePicker, setShowDatePicker] = useState(false);
-   const [showTimePicker, setShowTimePicker] = useState(false);
-   const [selectedHour, setSelectedHour] = useState(12);
-   const [selectedMinute, setSelectedMinute] = useState(0);
-   const [selectedAmPm, setSelectedAmPm] = useState('PM');
+
+   const [isLoading, setIsLoading] = useState(false);
+   const [error, setError] = useState('');
 
    useEffect(() => {
       if (task) {
-         setEditedTask({
-            _id: task._id,
-            task: task.task,
-            date: task.date,
-            time: task.time,
-            color: task.color || 'green',
-            completed: task.completed,
-            priority: task.priority,
+         setFormData({
+            title: task.task || task.title || '',
+            date: task.date || '',
+            time: task.time || '',
+            priority: task.priority || 'Medium',
          });
-
-         // Parse the time string to set hour, minute, and AM/PM
-         if (task.time) {
-            const timeRegex = /^(\d+):(\d+)\s(AM|PM)$/;
-            const match = task.time.match(timeRegex);
-            if (match) {
-               setSelectedHour(parseInt(match[1], 10));
-               setSelectedMinute(parseInt(match[2], 10));
-               setSelectedAmPm(match[3]);
-            }
-         }
       }
-   }, [task]);
+      setError('');
+   }, [task, isOpen]);
+
+   const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (!formData.title.trim()) {
+         setError('Task title is required');
+         return;
+      }
+
+      setIsLoading(true);
+      setError('');
+
+      try {
+         await onSave(task._id, formData);
+         onClose();
+      } catch (error) {
+         console.error('Error updating task:', error);
+         setError(error.message || 'Failed to update task');
+      } finally {
+         setIsLoading(false);
+      }
+   };
 
    const handleChange = (e) => {
       const { name, value } = e.target;
-      setEditedTask((prev) => ({
+      setFormData((prev) => ({
          ...prev,
          [name]: value,
       }));
+      // Clear error when user starts typing
+      if (error) setError('');
    };
 
-   const handleSubmit = (e) => {
-      e.preventDefault();
-      // Map color to priority
-      const colorToPriority = {
-         red: 'High',
-         yellow: 'Medium',
-         green: 'Low',
-      };
-
-      const updatedTask = {
-         ...editedTask,
-         priority: colorToPriority[editedTask.color] || 'Medium',
-      };
-
-      onSave(updatedTask);
-   };
-
-   // Format date to DD/MM/YYYY
-   const formatDate = (selectedDate) => {
-      const date = new Date(selectedDate);
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-   };
-
-   // Convert time to 12-hour format
-   const convertTo12HourFormat = (hour, minute, ampm) => {
-      return `${hour}:${minute.toString().padStart(2, '0')} ${ampm}`;
-   };
-
-   // Handle date selection from calendar
-   const handleDateSelect = (selectedDate) => {
-      setEditedTask((prev) => ({
-         ...prev,
-         date: formatDate(selectedDate),
-      }));
-      setShowDatePicker(false);
-   };
-
-   // Handle time selection
-   const handleTimeSelect = () => {
-      const formattedTime = convertTo12HourFormat(selectedHour, selectedMinute, selectedAmPm);
-      setEditedTask((prev) => ({
-         ...prev,
-         time: formattedTime,
-      }));
-      setShowTimePicker(false);
-   };
-
-   // Generate current month calendar
-   const generateCalendar = () => {
-      const today = new Date();
-      const currentMonth = today.getMonth();
-      const currentYear = today.getFullYear();
-
-      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-
-      const days = [];
-
-      // Add empty cells for days before the first day of month
-      for (let i = 0; i < firstDayOfMonth; i++) {
-         days.push(<div key={`empty-${i}`} className="h-8 w-8"></div>);
+   const handleClose = () => {
+      if (!isLoading) {
+         onClose();
       }
-
-      // Add days of month
-      for (let day = 1; day <= daysInMonth; day++) {
-         const isToday = day === today.getDate();
-         const dateString = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day
-            .toString()
-            .padStart(2, '0')}`;
-
-         days.push(
-            <button
-               key={day}
-               type="button"
-               onClick={() => handleDateSelect(dateString)}
-               className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
-                  isToday ? 'bg-[#9406E6] text-white' : 'hover:bg-purple-200 text-gray-700'
-               }`}
-            >
-               {day}
-            </button>
-         );
-      }
-
-      return days;
    };
 
-   // Generate hour selector for time picker
-   const generateHourSelector = () => {
-      const hours = [];
-      for (let i = 1; i <= 12; i++) {
-         hours.push(
-            <button
-               key={i}
-               type="button"
-               onClick={() => setSelectedHour(i)}
-               className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                  selectedHour === i ? 'bg-[#9406E6] text-white' : 'hover:bg-purple-200 text-gray-700'
-               }`}
-            >
-               {i}
-            </button>
-         );
+   const handleBackdropClick = (e) => {
+      if (e.target === e.currentTarget && !isLoading) {
+         onClose();
       }
-      return hours;
    };
 
-   // Generate minute selector for time picker
-   const generateMinuteSelector = () => {
-      const minutes = [];
-      for (let i = 0; i < 60; i += 5) {
-         minutes.push(
-            <button
-               key={i}
-               type="button"
-               onClick={() => setSelectedMinute(i)}
-               className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                  selectedMinute === i ? 'bg-[#9406E6] text-white' : 'hover:bg-purple-200 text-gray-700'
-               }`}
-            >
-               {i.toString().padStart(2, '0')}
-            </button>
-         );
-      }
-      return minutes;
-   };
+   if (!isOpen) return null;
 
-   return (
-      <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/60 backdrop-blur-sm">
-         <div className="bg-gradient-to-br from-[#9406E6]/90 to-[#00FFFF]/90 backdrop-blur-lg p-8 rounded-xl shadow-2xl w-full max-w-md mx-3 animate-slideIn">
-            <div className="flex justify-between items-center mb-6">
-               <h2 className="text-2xl font-bold text-white flex items-center">
-                  <svg
-                     xmlns="http://www.w3.org/2000/svg"
-                     className="h-7 w-7 mr-2"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor"
+   const modalContent = (
+      <div
+         className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-3 sm:p-4"
+         style={{
+            animation: 'modalBackdropFadeIn 0.3s ease-out forwards',
+         }}
+         onClick={handleBackdropClick}
+      >
+         <div
+            className="bg-gradient-to-br from-indigo-600/95 to-purple-600/95 backdrop-blur-lg rounded-xl shadow-2xl w-full max-w-sm mx-3 transform transition-all duration-300 ease-out"
+            style={{
+               animation: 'modalSlideIn 0.4s ease-out forwards',
+            }}
+            onClick={(e) => e.stopPropagation()}
+         >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/20">
+               <div className="flex items-center space-x-2">
+                  <div className="bg-white/20 p-1.5 rounded-full">
+                     <HiPencilAlt className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                     <h2 className="text-lg font-bold text-white font-proza">Edit Task</h2>
+                     <p className="text-xs text-white/80 truncate max-w-[180px]">
+                        {task?.task || task?.title || 'Task'}
+                     </p>
+                  </div>
+               </div>
+               {!isLoading && (
+                  <button
+                     onClick={handleClose}
+                     className="text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-white/20 touch-manipulation"
                   >
-                     <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                     />
-                  </svg>
-                  Edit Task
-               </h2>
-               <button onClick={onClose} className="text-white hover:text-red-300 transition-colors">
-                  <svg
-                     xmlns="http://www.w3.org/2000/svg"
-                     className="h-6 w-6"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor"
-                  >
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-               </button>
+                     <HiX className="h-5 w-5" />
+                  </button>
+               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-               <div>
-                  <label className="block text-white text-sm font-medium mb-2">Task Name</label>
-                  <input
-                     type="text"
-                     name="task"
-                     value={editedTask.task}
-                     onChange={handleChange}
-                     className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white transition-all"
-                     placeholder="Enter task name"
-                     required
-                  />
-               </div>
+            {/* Content */}
+            <div className="p-4">
+               {/* Error Message */}
+               {error && (
+                  <div className="mb-3 p-2 bg-red-500/20 border border-red-500/30 rounded-lg">
+                     <p className="text-red-200 text-xs">{error}</p>
+                  </div>
+               )}
 
-               <div className="relative">
-                  <label className="block text-white text-sm font-medium mb-2">Date</label>
-                  <div className="relative">
+               {/* Form */}
+               <form onSubmit={handleSubmit} className="space-y-3">
+                  {/* Title */}
+                  <div>
+                     <label className="block text-white text-xs font-medium mb-1">Task Title *</label>
                      <input
                         type="text"
-                        name="date"
-                        value={editedTask.date}
+                        name="title"
+                        value={formData.title}
                         onChange={handleChange}
-                        onFocus={() => setShowDatePicker(true)}
-                        className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white transition-all"
-                        placeholder="DD/MM/YYYY"
+                        className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white placeholder-white/70 rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-sm touch-manipulation"
+                        placeholder="Enter task title"
                         required
+                        disabled={isLoading}
+                        autoFocus
                      />
-                     <button
-                        type="button"
-                        onClick={() => setShowDatePicker(!showDatePicker)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white"
-                     >
-                        <svg
-                           xmlns="http://www.w3.org/2000/svg"
-                           className="h-5 w-5"
-                           fill="none"
-                           viewBox="0 0 24 24"
-                           stroke="currentColor"
-                        >
-                           <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                           />
-                        </svg>
-                     </button>
                   </div>
 
-                  {/* Date Picker Calendar */}
-                  {showDatePicker && (
-                     <div className="absolute z-10 mt-1 p-4 bg-white rounded-lg shadow-lg">
-                        <div className="mb-3">
-                           <div className="text-gray-700 font-medium text-center">
-                              {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                           </div>
-                        </div>
-                        <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                           {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                              <div key={day} className="text-gray-500 text-xs font-medium">
-                                 {day}
-                              </div>
-                           ))}
-                        </div>
-                        <div className="grid grid-cols-7 gap-1">{generateCalendar()}</div>
-                        <div className="mt-3 text-right">
-                           <button
-                              type="button"
-                              className="text-sm text-purple-600 hover:text-purple-800"
-                              onClick={() => setShowDatePicker(false)}
-                           >
-                              Close
-                           </button>
-                        </div>
+                  {/* Date and Time - Compact Grid */}
+                  <div className="grid grid-cols-2 gap-2">
+                     <div>
+                        <label className="block text-white text-xs font-medium mb-1">Date</label>
+                        <input
+                           type="date"
+                           name="date"
+                           value={formData.date}
+                           onChange={handleChange}
+                           className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-sm touch-manipulation"
+                           disabled={isLoading}
+                        />
                      </div>
-                  )}
-               </div>
+                     <div>
+                        <label className="block text-white text-xs font-medium mb-1">Time</label>
+                        <input
+                           type="time"
+                           name="time"
+                           value={formData.time}
+                           onChange={handleChange}
+                           className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-sm touch-manipulation"
+                           disabled={isLoading}
+                        />
+                     </div>
+                  </div>
 
-               <div className="relative">
-                  <label className="block text-white text-sm font-medium mb-2">Time</label>
-                  <div className="relative">
-                     <input
-                        type="text"
-                        name="time"
-                        value={editedTask.time}
+                  {/* Priority */}
+                  <div>
+                     <label className="block text-white text-xs font-medium mb-1">Priority</label>
+                     <select
+                        name="priority"
+                        value={formData.priority}
                         onChange={handleChange}
-                        onFocus={() => setShowTimePicker(true)}
-                        className="w-full px-4 py-3 bg-white/10 text-white placeholder-white/60 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white transition-all"
-                        placeholder="HH:MM AM/PM"
-                        required
-                     />
-                     <button
-                        type="button"
-                        onClick={() => setShowTimePicker(!showTimePicker)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white"
+                        className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-sm touch-manipulation"
+                        disabled={isLoading}
                      >
-                        <svg
-                           xmlns="http://www.w3.org/2000/svg"
-                           className="h-5 w-5"
-                           fill="none"
-                           viewBox="0 0 24 24"
-                           stroke="currentColor"
-                        >
-                           <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                           />
-                        </svg>
-                     </button>
+                        <option value="Low" className="text-gray-900">
+                           Low
+                        </option>
+                        <option value="Medium" className="text-gray-900">
+                           Medium
+                        </option>
+                        <option value="High" className="text-gray-900">
+                           High
+                        </option>
+                     </select>
                   </div>
+               </form>
+            </div>
 
-                  {/* Time Picker */}
-                  {showTimePicker && (
-                     <div className="absolute z-10 mt-1 p-4 bg-white rounded-lg shadow-lg">
-                        <div className="mb-3">
-                           <div className="text-gray-700 font-medium text-center">Select Time</div>
-                        </div>
-
-                        <div className="flex space-x-4">
-                           {/* Hour selector */}
-                           <div>
-                              <div className="text-gray-500 text-xs font-medium text-center mb-2">Hour</div>
-                              <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
-                                 {generateHourSelector()}
-                              </div>
-                           </div>
-
-                           {/* Minute selector */}
-                           <div>
-                              <div className="text-gray-500 text-xs font-medium text-center mb-2">Minute</div>
-                              <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
-                                 {generateMinuteSelector()}
-                              </div>
-                           </div>
-
-                           {/* AM/PM selector */}
-                           <div>
-                              <div className="text-gray-500 text-xs font-medium text-center mb-2">AM/PM</div>
-                              <div className="flex flex-col gap-2">
-                                 <button
-                                    type="button"
-                                    onClick={() => setSelectedAmPm('AM')}
-                                    className={`px-4 py-2 rounded-lg ${
-                                       selectedAmPm === 'AM'
-                                          ? 'bg-[#9406E6] text-white'
-                                          : 'hover:bg-purple-200 text-gray-700'
-                                    }`}
-                                 >
-                                    AM
-                                 </button>
-                                 <button
-                                    type="button"
-                                    onClick={() => setSelectedAmPm('PM')}
-                                    className={`px-4 py-2 rounded-lg ${
-                                       selectedAmPm === 'PM'
-                                          ? 'bg-[#9406E6] text-white'
-                                          : 'hover:bg-purple-200 text-gray-700'
-                                    }`}
-                                 >
-                                    PM
-                                 </button>
-                              </div>
-                           </div>
-                        </div>
-
-                        <div className="mt-3 flex justify-between">
-                           <div className="text-lg font-medium">
-                              {selectedHour}:{selectedMinute.toString().padStart(2, '0')} {selectedAmPm}
-                           </div>
-                           <div>
-                              <button
-                                 type="button"
-                                 className="ml-2 px-4 py-1 bg-[#9406E6] text-white rounded-lg"
-                                 onClick={handleTimeSelect}
-                              >
-                                 Set Time
-                              </button>
-                              <button
-                                 type="button"
-                                 className="ml-2 px-2 py-1 text-sm text-purple-600 hover:text-purple-800"
-                                 onClick={() => setShowTimePicker(false)}
-                              >
-                                 Cancel
-                              </button>
-                           </div>
-                        </div>
-                     </div>
-                  )}
-               </div>
-
-               <div>
-                  <label className="block text-white text-sm font-medium mb-2">Priority</label>
-                  <div className="flex space-x-4">
-                     <label className="inline-flex items-center">
-                        <input
-                           type="radio"
-                           name="color"
-                           value="red"
-                           checked={editedTask.color === 'red'}
-                           onChange={handleChange}
-                           className="hidden"
-                        />
-                        <span
-                           className={`w-6 h-6 rounded-full border-2 ${
-                              editedTask.color === 'red'
-                                 ? 'bg-red-500 border-white'
-                                 : 'bg-red-500/40 border-transparent'
-                           }`}
-                        ></span>
-                        <span className="ml-2 text-white">High</span>
-                     </label>
-
-                     <label className="inline-flex items-center">
-                        <input
-                           type="radio"
-                           name="color"
-                           value="yellow"
-                           checked={editedTask.color === 'yellow'}
-                           onChange={handleChange}
-                           className="hidden"
-                        />
-                        <span
-                           className={`w-6 h-6 rounded-full border-2 ${
-                              editedTask.color === 'yellow'
-                                 ? 'bg-yellow-400 border-white'
-                                 : 'bg-yellow-400/40 border-transparent'
-                           }`}
-                        ></span>
-                        <span className="ml-2 text-white">Medium</span>
-                     </label>
-
-                     <label className="inline-flex items-center">
-                        <input
-                           type="radio"
-                           name="color"
-                           value="green"
-                           checked={editedTask.color === 'green'}
-                           onChange={handleChange}
-                           className="hidden"
-                        />
-                        <span
-                           className={`w-6 h-6 rounded-full border-2 ${
-                              editedTask.color === 'green'
-                                 ? 'bg-green-500 border-white'
-                                 : 'bg-green-500/40 border-transparent'
-                           }`}
-                        ></span>
-                        <span className="ml-2 text-white">Low</span>
-                     </label>
-                  </div>
-               </div>
-
-               <div className="flex space-x-4 pt-4">
+            {/* Footer - Action Buttons */}
+            <div className="p-4 border-t border-white/20 bg-white/5">
+               <div className="flex flex-col space-y-2">
+                  <button
+                     onClick={handleSubmit}
+                     disabled={isLoading || !formData.title.trim()}
+                     className={`w-full py-2.5 px-4 rounded-lg font-semibold transition-all duration-200 text-sm touch-manipulation ${
+                        !isLoading && formData.title.trim()
+                           ? 'bg-white text-indigo-600 hover:bg-white/90 shadow-lg hover:shadow-white/25 active:scale-[0.98]'
+                           : 'bg-white/30 text-white/50 cursor-not-allowed'
+                     }`}
+                  >
+                     {isLoading ? (
+                        <span className="flex items-center justify-center">
+                           <AiOutlineLoading3Quarters className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" />
+                           Updating...
+                        </span>
+                     ) : (
+                        'Update Task'
+                     )}
+                  </button>
                   <button
                      type="button"
-                     onClick={onClose}
-                     className="w-1/2 py-3 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-lg transition-all active:scale-[0.98]"
+                     onClick={handleClose}
+                     disabled={isLoading}
+                     className={`w-full py-2.5 px-4 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] text-sm touch-manipulation ${
+                        isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                     }`}
                   >
                      Cancel
                   </button>
-                  <button
-                     type="submit"
-                     className="w-1/2 py-3 bg-white text-[#9406E6] font-semibold rounded-lg hover:shadow-lg hover:shadow-white/20 active:scale-[0.98] transition-all"
-                  >
-                     Save Changes
-                  </button>
                </div>
-            </form>
+            </div>
          </div>
       </div>
    );
+
+   // Use React Portal to render the modal at the document body level
+   return createPortal(modalContent, document.body);
 }
 
 export default EditTaskModal;

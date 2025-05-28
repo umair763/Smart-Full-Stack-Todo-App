@@ -465,27 +465,27 @@ const createTasks = async (userId) => {
             taskDate.setDate(getRandomNumber(1, 28));
 
             const taskName = getRandomElement(allTaskNames);
-            const priority = getRandomElement(priorities);
-            const color = colors[priorities.indexOf(priority)];
+        const priority = getRandomElement(priorities);
+        const color = colors[priorities.indexOf(priority)];
 
             // Completion rate decreases for older months
             const completionRate = Math.max(0.5, 0.9 - month * 0.03);
             const isCompleted = Math.random() < completionRate;
 
-            const task = new Task({
+        const task = new Task({
                 task: `Monthly: ${taskName}`,
-                date: formatDate(taskDate),
-                time: formatTime(taskDate),
-                priority: priority,
-                color: color,
+            date: formatDate(taskDate),
+            time: formatTime(taskDate),
+            priority: priority,
+            color: color,
                 completed: isCompleted,
-                userId: userId,
-                subtaskCount: 0,
-                completedSubtasks: 0,
-            });
+            userId: userId,
+            subtaskCount: 0,
+            completedSubtasks: 0,
+        });
 
-            await task.save();
-            tasks.push(task);
+        await task.save();
+        tasks.push(task);
             taskIndex++;
         }
 

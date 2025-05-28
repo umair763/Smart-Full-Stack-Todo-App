@@ -53,23 +53,13 @@ export const createSubtask = async (req, res) => {
         task.subtasks.push(newSubtask._id);
         await task.save();
 
-        // Save notification to DB
-        const savedNotification = await Notification.create({
-            userId: req.user._id,
-            type: "create",
-            message: `Subtask "${title}" created for task "${task.task}"`,
-            data: { subtaskId: newSubtask._id, taskId: task._id },
-        });
-
-        // Emit subtask creation event (real-time)
+        // Emit specific subtask created event for real-time UI updates
         const io = req.app.get("io");
-        if (io && io.sendNotification) {
-            io.sendNotification(req.user._id, {
-                ...savedNotification.toObject(),
-                type: "create",
-                message: `Subtask "${title}" created for task "${task.task}"`,
-                persistent: true,
-                read: false,
+        if (io) {
+            io.emit("subtaskCreated", {
+                subtask: newSubtask,
+                parentTaskId: actualTaskId,
+                userId: req.user._id,
             });
         }
 
@@ -105,23 +95,13 @@ export const updateSubtask = async (req, res) => {
 
         await subtask.save();
 
-        // Save notification to DB
-        const savedNotification = await Notification.create({
-            userId: req.user._id,
-            type: "update",
-            message: `Subtask "${subtask.title}" updated for task "${task.task}"`,
-            data: { subtaskId: subtask._id, taskId: task._id },
-        });
-
-        // Emit subtask update event (real-time)
+        // Emit specific subtask updated event for real-time UI updates
         const io = req.app.get("io");
-        if (io && io.sendNotification) {
-            io.sendNotification(req.user._id, {
-                ...savedNotification.toObject(),
-                type: "update",
-                message: `Subtask "${subtask.title}" updated for task "${task.task}"`,
-                persistent: true,
-                read: false,
+        if (io) {
+            io.emit("subtaskUpdated", {
+                subtask: subtask,
+                parentTaskId: subtask.taskId,
+                userId: req.user._id,
             });
         }
 
@@ -152,23 +132,13 @@ export const deleteSubtask = async (req, res) => {
         task.subtasks = task.subtasks.filter((id) => id.toString() !== subtaskId);
         await task.save();
 
-        // Save notification to DB
-        const savedNotification = await Notification.create({
-            userId: req.user._id,
-            type: "delete",
-            message: `Subtask "${subtask.title}" deleted from task "${task.task}"`,
-            data: { subtaskId: subtask._id, taskId: task._id },
-        });
-
-        // Emit subtask deletion event (real-time)
+        // Emit specific subtask deleted event for real-time UI updates
         const io = req.app.get("io");
-        if (io && io.sendNotification) {
-            io.sendNotification(req.user._id, {
-                ...savedNotification.toObject(),
-                type: "delete",
-                message: `Subtask "${subtask.title}" deleted from task "${task.task}"`,
-                persistent: true,
-                read: false,
+        if (io) {
+            io.emit("subtaskDeleted", {
+                subtaskId: subtask._id,
+                parentTaskId: subtask.taskId,
+                userId: req.user._id,
             });
         }
 
@@ -205,6 +175,19 @@ export const updateSubtaskStatus = async (req, res) => {
         // Calculate new completion counts
         const subtaskCount = task.subtasks.length;
         const completedSubtasks = task.subtasks.filter((st) => (st._id.toString() === subtaskId ? status : st.status)).length;
+
+        // Emit specific subtask status changed event for real-time UI updates
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("subtaskStatusChanged", {
+                subtaskId: subtaskId,
+                status: status,
+                parentTaskId: subtask.taskId,
+                subtaskCount: subtaskCount,
+                completedSubtasks: completedSubtasks,
+                userId: req.user._id,
+            });
+        }
 
         res.json({
             ...updatedSubtask.toObject(),

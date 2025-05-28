@@ -89,7 +89,7 @@ const ChangeUsername = () => {
 
    return (
       <div>
-         <h3 className="text-2xl font-bold text-white mb-6">Change Username</h3>
+         <h3 className="text-2xl font-bold text-white mb-6 font-proza">Change Username</h3>
 
          {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
          {success && (

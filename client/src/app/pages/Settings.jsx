@@ -21,6 +21,7 @@ import {
    FiUpload,
    FiMonitor,
 } from 'react-icons/fi';
+import DeleteAccountModal from '../../components/DeleteAccountModal';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -72,6 +73,10 @@ function Settings() {
    // Settings states
    const [exportLoading, setExportLoading] = useState(false);
    const [importLoading, setImportLoading] = useState(false);
+
+   // Delete account modal states
+   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+   const [isDeleting, setIsDeleting] = useState(false);
 
    // Smooth tab transition handler
    const handleTabChange = (newTab) => {
@@ -249,30 +254,52 @@ function Settings() {
    };
 
    // Handle account deletion
-   const handleDeleteAccount = async () => {
-      if (!window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-         return;
+   const handleOpenDeleteModal = () => {
+      setIsDeleteModalOpen(true);
+      setError('');
+   };
+
+   const handleCloseDeleteModal = () => {
+      if (!isDeleting) {
+         setIsDeleteModalOpen(false);
+         setError('');
       }
+   };
+
+   const handleDeleteAccount = async () => {
+      setIsDeleting(true);
+      setError('');
 
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/delete-account`, {
+         const response = await fetch(`${API_BASE_URL}/api/users/account`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
                'Content-Type': 'application/json',
             },
-            credentials: 'include',
          });
 
          if (!response.ok) {
-            throw new Error('Failed to delete account');
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to delete account');
          }
 
+         const result = await response.json();
+         console.log('Account deletion successful:', result);
+
+         // Successfully deleted account, now logout and redirect to landing page
          logout();
+
+         // Clear all local storage
+         localStorage.clear();
+
+         // Redirect to landing page
+         window.location.href = '/';
       } catch (err) {
-         setError('Error deleting account. Please try again.');
-         console.error(err);
+         console.error('Delete account error:', err);
+         setError(err.message || 'An error occurred while deleting your account');
+         setIsDeleting(false);
       }
    };
 
@@ -637,7 +664,7 @@ function Settings() {
                                  </div>
                               </div>
                               <button
-                                 onClick={handleDeleteAccount}
+                                 onClick={handleOpenDeleteModal}
                                  className="w-full px-6 py-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-300 font-medium text-sm"
                               >
                                  <FiTrash2 className="h-4 w-4 inline mr-2" />
@@ -650,6 +677,14 @@ function Settings() {
                </div>
             </div>
          </div>
+
+         {/* Custom Delete Account Modal */}
+         <DeleteAccountModal
+            isOpen={isDeleteModalOpen}
+            onClose={handleCloseDeleteModal}
+            onConfirm={handleDeleteAccount}
+            isDeleting={isDeleting}
+         />
       </div>
    );
 }

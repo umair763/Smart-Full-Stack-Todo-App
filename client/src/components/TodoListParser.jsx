@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import DisplayTodoList from './DisplayTodoList';
 import { useSocket } from '../app/context/SocketContext';
 import { useNotification } from '../app/context/NotificationContext';
 import ModernSortTabs from './ModernSortTabs';
-import CascadeDeleteModal from './CascadeDeleteModal';
-import { HiSortAscending, HiClipboardList } from 'react-icons/hi';
+import DeleteTaskModal from './DeleteTaskModal';
+import { HiSortAscending, HiClipboardList, HiChevronUp, HiChevronDown, HiCalendar } from 'react-icons/hi';
 
 // Use the consistent API base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -21,12 +21,11 @@ function TodoListParser({ searchTerm = '' }) {
    const [dependencies, setDependencies] = useState([]);
    const [isLoadingDependencies, setIsLoadingDependencies] = useState(false);
 
-   // Cascade delete modal state
-   const [cascadeDeleteModal, setCascadeDeleteModal] = useState({
+   // Simple delete modal state
+   const [deleteModal, setDeleteModal] = useState({
       isOpen: false,
       taskId: null,
       taskName: '',
-      dependentTasks: [],
       isDeleting: false,
    });
 
@@ -34,6 +33,188 @@ function TodoListParser({ searchTerm = '' }) {
       type: 'deadline',
       direction: 'asc',
    });
+
+   // Virtual scrolling state for performance optimization
+   const [scrollTop, setScrollTop] = useState(0);
+   const [containerHeight, setContainerHeight] = useState(0);
+   const [isScrolling, setIsScrolling] = useState(false);
+   const [scrollTimeout, setScrollTimeout] = useState(null);
+   const itemHeight = 85; // Reduced from 100 to 85 for more compact display
+   const buffer = 5; // Number of items to render outside visible area
+
+   // Calculate visible items for virtual scrolling
+   const getVisibleItems = () => {
+      if (filteredList.length <= 20) {
+         // For small lists, render all items
+         return { startIndex: 0, endIndex: filteredList.length - 1, visibleItems: filteredList };
+      }
+
+      const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - buffer);
+      const endIndex = Math.min(
+         filteredList.length - 1,
+         Math.ceil((scrollTop + containerHeight) / itemHeight) + buffer
+      );
+
+      return {
+         startIndex,
+         endIndex,
+         visibleItems: filteredList.slice(startIndex, endIndex + 1),
+      };
+   };
+
+   const { startIndex, endIndex, visibleItems } = getVisibleItems();
+
+   // Get current visible task count for scrolling indicator
+   const getVisibleTaskCount = () => {
+      if (filteredList.length === 0 || !containerHeight) return { visible: 0, total: 0 };
+
+      const visibleStartIndex = Math.max(0, Math.floor(scrollTop / itemHeight));
+      const visibleEndIndex = Math.min(filteredList.length - 1, Math.ceil((scrollTop + containerHeight) / itemHeight));
+
+      const visibleCount = Math.max(0, visibleEndIndex - visibleStartIndex + 1);
+
+      return {
+         visible: Math.min(visibleCount, filteredList.length),
+         total: filteredList.length,
+         startIndex: visibleStartIndex + 1, // 1-based for display
+         endIndex: Math.min(visibleEndIndex + 1, filteredList.length), // 1-based for display
+      };
+   };
+
+   // Get current date range being viewed
+   const getCurrentDateRange = () => {
+      if (filteredList.length === 0 || !containerHeight) return '';
+
+      const visibleStartIndex = Math.max(0, Math.floor(scrollTop / itemHeight));
+      const visibleEndIndex = Math.min(filteredList.length - 1, Math.ceil((scrollTop + containerHeight) / itemHeight));
+
+      // Ensure we have valid indices
+      if (visibleStartIndex >= filteredList.length || visibleEndIndex < 0) return '';
+
+      const startTask = filteredList[visibleStartIndex];
+      const endTask = filteredList[Math.min(visibleEndIndex, filteredList.length - 1)];
+
+      if (!startTask?.date || !endTask?.date) return '';
+
+      const startDate = startTask.date;
+      const endDate = endTask.date;
+
+      // Format dates for better display
+      const formatDisplayDate = (dateStr) => {
+         try {
+            const [day, month, year] = dateStr.split('/');
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('en-US', {
+               month: 'short',
+               day: 'numeric',
+               year: year !== new Date().getFullYear().toString() ? 'numeric' : undefined,
+            });
+         } catch {
+            return dateStr;
+         }
+      };
+
+      if (startDate === endDate) {
+         return formatDisplayDate(startDate);
+      } else {
+         const formattedStart = formatDisplayDate(startDate);
+         const formattedEnd = formatDisplayDate(endDate);
+         return `${formattedStart} - ${formattedEnd}`;
+      }
+   };
+
+   // Handle scroll for virtual scrolling
+   const handleScroll = (e) => {
+      setScrollTop(e.target.scrollTop);
+      if (!containerHeight) {
+         setContainerHeight(e.target.clientHeight);
+      }
+
+      // Show scrolling indicator
+      setIsScrolling(true);
+
+      // Clear existing timeout
+      if (scrollTimeout) {
+         clearTimeout(scrollTimeout);
+      }
+
+      // Hide scrolling indicator after 1.5 seconds of no scrolling
+      const timeout = setTimeout(() => {
+         setIsScrolling(false);
+      }, 1500);
+
+      setScrollTimeout(timeout);
+   };
+
+   // Scroll to top function
+   const scrollToTop = () => {
+      const container = document.getElementById('task-list-container');
+      if (container) {
+         container.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+   };
+
+   // Scroll to bottom function
+   const scrollToBottom = () => {
+      const container = document.getElementById('task-list-container');
+      if (container) {
+         const maxScroll = container.scrollHeight - container.clientHeight;
+         container.scrollTo({ top: maxScroll, behavior: 'smooth' });
+      }
+   };
+
+   // Add custom scrollbar styles
+   useEffect(() => {
+      const style = document.createElement('style');
+      style.textContent = `
+         .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+         }
+         .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(229, 231, 235, 0.3);
+            border-radius: 4px;
+         }
+         .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #9406E6, #7D05C3);
+            border-radius: 4px;
+            transition: background 0.2s ease;
+         }
+         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #7D05C3, #6B04A8);
+         }
+         .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #9406E6 rgba(229, 231, 235, 0.3);
+         }
+         .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+         }
+         @keyframes fadeIn {
+            from {
+               opacity: 0;
+               transform: translateY(-10px) translateX(10px);
+            }
+            to {
+               opacity: 1;
+               transform: translateY(0) translateX(0);
+            }
+         }
+      `;
+      document.head.appendChild(style);
+
+      return () => {
+         document.head.removeChild(style);
+      };
+   }, []);
+
+   // Cleanup scroll timeout on unmount
+   useEffect(() => {
+      return () => {
+         if (scrollTimeout) {
+            clearTimeout(scrollTimeout);
+         }
+      };
+   }, [scrollTimeout]);
 
    // Fetch tasks when component mounts
    useEffect(() => {
@@ -157,6 +338,22 @@ function TodoListParser({ searchTerm = '' }) {
 
    // Handle task deletion
    const handleDeleteTask = async (taskId) => {
+      // Find the task to get its name for the modal
+      const taskToDelete = todoList.find((task) => task._id === taskId);
+
+      // Show confirmation modal first
+      setDeleteModal({
+         isOpen: true,
+         taskId: taskId,
+         taskName: taskToDelete?.task || 'Unknown Task',
+         isDeleting: false,
+      });
+   };
+
+   // Handle simple delete confirmation
+   const handleDeleteConfirm = async () => {
+      setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+
       try {
          const token = localStorage.getItem('token');
          if (!token) {
@@ -164,7 +361,7 @@ function TodoListParser({ searchTerm = '' }) {
          }
 
          // First attempt to delete without confirmation
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -173,84 +370,51 @@ function TodoListParser({ searchTerm = '' }) {
          });
 
          if (response.status === 409) {
-            // Task has dependents, show modal for confirmation
-            const errorData = await response.json();
-            const taskToDelete = todoList.find((task) => task._id === taskId);
-
-            setCascadeDeleteModal({
-               isOpen: true,
-               taskId: taskId,
-               taskName: taskToDelete?.task || 'Unknown Task',
-               dependentTasks: errorData.dependentTasks,
-               isDeleting: false,
+            // Task has dependents, force delete with cascade
+            const cascadeResponse = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
+               method: 'DELETE',
+               headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+               },
+               body: JSON.stringify({ confirmCascade: true }),
             });
-            return; // Exit early, modal will handle the rest
-         }
 
-         if (!response.ok) {
+            if (!cascadeResponse.ok) {
+               const errorData = await cascadeResponse.json();
+               throw new Error(errorData.message || 'Failed to delete task');
+            }
+         } else if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message || 'Failed to delete task');
          }
 
-         // Regular deletion (no dependents)
-         setTodoList((prevList) => prevList.filter((task) => task._id !== taskId));
-         createSuccessNotification('Task deleted successfully');
-      } catch (error) {
-         console.error('Error deleting task:', error);
-         createErrorNotification(error.message || 'Failed to delete task');
-      }
-   };
+         // Regular deletion (no dependents) - Remove the task from local state
+         setTodoList((prevList) => prevList.filter((task) => task._id !== deleteModal.taskId));
 
-   // Handle cascade delete confirmation
-   const handleCascadeDeleteConfirm = async () => {
-      setCascadeDeleteModal((prev) => ({ ...prev, isDeleting: true }));
-
-      try {
-         const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${cascadeDeleteModal.taskId}`, {
-            method: 'DELETE',
-            headers: {
-               Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ confirmCascade: true }),
-         });
-
-         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to delete task');
-         }
-
-         const result = await response.json();
-
-         // Remove the task and its dependents from local state
-         const dependentIds = cascadeDeleteModal.dependentTasks.map((dep) => dep.id);
-         setTodoList((prevList) =>
-            prevList.filter((task) => task._id !== cascadeDeleteModal.taskId && !dependentIds.includes(task._id))
-         );
-
-         createSuccessNotification(result.message || 'Tasks deleted successfully');
-         setCascadeDeleteModal({
+         // Close the modal
+         setDeleteModal({
             isOpen: false,
             taskId: null,
             taskName: '',
-            dependentTasks: [],
             isDeleting: false,
          });
+
+         // Note: We don't create a success notification here because the backend already sends one
+         // This removes the duplicate notification issue
       } catch (error) {
          console.error('Error deleting task:', error);
          createErrorNotification(error.message || 'Failed to delete task');
-         setCascadeDeleteModal((prev) => ({ ...prev, isDeleting: false }));
+         setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
       }
    };
 
-   // Handle cascade delete cancel
-   const handleCascadeDeleteCancel = () => {
-      setCascadeDeleteModal({
+   // Handle simple delete cancel
+   const handleDeleteCancel = () => {
+      setDeleteModal({
          isOpen: false,
          taskId: null,
          taskName: '',
-         dependentTasks: [],
          isDeleting: false,
       });
    };
@@ -582,7 +746,7 @@ function TodoListParser({ searchTerm = '' }) {
                         <HiSortAscending className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                      </div>
                      <div>
-                        <h2 className="text-base sm:text-lg font-bold text-white">Task Sorting</h2>
+                        <h2 className="text-base sm:text-lg font-bold text-white font-proza">Task Sorting</h2>
                         <p className="text-xs text-white/80 hidden sm:block">Organize your tasks efficiently</p>
                      </div>
                   </div>
@@ -599,50 +763,136 @@ function TodoListParser({ searchTerm = '' }) {
             </div>
          </div>
 
-         {/* Task list with enhanced styling */}
-         <div className="space-y-3">
-            {filteredList.length === 0 ? (
-               <div className="text-center p-8 sm:p-12 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-lg">
-                  <div className="flex flex-col items-center space-y-4">
-                     <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-full">
-                        <HiClipboardList className="h-8 w-8 text-white" />
-                     </div>
-                     <div>
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                           {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
-                        </h3>
-                        <p className="text-gray-500 max-w-md">
-                           {searchTerm
-                              ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
-                              : 'Create your first task to get started with organizing your work!'}
-                        </p>
+         {/* Task list with enhanced styling and scrollable container */}
+         <div className="relative">
+            {/* Scrollable container with fixed height */}
+            <div
+               className="h-[70vh] overflow-y-auto pr-2 custom-scrollbar scroll-smooth"
+               id="task-list-container"
+               onScroll={handleScroll}
+            >
+               {filteredList.length === 0 ? (
+                  <div className="text-center p-8 sm:p-12 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-lg">
+                     <div className="flex flex-col items-center space-y-4">
+                        <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-full">
+                           <HiClipboardList className="h-8 w-8 text-white" />
+                        </div>
+                        <div>
+                           <h3 className="text-lg font-semibold text-gray-700 mb-2 font-proza">
+                              {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
+                           </h3>
+                           <p className="text-gray-500 max-w-md">
+                              {searchTerm
+                                 ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
+                                 : 'Create your first task to get started with organizing your work!'}
+                           </p>
+                        </div>
                      </div>
                   </div>
-               </div>
-            ) : (
-               filteredList.map((task) => (
-                  <DisplayTodoList
-                     key={task._id}
-                     list={task}
-                     isexceeded={isDeadlineExceeded(task)}
-                     onDelete={handleDeleteTask}
-                     onUpdate={handleUpdateTask}
-                     onStatusChange={handleTaskStatusChange}
-                     dependencies={dependencies}
-                     onDependencyChange={fetchDependencies}
-                  />
-               ))
+               ) : (
+                  <div
+                     style={{
+                        height: filteredList.length * itemHeight,
+                        position: 'relative',
+                     }}
+                  >
+                     {/* Virtual scrolling spacer for items before visible area */}
+                     <div style={{ height: startIndex * itemHeight }} />
+
+                     {/* Visible items */}
+                     <div>
+                        {visibleItems.map((task, index) => (
+                           <div
+                              key={task._id}
+                              style={{
+                                 minHeight: itemHeight,
+                                 position: 'relative',
+                              }}
+                           >
+                              <DisplayTodoList
+                                 list={task}
+                                 isexceeded={isDeadlineExceeded(task)}
+                                 onDelete={handleDeleteTask}
+                                 onUpdate={handleUpdateTask}
+                                 onStatusChange={handleTaskStatusChange}
+                                 dependencies={dependencies}
+                                 onDependencyChange={fetchDependencies}
+                              />
+                           </div>
+                        ))}
+                     </div>
+
+                     {/* Virtual scrolling spacer for items after visible area */}
+                     <div style={{ height: (filteredList.length - endIndex - 1) * itemHeight }} />
+                  </div>
+               )}
+            </div>
+
+            {/* Scroll indicators and controls */}
+            {filteredList.length > 5 && (
+               <>
+                  {/* Top fade indicator */}
+                  <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none z-10 rounded-t-xl"></div>
+
+                  {/* Bottom fade indicator */}
+                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white/30 via-white/10 to-transparent pointer-events-none z-10 rounded-b-xl"></div>
+
+                  {/* Date indicator - shows while scrolling */}
+                  {isScrolling && getCurrentDateRange() && (
+                     <div className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-gradient-to-r from-purple-800 to-purple-900 backdrop-blur-sm text-white text-xs font-medium px-3 py-2 rounded-lg border border-white/20 shadow-lg z-30 animate-fade-in">
+                        <div className="flex items-center gap-2">
+                           <HiCalendar className="h-3 w-3" />
+                           <span>{getCurrentDateRange()}</span>
+                        </div>
+                     </div>
+                  )}
+
+                  {/* Task count indicator - shows while scrolling */}
+                  {isScrolling && filteredList.length > 10 && (
+                     <div className="absolute top-16 right-4 bg-gradient-to-r from-purple-600 to-purple-700 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-lg border border-white/20 shadow-lg z-30 animate-fade-in">
+                        <div className="flex items-center gap-2">
+                           <HiClipboardList className="h-3 w-3" />
+                           <span>
+                              {(() => {
+                                 const { visible, total, startIndex, endIndex } = getVisibleTaskCount();
+                                 return `${startIndex}-${endIndex} of ${total}`;
+                              })()}
+                           </span>
+                        </div>
+                     </div>
+                  )}
+
+                  {/* Navigation buttons container - bottom left */}
+                  <div className="absolute bottom-3 left-6 flex flex-col gap-2 z-20">
+                     {/* Scroll to top button */}
+                     <button
+                        onClick={scrollToTop}
+                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 backdrop-blur-sm text-white p-2 rounded-full border border-white/20 shadow-lg transition-all duration-200 hover:scale-105"
+                        title="Scroll to top"
+                     >
+                        <HiChevronUp className="h-4 w-4" />
+                     </button>
+
+                     {/* Scroll to bottom button */}
+                     <button
+                        onClick={scrollToBottom}
+                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 backdrop-blur-sm text-white p-2 rounded-full border border-white/20 shadow-lg transition-all duration-200 hover:scale-105"
+                        title="Scroll to bottom"
+                     >
+                        <HiChevronDown className="h-4 w-4" />
+                     </button>
+                  </div>
+               </>
             )}
          </div>
 
-         {/* Cascade Delete Modal */}
-         <CascadeDeleteModal
-            isOpen={cascadeDeleteModal.isOpen}
-            onClose={handleCascadeDeleteCancel}
-            onConfirm={handleCascadeDeleteConfirm}
-            taskName={cascadeDeleteModal.taskName}
-            dependentTasks={cascadeDeleteModal.dependentTasks}
-            isLoading={cascadeDeleteModal.isDeleting}
+         {/* Simple Delete Task Modal */}
+         <DeleteTaskModal
+            isOpen={deleteModal.isOpen}
+            onClose={handleDeleteCancel}
+            onConfirm={handleDeleteConfirm}
+            taskName={deleteModal.taskName}
+            isDeleting={deleteModal.isDeleting}
          />
       </div>
    );

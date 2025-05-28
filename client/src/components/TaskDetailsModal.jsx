@@ -14,7 +14,7 @@ function TaskDetailsModal({ isOpen, onClose, task }) {
       <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out">
          <div className="bg-gradient-to-br from-[#9406E6]/90 to-[#00FFFF]/90 backdrop-blur-lg p-6 rounded-xl shadow-2xl w-full max-w-2xl mx-3 transform transition-all duration-300 ease-in-out">
             <div className="flex justify-between items-center mb-4">
-               <h2 className="text-xl font-bold text-white truncate">{task.task}</h2>
+               <h2 className="text-xl font-bold text-white truncate font-proza">{task.task}</h2>
                <button onClick={onClose} className="text-white hover:text-red-300 transition-colors">
                   <FiX className="h-6 w-6" />
                </button>

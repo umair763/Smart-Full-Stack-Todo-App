@@ -50,8 +50,8 @@ const Header = () => {
                         <HiCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
                      </div>
                      <div className="min-w-0 hidden xs:block">
-                        <h1 className="text-sm sm:text-lg lg:text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent truncate">
-                           Todo App
+                        <h1 className="font-extrabold  text-sm sm:text-lg lg:text-2xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent truncate font-proza">
+                           Smart Todo
                         </h1>
                         <p className="text-xs sm:text-sm text-white/70 hidden sm:block truncate">
                            To-Do lists help us break life into small steps.

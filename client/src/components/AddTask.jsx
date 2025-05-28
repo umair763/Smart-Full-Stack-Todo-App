@@ -43,10 +43,10 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }
                <div className="flex items-center justify-between mb-4 sm:mb-5 ">
                   <div className="flex items-center space-x-3">
                      <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-2.5 rounded-xl shadow-lg">
-                        <HiViewGrid className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                        <HiViewGrid className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                      </div>
                      <div>
-                        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Task Management</h2>
+                        <h2 className="text-base sm:text-lg font-bold text-white font-proza">Task Management</h2>
                         <p className="text-xs sm:text-sm text-white/80">Search, create, and organize your tasks</p>
                      </div>
                   </div>
