@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import DisplayTodoList from './DisplayTodoList';
 import { useSocket } from '../app/context/SocketContext';
 import { useNotification } from '../app/context/NotificationContext';
+import { useTheme } from '../context/ThemeContext';
 import ModernSortTabs from './ModernSortTabs';
 import DeleteTaskModal from './DeleteTaskModal';
 import { HiSortAscending, HiClipboardList, HiChevronUp, HiChevronDown, HiCalendar } from 'react-icons/hi';
@@ -18,6 +19,7 @@ function TodoListParser({ searchTerm = '' }) {
    const [error, setError] = useState(null);
    const { socket } = useSocket();
    const { createSuccessNotification, createErrorNotification } = useNotification();
+   const { isDark } = useTheme();
    const [dependencies, setDependencies] = useState([]);
    const [isLoadingDependencies, setIsLoadingDependencies] = useState(false);
 
@@ -171,7 +173,7 @@ function TodoListParser({ searchTerm = '' }) {
             width: 8px;
          }
          .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(229, 231, 235, 0.3);
+            background: ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
             border-radius: 4px;
          }
          .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -184,7 +186,7 @@ function TodoListParser({ searchTerm = '' }) {
          }
          .custom-scrollbar {
             scrollbar-width: thin;
-            scrollbar-color: #9406E6 rgba(229, 231, 235, 0.3);
+            scrollbar-color: #9406E6 ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
          }
          .animate-fade-in {
             animation: fadeIn 0.3s ease-in-out;
@@ -205,7 +207,7 @@ function TodoListParser({ searchTerm = '' }) {
       return () => {
          document.head.removeChild(style);
       };
-   }, []);
+   }, [isDark]);
 
    // Cleanup scroll timeout on unmount
    useEffect(() => {
@@ -719,7 +721,13 @@ function TodoListParser({ searchTerm = '' }) {
    // Render error state
    if (error) {
       return (
-         <div className="text-center text-red-500 p-4 bg-red-100 rounded-lg">
+         <div
+            className={`text-center p-4 rounded-lg ${
+               isDark
+                  ? 'text-red-400 bg-red-900/20 border border-red-800'
+                  : 'text-red-500 bg-red-100 border border-red-200'
+            }`}
+         >
             <p>{error}</p>
             <button
                onClick={fetchTasks}
@@ -735,31 +743,31 @@ function TodoListParser({ searchTerm = '' }) {
       <div className="w-full">
          {/* Enhanced Sort UI - Reduced Size */}
          <div className="relative mb-4">
-            {/* Background with glassmorphism effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-indigo-600/20 backdrop-blur-xl rounded-xl border border-white/30"></div>
+            {/* Background with theme-responsive styling */}
+            <div
+               className={`absolute inset-0 rounded-xl border shadow-lg ${
+                  isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'
+               }`}
+            ></div>
 
             {/* Content */}
             <div className="relative p-3 sm:p-4">
+               <ModernSortTabs onSortChange={handleSortChange} />
                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                     <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-1.5 sm:p-2 rounded-lg shadow-md">
-                        <HiSortAscending className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                     </div>
-                     <div>
-                        <h2 className="text-base sm:text-lg font-bold text-white font-proza">Task Sorting</h2>
-                        <p className="text-xs text-white/80 hidden sm:block">Organize your tasks efficiently</p>
-                     </div>
-                  </div>
-
                   {/* Task count badge */}
-                  <div className="bg-white/20 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full border border-white/30">
-                     <span className="text-xs sm:text-sm font-semibold text-white">
+                  <div
+                     className={`backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full border ${
+                        isDark
+                           ? 'bg-purple-900/50 border-purple-700 text-purple-200'
+                           : 'bg-purple-100 border-purple-200 text-purple-700'
+                     }`}
+                  >
+                     <span className="text-xs sm:text-sm font-semibold">
                         {filteredList.length} {filteredList.length === 1 ? 'Task' : 'Tasks'}
                      </span>
                   </div>
                </div>
 
-               <ModernSortTabs onSortChange={handleSortChange} />
             </div>
          </div>
 
@@ -772,16 +780,26 @@ function TodoListParser({ searchTerm = '' }) {
                onScroll={handleScroll}
             >
                {filteredList.length === 0 ? (
-                  <div className="text-center p-8 sm:p-12 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200 shadow-lg">
+                  <div
+                     className={`text-center p-8 sm:p-12 rounded-2xl border shadow-lg ${
+                        isDark
+                           ? 'bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600'
+                           : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'
+                     }`}
+                  >
                      <div className="flex flex-col items-center space-y-4">
                         <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-full">
                            <HiClipboardList className="h-8 w-8 text-white" />
                         </div>
                         <div>
-                           <h3 className="text-lg font-semibold text-gray-700 mb-2 font-proza">
+                           <h3
+                              className={`text-lg font-semibold mb-2 font-proza ${
+                                 isDark ? 'text-gray-200' : 'text-gray-700'
+                              }`}
+                           >
                               {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
                            </h3>
-                           <p className="text-gray-500 max-w-md">
+                           <p className={`max-w-md ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                               {searchTerm
                                  ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
                                  : 'Create your first task to get started with organizing your work!'}
@@ -832,14 +850,32 @@ function TodoListParser({ searchTerm = '' }) {
             {filteredList.length > 5 && (
                <>
                   {/* Top fade indicator */}
-                  <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none z-10 rounded-t-xl"></div>
+                  <div
+                     className={`absolute top-0 left-0 right-0 h-6 pointer-events-none z-10 rounded-t-xl ${
+                        isDark
+                           ? 'bg-gradient-to-b from-gray-800/30 via-gray-800/10 to-transparent'
+                           : 'bg-gradient-to-b from-white/30 via-white/10 to-transparent'
+                     }`}
+                  ></div>
 
                   {/* Bottom fade indicator */}
-                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white/30 via-white/10 to-transparent pointer-events-none z-10 rounded-b-xl"></div>
+                  <div
+                     className={`absolute bottom-0 left-0 right-0 h-6 pointer-events-none z-10 rounded-b-xl ${
+                        isDark
+                           ? 'bg-gradient-to-t from-gray-800/30 via-gray-800/10 to-transparent'
+                           : 'bg-gradient-to-t from-white/30 via-white/10 to-transparent'
+                     }`}
+                  ></div>
 
                   {/* Date indicator - shows while scrolling */}
                   {isScrolling && getCurrentDateRange() && (
-                     <div className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-gradient-to-r from-purple-800 to-purple-900 backdrop-blur-sm text-white text-xs font-medium px-3 py-2 rounded-lg border border-white/20 shadow-lg z-30 animate-fade-in">
+                     <div
+                        className={`absolute top-1/2 right-4 transform -translate-y-1/2 backdrop-blur-sm text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg z-30 animate-fade-in ${
+                           isDark
+                              ? 'bg-gradient-to-r from-purple-800 to-purple-900 border border-purple-600/20'
+                              : 'bg-gradient-to-r from-purple-800 to-purple-900 border border-white/20'
+                        }`}
+                     >
                         <div className="flex items-center gap-2">
                            <HiCalendar className="h-3 w-3" />
                            <span>{getCurrentDateRange()}</span>
@@ -849,7 +885,13 @@ function TodoListParser({ searchTerm = '' }) {
 
                   {/* Task count indicator - shows while scrolling */}
                   {isScrolling && filteredList.length > 10 && (
-                     <div className="absolute top-16 right-4 bg-gradient-to-r from-purple-600 to-purple-700 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-lg border border-white/20 shadow-lg z-30 animate-fade-in">
+                     <div
+                        className={`absolute top-16 right-4 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg z-30 animate-fade-in ${
+                           isDark
+                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-500/20'
+                              : 'bg-gradient-to-r from-purple-600 to-purple-700 border border-white/20'
+                        }`}
+                     >
                         <div className="flex items-center gap-2">
                            <HiClipboardList className="h-3 w-3" />
                            <span>
@@ -867,7 +909,11 @@ function TodoListParser({ searchTerm = '' }) {
                      {/* Scroll to top button */}
                      <button
                         onClick={scrollToTop}
-                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 backdrop-blur-sm text-white p-2 rounded-full border border-white/20 shadow-lg transition-all duration-200 hover:scale-105"
+                        className={`backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105 ${
+                           isDark
+                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/20'
+                              : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/20'
+                        }`}
                         title="Scroll to top"
                      >
                         <HiChevronUp className="h-4 w-4" />
@@ -876,7 +922,11 @@ function TodoListParser({ searchTerm = '' }) {
                      {/* Scroll to bottom button */}
                      <button
                         onClick={scrollToBottom}
-                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 backdrop-blur-sm text-white p-2 rounded-full border border-white/20 shadow-lg transition-all duration-200 hover:scale-105"
+                        className={`backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105 ${
+                           isDark
+                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/20'
+                              : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/20'
+                        }`}
                         title="Scroll to bottom"
                      >
                         <HiChevronDown className="h-4 w-4" />

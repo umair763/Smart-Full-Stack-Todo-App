@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { FiLink, FiList, FiCalendar, FiChevronUp, FiChevronDown, FiStar, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { HiSortAscending, HiSortDescending, HiSparkles, HiClock, HiViewGrid } from 'react-icons/hi';
+import { useTheme } from '../context/ThemeContext';
 
 const ModernSortTabs = ({ onSortChange }) => {
+   const { isDark } = useTheme();
    const [activeSort, setActiveSort] = useState('deadline');
    const [sortDirections, setSortDirections] = useState({
       deadline: 'asc',
@@ -30,11 +32,11 @@ const ModernSortTabs = ({ onSortChange }) => {
    };
 
    return (
-      <div className="bg-gradient-to-r from-purple-100 via-blue-100 to-indigo-100 backdrop-blur-sm border border-white/30 p-2 sm:p-3 md:p-4 rounded-xl mb-3 sm:mb-4 shadow-lg">
+      <div className={`p-1 sm:p-1 md:p-2 rounded-xl mb-3 sm:mb-4 ${isDark ? 'bg-gray-800 ' : 'bg-gray-100 '}`}>
          {/* Mobile Layout (< 640px) - Enhanced Grid */}
          <div className="sm:hidden">
             <div className="flex items-center justify-center mb-3">
-               <div className="flex items-center space-x-2 text-gray-700">
+               <div className={`flex items-center space-x-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   <HiViewGrid className="h-4 w-4 text-purple-600" />
                   <span className="font-semibold text-sm">Sort Tasks By</span>
                </div>
@@ -49,6 +51,7 @@ const ModernSortTabs = ({ onSortChange }) => {
                   isMobile={true}
                   showArrow={true}
                   color="from-blue-500 to-indigo-600"
+                  isDark={isDark}
                />
                <EnhancedSortTab
                   icon={<HiSparkles />}
@@ -59,6 +62,7 @@ const ModernSortTabs = ({ onSortChange }) => {
                   isMobile={true}
                   showArrow={true}
                   color="from-purple-500 to-pink-600"
+                  isDark={isDark}
                />
                <EnhancedSortTab
                   icon={<FiList />}
@@ -67,6 +71,7 @@ const ModernSortTabs = ({ onSortChange }) => {
                   onClick={() => handleSortChange('alphabetical')}
                   isMobile={true}
                   color="from-green-500 to-emerald-600"
+                  isDark={isDark}
                />
                <EnhancedSortTab
                   icon={<FiLink />}
@@ -75,6 +80,7 @@ const ModernSortTabs = ({ onSortChange }) => {
                   onClick={() => handleSortChange('dependencies')}
                   isMobile={true}
                   color="from-orange-500 to-red-600"
+                  isDark={isDark}
                />
             </div>
          </div>
@@ -82,13 +88,17 @@ const ModernSortTabs = ({ onSortChange }) => {
          {/* Desktop Layout (>= 640px) - Enhanced Horizontal */}
          <div className="hidden sm:block">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
-               <div className="flex items-center space-x-2 text-gray-700">
+               <div className={`flex items-center space-x-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                   <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-2 rounded-lg shadow-md">
                      <HiViewGrid className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                     <h3 className="font-bold text-base lg:text-lg text-gray-800">Sort Tasks</h3>
-                     <p className="text-xs lg:text-sm text-gray-600">Choose your preferred sorting method</p>
+                     <h3 className={`font-bold text-base lg:text-lg ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                        Sort Tasks
+                     </h3>
+                     <p className={`text-xs lg:text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Choose your preferred sorting method
+                     </p>
                   </div>
                </div>
 
@@ -99,6 +109,7 @@ const ModernSortTabs = ({ onSortChange }) => {
                      isActive={activeSort === 'dependencies'}
                      onClick={() => handleSortChange('dependencies')}
                      color="from-orange-500 to-red-600"
+                     isDark={isDark}
                   />
                   <EnhancedSortTab
                      icon={<FiList />}
@@ -106,6 +117,7 @@ const ModernSortTabs = ({ onSortChange }) => {
                      isActive={activeSort === 'alphabetical'}
                      onClick={() => handleSortChange('alphabetical')}
                      color="from-green-500 to-emerald-600"
+                     isDark={isDark}
                   />
                   <EnhancedDeadlineSortTab
                      icon={<HiClock />}
@@ -114,6 +126,7 @@ const ModernSortTabs = ({ onSortChange }) => {
                      direction={sortDirections.deadline}
                      onClick={() => handleSortChange('deadline')}
                      color="from-blue-500 to-indigo-600"
+                     isDark={isDark}
                   />
                   <EnhancedPrioritySortTab
                      icon={<HiSparkles />}
@@ -122,6 +135,7 @@ const ModernSortTabs = ({ onSortChange }) => {
                      direction={sortDirections.priority}
                      onClick={() => handleSortChange('priority')}
                      color="from-purple-500 to-pink-600"
+                     isDark={isDark}
                   />
                </div>
             </div>
@@ -130,7 +144,7 @@ const ModernSortTabs = ({ onSortChange }) => {
    );
 };
 
-const EnhancedSortTab = ({ icon, label, isActive, onClick, isMobile, direction, showArrow, color }) => {
+const EnhancedSortTab = ({ icon, label, isActive, onClick, isMobile, direction, showArrow, color, isDark }) => {
    if (isMobile) {
       return (
          <button
@@ -138,7 +152,9 @@ const EnhancedSortTab = ({ icon, label, isActive, onClick, isMobile, direction, 
             className={`group relative overflow-hidden flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-300 transform hover:scale-105 ${
                isActive
                   ? `bg-gradient-to-r ${color} text-white shadow-lg scale-105`
-                  : 'bg-white/70 text-gray-700 hover:bg-white/90 hover:shadow-md'
+                  : isDark
+                  ? 'bg-gray-600/80 text-gray-200 hover:bg-gray-500/90 hover:shadow-md border border-gray-500/30'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-lg border border-gray-200'
             }`}
          >
             <div className="flex items-center justify-center mb-1">
@@ -171,7 +187,9 @@ const EnhancedSortTab = ({ icon, label, isActive, onClick, isMobile, direction, 
          className={`group relative overflow-hidden flex items-center space-x-1.5 px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md ${
             isActive
                ? `bg-gradient-to-r ${color} text-white shadow-lg scale-105`
-               : 'bg-white/80 text-gray-700 hover:bg-white/95 hover:shadow-lg'
+               : isDark
+               ? 'bg-gray-600/80 text-gray-200 hover:bg-gray-500/95 hover:shadow-lg border border-gray-500/30'
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-lg border border-gray-200'
          }`}
       >
          <span
@@ -189,14 +207,16 @@ const EnhancedSortTab = ({ icon, label, isActive, onClick, isMobile, direction, 
    );
 };
 
-const EnhancedDeadlineSortTab = ({ icon, label, isActive, direction, onClick, color }) => {
+const EnhancedDeadlineSortTab = ({ icon, label, isActive, direction, onClick, color, isDark }) => {
    return (
       <button
          onClick={onClick}
          className={`group relative overflow-hidden flex items-center space-x-1.5 px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md ${
             isActive
                ? `bg-gradient-to-r ${color} text-white shadow-lg scale-105`
-               : 'bg-white/80 text-gray-700 hover:bg-white/95 hover:shadow-lg'
+               : isDark
+               ? 'bg-gray-600/80 text-gray-200 hover:bg-gray-500/95 hover:shadow-lg border border-gray-500/30'
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-lg border border-gray-200'
          }`}
          title={direction === 'asc' ? 'Sort by earliest deadline first' : 'Sort by latest deadline first'}
       >
@@ -220,14 +240,16 @@ const EnhancedDeadlineSortTab = ({ icon, label, isActive, direction, onClick, co
    );
 };
 
-const EnhancedPrioritySortTab = ({ icon, label, isActive, direction, onClick, color }) => {
+const EnhancedPrioritySortTab = ({ icon, label, isActive, direction, onClick, color, isDark }) => {
    return (
       <button
          onClick={onClick}
          className={`group relative overflow-hidden flex items-center space-x-1.5 px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md ${
             isActive
                ? `bg-gradient-to-r ${color} text-white shadow-lg scale-105`
-               : 'bg-white/80 text-gray-700 hover:bg-white/95 hover:shadow-lg'
+               : isDark
+               ? 'bg-gray-600/80 text-gray-200 hover:bg-gray-500/95 hover:shadow-lg border border-gray-500/30'
+               : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-lg border border-gray-200'
          }`}
          title={direction === 'asc' ? 'Sort by highest priority first' : 'Sort by lowest priority first'}
       >
