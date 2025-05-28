@@ -126,7 +126,10 @@ function RegisterUser() {
    };
 
    return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 p-4">
+      <div
+         className="fixed inset-0 w-full h-full flex justify-center items-center bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 overflow-hidden"
+         style={{ margin: 0, padding: 0 }}
+      >
          {/* Theme Toggle in top-right corner */}
          <div className="absolute top-4 right-4 z-10">
             <ThemeToggle variant="floating" size="medium" />
@@ -142,26 +145,26 @@ function RegisterUser() {
             </Link>
          </div>
 
-         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
-            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-6">Create Account</h2>
+         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-4 w-full max-w-sm mx-4 border border-gray-200 dark:border-gray-700 max-h-[calc(100vh-2rem)] overflow-y-auto">
+            <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100 mb-4">Create Account</h2>
 
             {error && (
-               <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-600 text-red-700 dark:text-red-300 p-4 mb-4">
+               <div className="bg-red-100 dark:bg-red-900/30 border-l-4 border-red-500 dark:border-red-600 text-red-700 dark:text-red-300 p-3 mb-3 text-sm">
                   {error}
                </div>
             )}
             {success && (
-               <div className="bg-green-100 dark:bg-green-900/30 border-l-4 border-green-500 dark:border-green-600 text-green-700 dark:text-green-300 p-4 mb-4">
+               <div className="bg-green-100 dark:bg-green-900/30 border-l-4 border-green-500 dark:border-green-600 text-green-700 dark:text-green-300 p-3 mb-3 text-sm">
                   {success}
                </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-3">
                {/* Profile Image Selector - Centered at the top */}
-               <div className="flex justify-center mb-6">
+               <div className="flex justify-center mb-3">
                   <div
                      onClick={handleImageClick}
-                     className="w-24 h-24 rounded-full cursor-pointer border-2 border-dashed border-purple-400 dark:border-purple-500 flex items-center justify-center overflow-hidden hover:border-purple-600 dark:hover:border-purple-400 transition-colors bg-gray-50 dark:bg-gray-700"
+                     className="w-16 h-16 rounded-full cursor-pointer border-2 border-dashed border-purple-400 dark:border-purple-500 flex items-center justify-center overflow-hidden hover:border-purple-600 dark:hover:border-purple-400 transition-colors bg-gray-50 dark:bg-gray-700"
                   >
                      {previewUrl ? (
                         <img src={previewUrl} alt="Profile Preview" className="w-full h-full object-cover" />
@@ -169,7 +172,7 @@ function RegisterUser() {
                         <div className="text-center text-gray-500 dark:text-gray-400">
                            <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-8 w-8 mx-auto"
+                              className="h-6 w-6 mx-auto"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -181,7 +184,7 @@ function RegisterUser() {
                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                               />
                            </svg>
-                           <span className="text-xs">Add Photo</span>
+                           <span className="text-xs">Photo</span>
                         </div>
                      )}
                   </div>
@@ -202,7 +205,7 @@ function RegisterUser() {
                      name="username"
                      value={formData.username}
                      onChange={handleChange}
-                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400"
+                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400 text-sm"
                      placeholder="Enter your username"
                      required
                   />
@@ -215,7 +218,7 @@ function RegisterUser() {
                      name="email"
                      value={formData.email}
                      onChange={handleChange}
-                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400"
+                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400 text-sm"
                      placeholder="Enter your email"
                      required
                   />
@@ -229,7 +232,7 @@ function RegisterUser() {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400"
+                        className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400 text-sm"
                         placeholder="Create a password"
                         required
                      />
@@ -241,7 +244,7 @@ function RegisterUser() {
                         {isPasswordVisible ? (
                            <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                              className="h-4 w-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -262,7 +265,7 @@ function RegisterUser() {
                         ) : (
                            <svg
                               xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                              className="h-4 w-4 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -288,17 +291,17 @@ function RegisterUser() {
                      name="confirmPassword"
                      value={formData.confirmPassword}
                      onChange={handleChange}
-                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400"
+                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 dark:focus:ring-purple-400 text-sm"
                      placeholder="Confirm your password"
                      required
                   />
                </div>
 
-               <div className="flex flex-col gap-4">
+               <div className="flex flex-col gap-3 pt-2">
                   <button
                      type="submit"
                      disabled={isLoading}
-                     className={`w-full bg-[#9406E6] dark:bg-purple-600 text-white font-bold py-3 rounded-lg hover:bg-[#7d05c3] dark:hover:bg-purple-700 transition-colors ${
+                     className={`w-full bg-[#9406E6] dark:bg-purple-600 text-white font-bold py-2.5 rounded-lg hover:bg-[#7d05c3] dark:hover:bg-purple-700 transition-colors text-sm ${
                         isLoading ? 'opacity-70 cursor-not-allowed' : ''
                      }`}
                   >
@@ -306,14 +309,14 @@ function RegisterUser() {
                   </button>
 
                   <div className="text-center">
-                     <p className="text-gray-600 dark:text-gray-400">Or sign up with</p>
-                     <div className="flex justify-center mt-2">
+                     <p className="text-gray-600 dark:text-gray-400 text-sm">Or sign up with</p>
+                     <div className="flex justify-center mt-1">
                         <GoogleSignIn />
                      </div>
                   </div>
 
-                  <div className="text-center mt-4">
-                     <p className="text-gray-600 dark:text-gray-400">
+                  <div className="text-center">
+                     <p className="text-gray-600 dark:text-gray-400 text-sm">
                         Already have an account?{' '}
                         <Link
                            to="/auth/login"
