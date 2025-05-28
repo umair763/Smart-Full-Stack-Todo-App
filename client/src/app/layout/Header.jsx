@@ -30,30 +30,30 @@ const Header = () => {
    };
 
    return (
-      <header className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 text-white rounded-xl shadow-lg border border-white/20 dark:border-white/10 backdrop-blur-sm">
-         <div className="container mx-auto px-2 sm:px-3 lg:px-6 py-2 sm:py-3 lg:py-4">
-            <div className="flex justify-between items-center min-h-[48px] sm:min-h-[56px]">
+      <header className="mb-2 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 text-white rounded-xl shadow-lg border border-white/20 dark:border-white/10 backdrop-blur-sm">
+         <div className="mx-auto px-4 sm:px-4 lg:px-4 py-1.5 sm:py-2 lg:py-3">
+            <div className="flex justify-between items-center min-h-[40px] sm:min-h-[48px] lg:min-h-[56px]">
                {/* Left Section - Logo & Back Button - Always stays left */}
-               <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+               <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 min-w-0">
                   {(isSettingsPage || isInsightsPage) && (
                      <button
                         onClick={() => navigate('/dashboard')}
-                        className="group flex items-center justify-center p-1.5 sm:p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 transform hover:scale-105 flex-shrink-0"
+                        className="group flex items-center justify-center p-1 sm:p-1.5 lg:p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 transform hover:scale-105 flex-shrink-0"
                         title="Back to Dashboard"
                      >
-                        <HiArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-[-2px] transition-transform duration-200" />
+                        <HiArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 group-hover:translate-x-[-2px] transition-transform duration-200" />
                      </button>
                   )}
 
-                  <div className="flex items-center space-x-2 min-w-0">
-                     <div className="bg-white/20 p-1.5 sm:p-2 rounded-lg flex-shrink-0">
-                        <HiCheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                  <div className="flex items-center space-x-1 sm:space-x-2 min-w-0">
+                     <div className="bg-white/20 p-1 sm:p-1.5 lg:p-2 rounded-lg flex-shrink-0">
+                        <HiCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
                      </div>
-                     <div className="min-w-0">
-                        <h1 className="text-lg sm:text-2xl lg:text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent truncate">
+                     <div className="min-w-0 hidden xs:block">
+                        <h1 className="text-sm sm:text-lg lg:text-2xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent truncate">
                            Todo App
                         </h1>
-                        <p className="text-sm sm:text-md text-white/70 hidden sm:block truncate">
+                        <p className="text-xs sm:text-sm text-white/70 hidden sm:block truncate">
                            To-Do lists help us break life into small steps.
                         </p>
                      </div>
@@ -63,18 +63,18 @@ const Header = () => {
                {/* Desktop Navigation - Hidden on mobile */}
                {isLoggedIn && (
                   <nav className="hidden md:block flex-shrink-0">
-                     <ul className="flex items-center space-x-1 lg:space-x-2">
+                     <ul className="flex items-center space-x-2">
                         <li>
                            <Link
                               to="/dashboard"
-                              className={`group flex items-center space-x-2 px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                              className={`group flex items-center space-x-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
                                  isDashboardPage
                                     ? 'bg-white/25 shadow-lg border border-white/30'
                                     : 'bg-white/10 hover:bg-white/20'
                               }`}
                            >
-                              <HiHome className="h-4 w-4 lg:h-5 lg:w-5 group-hover:scale-110 transition-transform duration-200" />
-                              <span className="text-sm lg:text-base font-medium">Dashboard</span>
+                              <HiHome className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                              <span className="text-sm font-medium">Dashboard</span>
                               {isDashboardPage && (
                                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                               )}
@@ -83,14 +83,14 @@ const Header = () => {
                         <li>
                            <Link
                               to="/insights"
-                              className={`group flex items-center space-x-2 px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                              className={`group flex items-center space-x-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
                                  isInsightsPage
                                     ? 'bg-white/25 shadow-lg border border-white/30'
                                     : 'bg-white/10 hover:bg-white/20'
                               }`}
                            >
-                              <HiChartBar className="h-4 w-4 lg:h-5 lg:w-5 group-hover:rotate-12 transition-transform duration-200" />
-                              <span className="text-sm lg:text-base font-medium">Insights</span>
+                              <HiChartBar className="h-4 w-4 group-hover:rotate-12 transition-transform duration-200" />
+                              <span className="text-sm font-medium">Insights</span>
                               {isInsightsPage && (
                                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                               )}
@@ -99,26 +99,92 @@ const Header = () => {
                         <li>
                            <Link
                               to="/settings"
-                              className={`group flex items-center space-x-2 px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                              className={`group flex items-center space-x-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
                                  isSettingsPage
                                     ? 'bg-white/25 shadow-lg border border-white/30'
                                     : 'bg-white/10 hover:bg-white/20'
                               }`}
                            >
-                              <HiCog className="h-4 w-4 lg:h-5 lg:w-5 group-hover:rotate-180 transition-transform duration-300" />
-                              <span className="text-sm lg:text-base font-medium">Settings</span>
+                              <HiCog className="h-4 w-4 group-hover:rotate-180 transition-transform duration-300" />
+                              <span className="text-sm font-medium">Settings</span>
                               {isSettingsPage && (
                                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                               )}
                            </Link>
                         </li>
 
-                        <li className="flex items-center ml-2">
+                        <li className="flex items-center ml-1">
                            <ThemeToggle variant="header" size="medium" />
                         </li>
 
                         <li className="flex items-center ml-1">
-                           <div className="p-2 pb-0.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200">
+                           <div className="p-1.5 pb-0 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200">
+                              <NotificationBell />
+                           </div>
+                        </li>
+                     </ul>
+                  </nav>
+               )}
+
+               {/* Tablet Navigation - Medium screens */}
+               {isLoggedIn && (
+                  <nav className="hidden sm:block md:hidden flex-shrink-0">
+                     <ul className="flex items-center space-x-1">
+                        <li>
+                           <Link
+                              to="/dashboard"
+                              className={`group flex items-center space-x-1.5 px-2 py-1.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                                 isDashboardPage
+                                    ? 'bg-white/25 shadow-lg border border-white/30'
+                                    : 'bg-white/10 hover:bg-white/20'
+                              }`}
+                           >
+                              <HiHome className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                              <span className="text-sm font-medium">Dashboard</span>
+                              {isDashboardPage && (
+                                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                              )}
+                           </Link>
+                        </li>
+                        <li>
+                           <Link
+                              to="/insights"
+                              className={`group flex items-center space-x-1.5 px-2 py-1.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                                 isInsightsPage
+                                    ? 'bg-white/25 shadow-lg border border-white/30'
+                                    : 'bg-white/10 hover:bg-white/20'
+                              }`}
+                           >
+                              <HiChartBar className="h-4 w-4 group-hover:rotate-12 transition-transform duration-200" />
+                              <span className="text-sm font-medium">Insights</span>
+                              {isInsightsPage && (
+                                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                              )}
+                           </Link>
+                        </li>
+                        <li>
+                           <Link
+                              to="/settings"
+                              className={`group flex items-center space-x-1.5 px-2 py-1.5 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                                 isSettingsPage
+                                    ? 'bg-white/25 shadow-lg border border-white/30'
+                                    : 'bg-white/10 hover:bg-white/20'
+                              }`}
+                           >
+                              <HiCog className="h-4 w-4 group-hover:rotate-180 transition-transform duration-300" />
+                              <span className="text-sm font-medium">Settings</span>
+                              {isSettingsPage && (
+                                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                              )}
+                           </Link>
+                        </li>
+
+                        <li className="flex items-center ml-1">
+                           <ThemeToggle variant="header" size="small" />
+                        </li>
+
+                        <li className="flex items-center ml-1">
+                           <div className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200">
                               <NotificationBell />
                            </div>
                         </li>
@@ -128,7 +194,7 @@ const Header = () => {
 
                {/* Mobile Menu Button & Notification - Always stays right */}
                {isLoggedIn && (
-                  <div className="flex items-center space-x-2 md:hidden flex-shrink-0">
+                  <div className="flex items-center space-x-1 sm:hidden flex-shrink-0">
                      <div className="flex-shrink-0">
                         <ThemeToggle variant="header" size="small" />
                      </div>
@@ -137,9 +203,9 @@ const Header = () => {
                      </div>
                      <button
                         onClick={toggleMobileMenu}
-                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 flex-shrink-0"
+                        className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-200 flex-shrink-0"
                      >
-                        {isMobileMenuOpen ? <HiX className="h-5 w-5" /> : <HiMenu className="h-5 w-5" />}
+                        {isMobileMenuOpen ? <HiX className="h-4 w-4" /> : <HiMenu className="h-4 w-4" />}
                      </button>
                   </div>
                )}
@@ -147,35 +213,35 @@ const Header = () => {
 
             {/* Mobile Navigation Menu */}
             {isLoggedIn && isMobileMenuOpen && (
-               <div className="md:hidden mt-4 pt-4 border-t border-white/20 dark:border-white/10">
-                  <nav className="space-y-2">
+               <div className="md:hidden mt-2 pt-2 border-t border-white/20 dark:border-white/10">
+                  <nav className="space-y-1">
                      <button
                         onClick={() => handleNavigation('/dashboard')}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                        className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                            isDashboardPage ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'
                         }`}
                      >
-                        <HiHome className="h-5 w-5" />
+                        <HiHome className="h-4 w-4" />
                         <span className="font-medium">Dashboard</span>
                      </button>
 
                      <button
                         onClick={() => handleNavigation('/insights')}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                        className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                            isInsightsPage ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'
                         }`}
                      >
-                        <HiChartBar className="h-5 w-5" />
+                        <HiChartBar className="h-4 w-4" />
                         <span className="font-medium">Insights</span>
                      </button>
 
                      <button
                         onClick={() => handleNavigation('/settings')}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                        className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                            isSettingsPage ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'
                         }`}
                      >
-                        <HiCog className="h-5 w-5" />
+                        <HiCog className="h-4 w-4" />
                         <span className="font-medium">Settings</span>
                      </button>
                   </nav>
