@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import Header from '../layout/Header';
 import ChangeProfileImage from '../../components/settings/ChangeProfileImage';
 import ChangeUsername from '../../components/settings/ChangeUsername';
 import DeleteAccount from '../../components/settings/DeleteAccount';
@@ -60,7 +58,6 @@ const tabs = [
 ];
 
 function Settings() {
-   const navigate = useNavigate();
    const { logout } = useAuth();
    const { theme, changeTheme, themes, isDark, actualTheme } = useTheme();
    const [activeTab, setActiveTab] = useState('account');
@@ -93,7 +90,6 @@ function Settings() {
          try {
             const token = localStorage.getItem('token');
             if (!token) {
-               navigate('/');
                return;
             }
 
@@ -274,21 +270,15 @@ function Settings() {
          }
 
          logout();
-         navigate('/');
       } catch (err) {
          setError('Error deleting account. Please try again.');
          console.error(err);
       }
    };
 
-   // Return to dashboard
-   const handleBackToDashboard = () => {
-      navigate('/dashboard');
-   };
-
    if (loading) {
       return (
-         <div className="w-full h-screen mx-auto p-4 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+         <div className="w-full h-screen mx-auto p-4 rounded-xl bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
             <div className="relative">
                <div className="animate-spin rounded-full h-16 w-16 border-4 border-white/20"></div>
                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-white absolute top-0 left-0"></div>
@@ -299,37 +289,7 @@ function Settings() {
    }
 
    return (
-      <div className="w-full h-[83vh] p-6 mx-auto bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden">
-         {/* Ultra-Compact Header */}
-         <div className="flex items-center mb-3 p-2 bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-lg border border-white/20 dark:border-white/10 flex-shrink-0 h-12">
-            <button
-               onClick={handleBackToDashboard}
-               className="group flex items-center text-white hover:text-purple-200 transition-all duration-300"
-            >
-               <div className="mr-2 p-1 rounded bg-white/10 group-hover:bg-white/20 transition-all duration-300">
-                  <svg
-                     xmlns="http://www.w3.org/2000/svg"
-                     className="h-3 w-3 transform group-hover:-translate-x-1 transition-transform duration-300"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor"
-                  >
-                     <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                     />
-                  </svg>
-               </div>
-               <span className="font-medium text-xs">Back to Dashboard</span>
-            </button>
-            <div className="ml-auto flex items-center space-x-2">
-               <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
-               <span className="text-white/80 text-xs">Settings</span>
-            </div>
-         </div>
-
+      <div className="w-11/12 h-[90vh] p-6 mx-auto bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden rounded-xl">
          <div className="grid grid-cols-1 lg:grid-cols-[240px,1fr] gap-4 flex-1 min-h-0 overflow-hidden">
             {/* Enhanced Sidebar */}
             <div className="bg-white/10 dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/20 dark:border-white/10 flex flex-col overflow-hidden">

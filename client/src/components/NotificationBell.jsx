@@ -123,7 +123,7 @@ function NotificationBell() {
       return (
          <div
             key={notification._id}
-            className={`px-4 sm:px-6 py-4 transition-all duration-200 hover:bg-gray-50 cursor-pointer ${
+            className={`px-4 sm:px-6 py-4  transition-all duration-200 hover:bg-gray-50 cursor-pointer ${
                notification.read ? '' : 'bg-blue-50/50 border-l-4 border-l-blue-500'
             }`}
             onClick={(e) => {
@@ -185,7 +185,7 @@ function NotificationBell() {
          {/* Bell icon with badge - Enhanced for header */}
          <button
             onClick={toggleDropdown}
-            className="relative p-2 text-white hover:text-white/80 focus:outline-none transition-all duration-200 hover:bg-white/10 rounded-lg group"
+            className="relative text-white hover:text-white/80 focus:outline-none transition-all duration-200 group"
             aria-label="Notifications"
          >
             <FiBell className="h-5 w-5 lg:h-6 lg:w-6 group-hover:scale-110 transition-transform duration-200" />

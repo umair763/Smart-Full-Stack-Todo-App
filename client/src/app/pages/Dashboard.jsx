@@ -6,7 +6,6 @@ import AddTask from '../../components/AddTask';
 import AddTaskForm from '../../components/AddTaskForm';
 import DeleteTaskForm from '../../components/DeleteTaskForm';
 import Modal from '../../components/Modal';
-import Header from '../layout/Header'; // Import Header
 import ReminderModal from '../../components/ReminderModal';
 import CascadeDeleteModal from '../../components/CascadeDeleteModal';
 
@@ -252,11 +251,6 @@ function Dashboard() {
    return (
       <div className="w-full sm:w-11/12 md:w-10/12 lg:w-11/12 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 p-1 sm:p-2 md:p-3 lg:p-4 xl:p-6">
          <div className="max-w-7xl mx-auto px-1 sm:px-2 md:px-4 lg:px-6">
-            {/* Header */}
-            <div className="mb-2 sm:mb-4 md:mb-6">
-               <Header />
-            </div>
-
             {/* Main Content */}
             <div className="space-y-2 sm:space-y-4 md:space-y-6">
                <AddTask
