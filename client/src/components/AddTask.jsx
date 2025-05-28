@@ -31,16 +31,16 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }
    }
 
    return (
-      <div className="mb-6">
+      <div className="mb-3 -mt-10">
          {/* Enhanced Container with Glassmorphism */}
-         <div className="relative bg-white/15 backdrop-blur-lg border border-white/20 p-4 sm:p-5 lg:p-6 rounded-2xl shadow-xl">
+         <div className="relative bg-white/15 backdrop-blur-lg border border-white/20 p-4 sm:p-3 lg:p-5 rounded-2xl shadow-xl">
             {/* Background Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-indigo-500/10 rounded-2xl"></div>
 
             {/* Content */}
             <div className="relative">
                {/* Header Section */}
-               <div className="flex items-center justify-between mb-4 sm:mb-5">
+               <div className="flex items-center justify-between mb-4 sm:mb-5 ">
                   <div className="flex items-center space-x-3">
                      <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-2.5 rounded-xl shadow-lg">
                         <HiViewGrid className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -64,17 +64,15 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }
                   <div className="flex-1 lg:flex-grow">
                      <div className="relative group">
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                        <div className="relative bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30 p-1">
+                        <div className="relative bg-white/20 backdrop-blur-sm rounded-2xl border border-white/30 p-0.5">
                            <div className="relative">
                               <input
                                  type="text"
                                  value={searchTask}
                                  onChange={handleSearchTask}
                                  placeholder="Search tasks by name..."
-                                 className="w-full h-12 sm:h-14 pl-12 sm:pl-14 pr-12 sm:pr-14 py-3 sm:py-4 bg-transparent text-white placeholder-white/70 rounded-xl outline-none focus:ring-2 focus:ring-white/50 transition-all duration-300 text-sm sm:text-base"
+                                 className="w-full h-8 sm:h-8 pl-10 sm:pl-12 pr-10 sm:pr-12 py-2 bg-transparent text-white placeholder-white/70 rounded-xl outline-none focus:ring-2 focus:ring-white/50 transition-all duration-300 text-xs sm:text-sm"
                               />
-
-                              {/* Search Icon */}
                               <div className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-white/80">
                                  <FiSearch className="h-5 w-5 sm:h-6 sm:w-6" />
                               </div>
@@ -98,20 +96,19 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }
                      {/* Add Task Button */}
                      <button
                         onClick={handleAddTask}
-                        className="group relative overflow-hidden h-12 sm:h-14 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#9406E6] via-[#C724B1] to-[#9406E6] text-white rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0"
+                        className="group relative overflow-hidden mt-2 h-9 sm:h-10 px-3 sm:px-4 lg:px-5 bg-gradient-to-r from-[#9406E6] via-[#C724B1] to-[#9406E6] text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0"
                      >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
-                        <div className="relative flex items-center justify-center space-x-1 sm:space-x-2 lg:space-x-3">
-                           <FiPlus className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-90 transition-transform duration-300 flex-shrink-0" />
-                           <span className="text-xs sm:text-sm lg:text-base flex-shrink-0">Add Task</span>
-                           <HiLightningBolt className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-125 transition-transform duration-300 flex-shrink-0" />
+                        <div className="relative flex items-center justify-center space-x-1 sm:space-x-2 lg:space-x-2">
+                           <FiPlus className="h-3 w-3 sm:h-4 sm:w-4 group-hover:rotate-90 transition-transform duration-300 flex-shrink-0" />
+                           <span className="text-xs sm:text-sm flex-shrink-0">Add Task</span>
                         </div>
                      </button>
 
                      {/* Delete Task Button */}
                      <button
                         onClick={handleDeleteTask}
-                        className="group relative overflow-hidden h-12 sm:h-14 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-red-500 via-red-600 to-red-500 text-white rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0"
+                        className="group relative overflow-hidden mt-2 h-9 sm:h-10 px-3 sm:px-4 lg:px-5 bg-gradient-to-r from-red-500 via-red-600 to-red-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0"
                      >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
                         <div className="relative flex items-center justify-center space-x-1 sm:space-x-2 lg:space-x-3">

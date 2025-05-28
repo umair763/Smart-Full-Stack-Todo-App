@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -9,7 +8,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Insights() {
-   const navigate = useNavigate();
    const [filter, setFilter] = useState('weekly');
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState('');
@@ -126,43 +124,18 @@ function Insights() {
       return data;
    };
 
-      // Return to dashboard
-      const handleBackToDashboard = () => {
-         navigate('/dashboard');
-      };
-   
-      if (loading) {
-         return (
-            <div className="w-11/12 p-5 rounded-xl shadow-lg bg-gradient-to-br from-[#9406E6] to-[#00FFFF] grid grid-cols-1 gap-4">
-               <div className="flex items-center justify-center h-96">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-               </div>
+   if (loading) {
+      return (
+         <div className="w-11/12 p-5 rounded-xl shadow-lg bg-gradient-to-br from-[#9406E6] to-[#00FFFF] grid grid-cols-1 gap-4">
+            <div className="flex items-center justify-center h-96">
+               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
             </div>
-         );
-      }
+         </div>
+      );
+   }
 
    return (
-      // <div className="container mx-auto p-4 max-w-6xl">
       <div className="container mx-auto p-4 max-w-6xl w-full rounded-xl shadow-lg bg-gradient-to-br from-[#9406E6] to-[#00FFFF] flex flex-col gap-6">
-         {/* Header with back button */}
-         <div className="flex items-center mb-6 ">
-            <button
-               onClick={handleBackToDashboard}
-               className="flex items-center text-white hover:text-gray-200 transition-colors"
-            >
-               <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-               >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-               </svg>
-               Back to Dashboard
-            </button>
-         </div>
-
          <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Task Insights</h1>
             <p className="text-white/70">View your task completion statistics and track your productivity.</p>
