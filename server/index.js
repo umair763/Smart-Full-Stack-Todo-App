@@ -12,6 +12,7 @@ import subtaskRoutes from "./routes/subtaskRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 import dependencyRoutes from "./routes/dependencyRoutes.js";
+import streakRoutes from "./routes/streakRoutes.js";
 
 import noteRoutes from "./routes/noteRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
@@ -225,6 +226,12 @@ app.get("/api/debug", (req, res) => {
                 { method: "DELETE", path: "/api/dependencies/:id" },
                 { method: "POST", path: "/api/dependencies/validate" },
             ],
+            streaks: [
+                { method: "GET", path: "/api/streaks" },
+                { method: "GET", path: "/api/streaks/analytics" },
+                { method: "POST", path: "/api/streaks/update" },
+                { method: "GET", path: "/api/streaks/history" },
+            ],
             sockets: [
                 { event: "connection", description: "New client connected" },
                 { event: "authenticate", description: "Authenticate user with socket" },
@@ -251,6 +258,7 @@ app.use("/api/tasks", subtaskRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/dependencies", dependencyRoutes);
+app.use("/api/streaks", streakRoutes);
 
 app.use("/api", noteRoutes);
 app.use("/api", attachmentRoutes);

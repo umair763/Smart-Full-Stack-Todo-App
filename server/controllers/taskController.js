@@ -2,6 +2,7 @@ import Task from "../models/Task.js";
 import { dbEvents } from "../index.js";
 import Notification from "../models/Notification.js";
 import Dependency from "../models/Dependency.js";
+import { updateStreakFromTasks } from "./streakController.js";
 
 // Get all tasks for a user
 export const getTasks = async (req, res) => {
@@ -69,6 +70,14 @@ export const createTask = async (req, res) => {
                 persistent: true,
                 read: false,
             });
+        }
+
+        // Update streak
+        try {
+            await updateStreakFromTasks(req.user._id);
+        } catch (streakError) {
+            console.error("Streak update failed during task creation:", streakError);
+            // Don't fail the task creation if streak update fails
         }
 
         res.status(201).json(newTask);
@@ -177,6 +186,14 @@ export const updateTask = async (req, res) => {
             });
         }
 
+        // Update streak
+        try {
+            await updateStreakFromTasks(req.user._id);
+        } catch (streakError) {
+            console.error("Streak update failed during task update:", streakError);
+            // Don't fail the task update if streak update fails
+        }
+
         res.json(updatedTask);
     } catch (error) {
         console.error("Update task error:", error);
@@ -270,6 +287,14 @@ export const deleteTask = async (req, res) => {
             }
         }
 
+        // Update streak
+        try {
+            await updateStreakFromTasks(req.user._id);
+        } catch (streakError) {
+            console.error("Streak update failed during task deletion:", streakError);
+            // Don't fail the task deletion if streak update fails
+        }
+
         res.json({
             message:
                 dependentTasks.length > 0 && confirmCascade
@@ -286,21 +311,167 @@ export const deleteTask = async (req, res) => {
 // Get task statistics
 export const getTaskStats = async (req, res) => {
     try {
-        const totalTasks = await Task.countDocuments({ userId: req.user._id });
-        const completedTasks = await Task.countDocuments({
-            userId: req.user._id,
-            completed: true,
+        const { period } = req.query;
+        const userId = req.user._id;
+
+        // Basic counts
+        const totalTasks = await Task.countDocuments({ userId });
+        const completedTasks = await Task.countDocuments({ userId, completed: true });
+        const pendingTasks = await Task.countDocuments({ userId, completed: false });
+
+        // Calculate overdue tasks
+        const now = new Date();
+        const allTasks = await Task.find({ userId });
+
+        const overdueTasks = allTasks.filter((task) => {
+            if (task.completed) return false;
+            try {
+                // Parse the date and time
+                const [day, month, year] = task.date.split("/");
+                const [time, period] = task.time.split(" ");
+                const [hours, minutes] = time.split(":");
+
+                let hour24 = parseInt(hours);
+                if (period === "PM" && hour24 !== 12) hour24 += 12;
+                if (period === "AM" && hour24 === 12) hour24 = 0;
+
+                const taskDateTime = new Date(year, month - 1, day, hour24, minutes);
+                return taskDateTime < now;
+            } catch (error) {
+                return false;
+            }
+        }).length;
+
+        // Priority distribution
+        const priorityStats = await Task.aggregate([
+            { $match: { userId } },
+            {
+                $group: {
+                    _id: "$priority",
+                    count: { $sum: 1 },
+                    completed: {
+                        $sum: { $cond: [{ $eq: ["$completed", true] }, 1, 0] },
+                    },
+                },
+            },
+        ]);
+
+        const priorityDistribution = {
+            High: { total: 0, completed: 0 },
+            Medium: { total: 0, completed: 0 },
+            Low: { total: 0, completed: 0 },
+        };
+
+        priorityStats.forEach((stat) => {
+            const priority = stat._id || "Medium";
+            priorityDistribution[priority] = {
+                total: stat.count,
+                completed: stat.completed,
+            };
         });
-        const pendingTasks = await Task.countDocuments({
-            userId: req.user._id,
-            completed: false,
+
+        // Time-based statistics based on period
+        let timeStats = [];
+        const currentDate = new Date();
+
+        if (period === "weekly") {
+            // Last 7 days
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(currentDate);
+                date.setDate(date.getDate() - i);
+                const dateStr = `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+                    .toString()
+                    .padStart(2, "0")}/${date.getFullYear()}`;
+
+                const dayTasks = allTasks.filter((task) => task.date === dateStr);
+                timeStats.push({
+                    name: date.toLocaleDateString("en-US", { weekday: "short" }),
+                    fullDate: date.toLocaleDateString("en-GB"), // Add fullDate for tooltip
+                    total: dayTasks.length,
+                    completed: dayTasks.filter((t) => t.completed).length,
+                    pending: dayTasks.filter((t) => !t.completed).length,
+                });
+            }
+        } else if (period === "monthly") {
+            // Last 4 weeks
+            for (let i = 3; i >= 0; i--) {
+                const weekEnd = new Date(currentDate);
+                weekEnd.setDate(weekEnd.getDate() - i * 7);
+                const weekStart = new Date(weekEnd);
+                weekStart.setDate(weekStart.getDate() - 6);
+
+                const weekTasks = allTasks.filter((task) => {
+                    try {
+                        const [day, month, year] = task.date.split("/");
+                        const taskDate = new Date(year, month - 1, day);
+                        // Set hours to compare dates properly
+                        taskDate.setHours(0, 0, 0, 0);
+                        weekStart.setHours(0, 0, 0, 0);
+                        weekEnd.setHours(23, 59, 59, 999);
+                        return taskDate >= weekStart && taskDate <= weekEnd;
+                    } catch {
+                        return false;
+                    }
+                });
+
+                timeStats.push({
+                    name: `Week ${4 - i}`,
+                    fullDate: `${weekStart.toLocaleDateString("en-GB")} - ${weekEnd.toLocaleDateString("en-GB")}`,
+                    total: weekTasks.length,
+                    completed: weekTasks.filter((t) => t.completed).length,
+                    pending: weekTasks.filter((t) => !t.completed).length,
+                });
+            }
+        } else if (period === "yearly") {
+            // Last 12 months
+            for (let i = 11; i >= 0; i--) {
+                const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                const monthTasks = allTasks.filter((task) => {
+                    try {
+                        const [day, month, year] = task.date.split("/");
+                        const taskDate = new Date(year, month - 1, day);
+                        return taskDate.getMonth() === monthDate.getMonth() && taskDate.getFullYear() === monthDate.getFullYear();
+                    } catch {
+                        return false;
+                    }
+                });
+
+                timeStats.push({
+                    name: monthDate.toLocaleDateString("en-US", { month: "short" }),
+                    fullDate: monthDate.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+                    total: monthTasks.length,
+                    completed: monthTasks.filter((t) => t.completed).length,
+                    pending: monthTasks.filter((t) => !t.completed).length,
+                });
+            }
+        }
+
+        // Calculate productivity metrics
+        const recentTasks = allTasks.filter((task) => {
+            try {
+                const [day, month, year] = task.date.split("/");
+                const taskDate = new Date(year, month - 1, day);
+                const weekAgo = new Date(currentDate);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                return taskDate >= weekAgo;
+            } catch {
+                return false;
+            }
         });
+
+        const productivityScore =
+            recentTasks.length > 0 ? Math.round((recentTasks.filter((t) => t.completed).length / recentTasks.length) * 100) : 0;
 
         res.json({
             totalTasks,
             completedTasks,
             pendingTasks,
+            overdueTasks,
             completionRate: totalTasks ? (completedTasks / totalTasks) * 100 : 0,
+            priorityDistribution,
+            timeStats,
+            productivityScore,
+            period: period || "weekly",
         });
     } catch (error) {
         console.error("Get task stats error:", error);

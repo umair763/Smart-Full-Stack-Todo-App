@@ -300,36 +300,207 @@ const createTasks = async (userId) => {
         allTaskNames.push(...category.tasks);
     });
 
-    // Shuffle and take 20 tasks
-    const shuffledTasks = allTaskNames.sort(() => 0.5 - Math.random()).slice(0, 20);
+    console.log("📝 Creating 60 tasks across different time periods...");
 
-    console.log("📝 Creating 20 tasks...");
+    // Create tasks for different time periods to show meaningful insights
+    const timeDistribution = [
+        // Past 3 months (40 tasks) - for historical data
+        { period: "past3months", count: 40, startDays: -90, endDays: -1, completionRate: 0.7 },
+        // Current week (10 tasks) - for current activity
+        { period: "currentWeek", count: 10, startDays: -3, endDays: 3, completionRate: 0.4 },
+        // Future (10 tasks) - for upcoming tasks
+        { period: "future", count: 10, startDays: 4, endDays: 30, completionRate: 0.1 },
+    ];
 
-    for (let i = 0; i < shuffledTasks.length; i++) {
-        const taskName = shuffledTasks[i];
-        const priority = getRandomElement(priorities);
-        const color = colors[priorities.indexOf(priority)];
+    let taskIndex = 0;
 
-        // Generate random date between 1-30 days from now
-        const taskDate = getRandomDate(1, 30);
+    for (const timePeriod of timeDistribution) {
+        console.log(`\n📅 Creating ${timePeriod.count} tasks for ${timePeriod.period}...`);
 
-        const task = new Task({
-            task: taskName,
-            date: formatDate(taskDate),
-            time: formatTime(taskDate),
-            priority: priority,
-            color: color,
-            completed: Math.random() < 0.15, // 15% chance of being completed
-            userId: userId,
-            subtaskCount: 0,
-            completedSubtasks: 0,
-        });
+        // Shuffle task names for this period
+        const shuffledTasks = [...allTaskNames].sort(() => 0.5 - Math.random());
 
-        await task.save();
-        tasks.push(task);
+        for (let i = 0; i < timePeriod.count; i++) {
+            const taskName = shuffledTasks[i % shuffledTasks.length];
+            const priority = getRandomElement(priorities);
+            const color = colors[priorities.indexOf(priority)];
 
-        console.log(`  ✓ Created task ${i + 1}: ${taskName} (${priority} priority)`);
+            // Generate date within the specified range
+            const taskDate = getRandomDate(timePeriod.startDays, timePeriod.endDays);
+
+            // Determine completion status based on period
+            let isCompleted;
+            if (timePeriod.period === "past3months") {
+                // Higher completion rate for past tasks, with some variation
+                isCompleted = Math.random() < timePeriod.completionRate;
+            } else if (timePeriod.period === "currentWeek") {
+                // Moderate completion rate for current tasks
+                isCompleted = Math.random() < timePeriod.completionRate;
+            } else {
+                // Low completion rate for future tasks
+                isCompleted = Math.random() < timePeriod.completionRate;
+            }
+
+            const task = new Task({
+                task: `${taskName} (${timePeriod.period})`,
+                date: formatDate(taskDate),
+                time: formatTime(taskDate),
+                priority: priority,
+                color: color,
+                completed: isCompleted,
+                userId: userId,
+                subtaskCount: 0,
+                completedSubtasks: 0,
+            });
+
+            await task.save();
+            tasks.push(task);
+            taskIndex++;
+
+            console.log(
+                `  ✓ Created task ${taskIndex}: ${task.task} (${priority} priority, ${isCompleted ? "Completed" : "Pending"})`
+            );
+        }
     }
+
+    // Create additional tasks for specific days to ensure weekly/monthly charts have data
+    console.log("\n📊 Creating specific tasks for chart visualization...");
+
+    // Create tasks for each day of the past week
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+
+        // Create 2-4 tasks per day
+        const tasksPerDay = getRandomNumber(2, 4);
+
+        for (let j = 0; j < tasksPerDay; j++) {
+            const taskName = getRandomElement(allTaskNames);
+            const priority = getRandomElement(priorities);
+            const color = colors[priorities.indexOf(priority)];
+
+            // Random time during the day
+            const hour = getRandomNumber(8, 18);
+            const minute = getRandomNumber(0, 59);
+            date.setHours(hour, minute, 0, 0);
+
+            // Higher completion rate for older days
+            const daysAgo = i;
+            const completionRate = Math.max(0.3, 0.9 - daysAgo * 0.1);
+            const isCompleted = Math.random() < completionRate;
+
+            const task = new Task({
+                task: `Daily: ${taskName}`,
+                date: formatDate(date),
+                time: formatTime(date),
+                priority: priority,
+                color: color,
+                completed: isCompleted,
+                userId: userId,
+                subtaskCount: 0,
+                completedSubtasks: 0,
+            });
+
+            await task.save();
+            tasks.push(task);
+            taskIndex++;
+        }
+
+        console.log(`  ✓ Created ${tasksPerDay} tasks for ${formatDate(date)}`);
+    }
+
+    // Create tasks for each week of the past month
+    console.log("\n📅 Creating weekly distribution tasks...");
+    for (let week = 0; week < 4; week++) {
+        const weekStart = new Date();
+        weekStart.setDate(weekStart.getDate() - week * 7 - 7);
+
+        // Create 3-6 tasks per week
+        const tasksPerWeek = getRandomNumber(3, 6);
+
+        for (let j = 0; j < tasksPerWeek; j++) {
+            const taskDate = new Date(weekStart);
+            taskDate.setDate(taskDate.getDate() + getRandomNumber(0, 6)); // Random day in the week
+
+            const taskName = getRandomElement(allTaskNames);
+            const priority = getRandomElement(priorities);
+            const color = colors[priorities.indexOf(priority)];
+
+            // Completion rate decreases for older weeks
+            const completionRate = Math.max(0.4, 0.8 - week * 0.1);
+            const isCompleted = Math.random() < completionRate;
+
+            const task = new Task({
+                task: `Weekly: ${taskName}`,
+                date: formatDate(taskDate),
+                time: formatTime(taskDate),
+                priority: priority,
+                color: color,
+                completed: isCompleted,
+                userId: userId,
+                subtaskCount: 0,
+                completedSubtasks: 0,
+            });
+
+            await task.save();
+            tasks.push(task);
+            taskIndex++;
+        }
+
+        console.log(`  ✓ Created ${tasksPerWeek} tasks for week ${week + 1}`);
+    }
+
+    // Create tasks for each month of the past year
+    console.log("\n📆 Creating monthly distribution tasks...");
+    for (let month = 0; month < 12; month++) {
+        const monthDate = new Date();
+        monthDate.setMonth(monthDate.getMonth() - month);
+        monthDate.setDate(getRandomNumber(1, 28)); // Safe day range for all months
+
+        // Create 2-5 tasks per month
+        const tasksPerMonth = getRandomNumber(2, 5);
+
+        for (let j = 0; j < tasksPerMonth; j++) {
+            const taskDate = new Date(monthDate);
+            taskDate.setDate(getRandomNumber(1, 28));
+
+            const taskName = getRandomElement(allTaskNames);
+            const priority = getRandomElement(priorities);
+            const color = colors[priorities.indexOf(priority)];
+
+            // Completion rate decreases for older months
+            const completionRate = Math.max(0.5, 0.9 - month * 0.03);
+            const isCompleted = Math.random() < completionRate;
+
+            const task = new Task({
+                task: `Monthly: ${taskName}`,
+                date: formatDate(taskDate),
+                time: formatTime(taskDate),
+                priority: priority,
+                color: color,
+                completed: isCompleted,
+                userId: userId,
+                subtaskCount: 0,
+                completedSubtasks: 0,
+            });
+
+            await task.save();
+            tasks.push(task);
+            taskIndex++;
+        }
+
+        const monthName = monthDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        console.log(`  ✓ Created ${tasksPerMonth} tasks for ${monthName}`);
+    }
+
+    console.log(`\n🎯 Total tasks created: ${tasks.length}`);
+    console.log(`📊 Distribution:`);
+    console.log(`   • Past 3 months: 40 tasks (70% completion rate)`);
+    console.log(`   • Current week: 10 tasks (40% completion rate)`);
+    console.log(`   • Future: 10 tasks (10% completion rate)`);
+    console.log(`   • Daily distribution: ${7 * 3} tasks (for weekly charts)`);
+    console.log(`   • Weekly distribution: ${4 * 4} tasks (for monthly charts)`);
+    console.log(`   • Monthly distribution: ${12 * 3} tasks (for yearly charts)`);
 
     return tasks;
 };
@@ -557,12 +728,20 @@ const seedDatabase = async () => {
 
         console.log("\n🎉 Database seeding completed successfully!");
         console.log("\n📊 Summary:");
-        console.log(`   • 20 tasks created`);
+        console.log(`   • ${tasks.length} tasks created across different time periods`);
         console.log(`   • 10 tasks with subtasks (4-6 subtasks each)`);
         console.log(`   • 7 tasks with notes (2-3 notes each)`);
         console.log(`   • 7 task dependencies created`);
         console.log(`   • Using target user: ${user.email}`);
-        console.log("\n🚀 You can now test the application with realistic data!");
+        console.log("\n📈 Data Distribution for Insights:");
+        console.log(`   • Historical data: Past 3 months with 70% completion rate`);
+        console.log(`   • Current activity: This week with 40% completion rate`);
+        console.log(`   • Future tasks: Next month with 10% completion rate`);
+        console.log(`   • Daily data: Last 7 days for weekly charts`);
+        console.log(`   • Weekly data: Last 4 weeks for monthly charts`);
+        console.log(`   • Monthly data: Last 12 months for yearly charts`);
+        console.log("\n🚀 You can now test the Insights page with rich, realistic data!");
+        console.log("💡 All chart views (weekly, monthly, yearly) should now display meaningful visualizations!");
     } catch (error) {
         console.error("❌ Error seeding database:", error);
     } finally {
