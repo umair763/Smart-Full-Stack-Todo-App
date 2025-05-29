@@ -16,12 +16,75 @@ function EditTaskModal({ isOpen, onClose, onSave, task }) {
    const [isLoading, setIsLoading] = useState(false);
    const [error, setError] = useState('');
 
+   // Helper function to convert DD/MM/YYYY to YYYY-MM-DD
+   const convertDateToInputFormat = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+         const [day, month, year] = dateStr.split('/');
+         if (!day || !month || !year) return '';
+         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      } catch (error) {
+         console.error('Error converting date to input format:', error);
+         return '';
+      }
+   };
+
+   // Helper function to convert YYYY-MM-DD to DD/MM/YYYY
+   const convertDateToApiFormat = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+         const [year, month, day] = dateStr.split('-');
+         if (!day || !month || !year) return '';
+         return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+      } catch (error) {
+         console.error('Error converting date to API format:', error);
+         return '';
+      }
+   };
+
+   // Helper function to convert 12-hour time to 24-hour time
+   const convertTimeToInputFormat = (timeStr) => {
+      if (!timeStr) return '';
+      try {
+         const [time, period] = timeStr.split(' ');
+         if (!time || !period) return '';
+         const [hours, minutes] = time.split(':');
+         if (!hours || !minutes) return '';
+         let hour = parseInt(hours, 10);
+
+         if (period === 'PM' && hour !== 12) hour += 12;
+         if (period === 'AM' && hour === 12) hour = 0;
+
+         return `${hour.toString().padStart(2, '0')}:${minutes}`;
+      } catch (error) {
+         console.error('Error converting time to input format:', error);
+         return '';
+      }
+   };
+
+   // Helper function to convert 24-hour time to 12-hour time
+   const convertTimeToApiFormat = (timeStr) => {
+      if (!timeStr) return '';
+      try {
+         const [hours, minutes] = timeStr.split(':');
+         if (!hours || !minutes) return '';
+         const hour = parseInt(hours, 10);
+         if (isNaN(hour) || hour < 0 || hour > 23) return '';
+         const period = hour >= 12 ? 'PM' : 'AM';
+         const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+         return `${hour12}:${minutes} ${period}`;
+      } catch (error) {
+         console.error('Error converting time to API format:', error);
+         return '';
+      }
+   };
+
    useEffect(() => {
       if (task) {
          setFormData({
             title: task.task || task.title || '',
-            date: task.date || '',
-            time: task.time || '',
+            date: convertDateToInputFormat(task.date) || '',
+            time: convertTimeToInputFormat(task.time) || '',
             priority: task.priority || 'Medium',
          });
       }
@@ -35,11 +98,29 @@ function EditTaskModal({ isOpen, onClose, onSave, task }) {
          return;
       }
 
+      if (formData.date && !formData.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+         setError('Invalid date format. Please use the date picker.');
+         return;
+      }
+
+      if (formData.time && !formData.time.match(/^\d{2}:\d{2}$/)) {
+         setError('Invalid time format. Please use the time picker.');
+         return;
+      }
+
       setIsLoading(true);
       setError('');
 
       try {
-         await onSave(task._id, formData);
+         // Format the date and time for the API
+         const apiFormData = {
+            task: formData.title.trim(),
+            date: formData.date ? convertDateToApiFormat(formData.date) : '',
+            time: formData.time ? convertTimeToApiFormat(formData.time) : '',
+            priority: formData.priority,
+         };
+
+         await onSave(task._id, apiFormData);
          onClose();
       } catch (error) {
          console.error('Error updating task:', error);

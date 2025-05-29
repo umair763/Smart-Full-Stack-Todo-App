@@ -11,7 +11,14 @@ import {
    FiDownload,
    FiLink,
 } from 'react-icons/fi';
-import { HiCalendar, HiClock, HiCheck, HiChevronUp, HiChevronDown as HiChevronDownIcon, HiPencilAlt } from 'react-icons/hi';
+import {
+   HiCalendar,
+   HiClock,
+   HiCheck,
+   HiChevronUp,
+   HiChevronDown as HiChevronDownIcon,
+   HiPencilAlt,
+} from 'react-icons/hi';
 import EditTaskModal from './EditTaskModal';
 import Subtask from './Subtask';
 import SubtaskModal from './SubtaskModal';
@@ -349,9 +356,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       onDelete(list._id);
    }
 
-   function handleSaveTask(updatedTask) {
+   function handleSaveTask(taskId, updatedTaskData) {
       // Call the parent component's update function
-      onUpdate(list._id, updatedTask);
+      // Ensure taskId is the first argument and the actual task data is second
+      onUpdate(taskId, updatedTaskData);
       setShowEditModal(false);
    }
 
@@ -528,7 +536,8 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             const completedCount = updatedSubtasks.filter((st) => st.status).length;
 
             // Update the parent task locally for immediate UI feedback
-            const updatedTask = {
+            const parentTaskUpdate = {
+               // Renamed from updatedTask to avoid confusion
                ...list,
                subtaskCount: totalSubtasks,
                completedSubtasks: completedCount,
@@ -536,7 +545,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
             // Call the parent update handler to update in parent components
             if (onUpdate) {
-               onUpdate(list._id, updatedTask);
+               onUpdate(list._id, parentTaskUpdate); // Pass parentTaskUpdate here
             }
          } catch (error) {
             console.error('Error updating subtask status locally:', error);

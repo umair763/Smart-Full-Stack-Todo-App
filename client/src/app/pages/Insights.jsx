@@ -83,7 +83,7 @@ function Insights() {
       if (isRefresh) {
          setRefreshing(true);
       } else {
-      setLoading(true);
+         setLoading(true);
       }
       setError('');
 
@@ -94,8 +94,8 @@ function Insights() {
          }
 
          const headers = {
-               Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
          };
 
          // Fetch all data in parallel
@@ -308,14 +308,15 @@ function Insights() {
                   </div>
                   <div className="text-white text-lg font-medium">Loading insights...</div>
                   <div className="text-white/60 text-sm">Analyzing your productivity data</div>
-         </div>
+               </div>
             </div>
          </div>
       );
    }
 
    return (
-      <div className="w-11/12 p-6 mx-auto bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden rounded-xl">
+      <div
+         className="w-11/12 p-6 mx-auto bg-gradient-to-br from-slate-900/80 via-purple-900/80 to-slate-900/80 dark:from-gray-900/80 dark:via-gray-800/80 dark:to-gray-900/80 flex flex-col overflow-hidden rounded-xl">
          <div className="flex flex-col h-full space-y-4 overflow-hidden">
             {/* Compact Header Section */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 flex-shrink-0">
@@ -345,19 +346,19 @@ function Insights() {
                            {mode}
                         </button>
                      ))}
-            </div>
+                  </div>
 
                   {/* Time Filter */}
-            <div className="relative">
-               <select
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
+                  <div className="relative">
+                     <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
                         className="mt-1 appearance-none bg-white/40 backdrop-blur-sm text-gray-950 px-3 py-1.5 pr-8 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer text-xs"
-               >
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-               </select>
+                     >
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                     </select>
                      <HiFilter className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70 pointer-events-none" />
                   </div>
 
@@ -381,7 +382,7 @@ function Insights() {
                      <div>
                         <div className="font-medium text-sm">Error loading data</div>
                         <div className="text-xs text-red-200">{error}</div>
-         </div>
+                     </div>
                   </div>
                </div>
             )}
@@ -482,7 +483,7 @@ function Insights() {
                                  </AreaChart>
                               </ResponsiveContainer>
                            </div>
-            </div>
+                        </div>
 
                         {/* Priority Distribution */}
                         <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
@@ -553,15 +554,15 @@ function Insights() {
                               <div>
                                  <h3 className="text-lg font-bold text-white font-proza">Current Streak</h3>
                                  <p className="text-white/60 text-xs">Consecutive days with ≥50% completion</p>
-                  </div>
-               </div>
+                              </div>
+                           </div>
                            <div className="text-3xl font-bold text-white">{streakData.current}</div>
                            <div className="text-white/60 text-xs">
                               {streakData.isActive
                                  ? 'Active streak'
                                  : `${streakData.daysSinceLastActivity || 0} days ago`}
-               </div>
-            </div>
+                           </div>
+                        </div>
 
                         <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
                            <div className="flex items-center gap-2 mb-3">
@@ -575,8 +576,8 @@ function Insights() {
                            </div>
                            <div className="text-3xl font-bold text-white">{streakData.longest}</div>
                            <div className="text-white/60 text-xs">days</div>
-                  </div>
-               </div>
+                        </div>
+                     </div>
                   </>
                )}
 
@@ -614,8 +615,8 @@ function Insights() {
                                  <Bar dataKey="pending" fill={COLORS.warning} name="Pending" radius={[4, 4, 0, 0]} />
                               </BarChart>
                            </ResponsiveContainer>
-            </div>
-         </div>
+                        </div>
+                     </div>
 
                      {/* Priority Breakdown */}
                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -657,24 +658,24 @@ function Insights() {
                            Productivity Trends
                         </h3>
                         <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
+                           <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={weeklyTrends}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                                  <XAxis dataKey="day" stroke="rgba(255,255,255,0.7)" fontSize={10} />
                                  <YAxis stroke="rgba(255,255,255,0.7)" fontSize={10} />
                                  <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                        <Line
-                           type="monotone"
+                                 <Legend />
+                                 <Line
+                                    type="monotone"
                                     dataKey="productivity"
                                     stroke={COLORS.secondary}
                                     strokeWidth={3}
                                     dot={{ fill: COLORS.secondary, strokeWidth: 2, r: 4 }}
                                     activeDot={{ r: 6, stroke: COLORS.secondary, strokeWidth: 2 }}
                                     name="Productivity %"
-                        />
-                     </LineChart>
-                  </ResponsiveContainer>
+                                 />
+                              </LineChart>
+                           </ResponsiveContainer>
                         </div>
                      </div>
 
@@ -723,8 +724,8 @@ function Insights() {
                            </div>
                         </div>
                      </div>
-               </div>
-            )}
+                  </div>
+               )}
             </div>
          </div>
       </div>

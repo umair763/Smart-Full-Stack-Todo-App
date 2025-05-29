@@ -429,6 +429,16 @@ function TodoListParser({ searchTerm = '' }) {
             throw new Error('Authentication required');
          }
 
+         // Validate date format (DD/MM/YYYY)
+         if (updatedTask.date && !updatedTask.date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+            throw new Error('Invalid date format. Expected format: DD/MM/YYYY');
+         }
+
+         // Validate time format (HH:MM AM/PM)
+         if (updatedTask.time && !updatedTask.time.match(/^\d{1,2}:\d{2}\s(?:AM|PM)$/)) {
+            throw new Error('Invalid time format. Expected format: HH:MM AM/PM');
+         }
+
          const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
             method: 'PUT',
             headers: {
@@ -447,10 +457,10 @@ function TodoListParser({ searchTerm = '' }) {
 
          // Update the task in the local state
          setTodoList((prevList) => prevList.map((task) => (task._id === taskId ? data : task)));
-         createSuccessNotification('Task updated successfully');
       } catch (error) {
          console.error('Error updating task:', error);
          createErrorNotification(error.message || 'Failed to update task');
+         throw error; // Re-throw the error to be handled by the caller
       }
    };
 
@@ -767,7 +777,6 @@ function TodoListParser({ searchTerm = '' }) {
                      </span>
                   </div>
                </div>
-
             </div>
          </div>
 
