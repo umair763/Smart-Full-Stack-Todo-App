@@ -316,7 +316,7 @@ function Settings() {
    }
 
    return (
-      <div className="w-11/12 h-[90vh] p-6 mx-auto bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex flex-col overflow-hidden rounded-xl">
+      <div className="w-11/12 h-[90vh] p-6 mx-auto bg-gradient-to-br from-indigo-900/80 via-purple-900/80 to-pink-900/80 dark:from-gray-900/80 dark:via-gray-800/80 dark:to-gray-900/80 flex flex-col overflow-hidden rounded-xl">
          <div className="grid grid-cols-1 lg:grid-cols-[240px,1fr] gap-4 flex-1 min-h-0 overflow-hidden">
             {/* Enhanced Sidebar */}
             <div className="bg-white/10 dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-white/20 dark:border-white/10 flex flex-col overflow-hidden">
@@ -677,7 +677,6 @@ function Settings() {
                </div>
             </div>
          </div>
-
          {/* Custom Delete Account Modal */}
          <DeleteAccountModal
             isOpen={isDeleteModalOpen}
