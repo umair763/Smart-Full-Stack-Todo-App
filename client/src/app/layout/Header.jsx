@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from '../../components/NotificationBell';
 import ThemeToggle from '../../components/ThemeToggle';
 import { HiArrowLeft, HiChartBar, HiCog, HiMenu, HiX, HiHome, HiCheckCircle } from 'react-icons/hi';
+import { FaBeer } from 'react-icons/fa';
 
 const Header = () => {
    const { isLoggedIn } = useAuth();
@@ -15,6 +16,7 @@ const Header = () => {
    const isSettingsPage = location.pathname === '/settings';
    const isInsightsPage = location.pathname === '/insights';
    const isDashboardPage = location.pathname === '/dashboard';
+   const isHomePage = location.pathname === '/home';
 
    const toggleMobileMenu = () => {
       setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -64,6 +66,20 @@ const Header = () => {
                {isLoggedIn && (
                   <nav className="hidden md:block flex-shrink-0">
                      <ul className="flex items-center space-x-2">
+                        <li>
+                           <Link
+                              to="/home"
+                              className={`group flex items-center space-x-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
+                                 isDashboardPage
+                                    ? 'bg-white/25 shadow-lg border border-white/30'
+                                    : 'bg-white/10 hover:bg-white/20'
+                              }`}
+                           >
+                              <HiHome className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                              <span className="text-sm font-medium">Home</span>
+
+                           </Link>
+                        </li>
                         <li>
                            <Link
                               to="/dashboard"

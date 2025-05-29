@@ -40,12 +40,12 @@ const LandingPage = () => {
             'Create tasks with dependencies, subtasks, and priorities. Watch your workflow optimize itself as you work.',
          color: 'from-purple-500 to-pink-500',
       },
-      {
-         icon: HiUsers,
-         title: 'Real-Time Collaboration',
-         description: 'See updates instantly. Know what your team is working on without constant check-ins.',
-         color: 'from-blue-500 to-cyan-500',
-      },
+      // {
+      //    icon: HiUsers,
+      //    title: 'Real-Time Collaboration',
+      //    description: 'See updates instantly. Know what your team is working on without constant check-ins.',
+      //    color: 'from-blue-500 to-cyan-500',
+      // },
       {
          icon: HiBell,
          title: 'Smart Reminders & Notifications',
@@ -287,14 +287,14 @@ const LandingPage = () => {
                            <HiCheckCircle className="h-5 w-5 text-green-500" />
                            <span>Smart task dependencies</span>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        {/* <div className="flex items-center space-x-2">
                            <HiCheckCircle className="h-5 w-5 text-green-500" />
                            <span>Real-time collaboration</span>
                         </div>
                         <div className="flex items-center space-x-2">
                            <HiCheckCircle className="h-5 w-5 text-green-500" />
                            <span>AI-powered insights</span>
-                        </div>
+                        </div> */}
                      </motion.div>
                   </motion.div>
 
@@ -606,7 +606,7 @@ const LandingPage = () => {
                   <p className="text-xl text-gray-600 dark:text-gray-300">Enterprise-grade security you can trust</p>
                </motion.div>
 
-               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+               <div className="flex flex-wrap justify-center gap-8">
                   {[
                      {
                         icon: HiShieldCheck,
@@ -623,15 +623,15 @@ const LandingPage = () => {
                         title: '99.9% Uptime',
                         description: 'Reliable service with guaranteed availability',
                      },
-                     {
-                        icon: HiShieldCheck,
-                        title: 'SOC 2 Certified',
-                        description: 'Independently verified security controls',
-                     },
+                     // {
+                     //    icon: HiShieldCheck,
+                     //    title: 'SOC 2 Certified',
+                     //    description: 'Independently verified security controls',
+                     // },
                   ].map((item, index) => (
                      <motion.div
                         key={index}
-                        className="text-center"
+                        className="text-center flex-1 min-w-[220px] max-w-xs"
                         initial={{ opacity: 0, y: 50 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -647,8 +647,6 @@ const LandingPage = () => {
                </div>
             </div>
          </section>
-
-         {/* Final CTA Section */}
          <section className="py-20 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600">
             <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
                <motion.div
@@ -681,7 +679,7 @@ const LandingPage = () => {
          </section>
 
          {/* Footer */}
-         <footer className="bg-gray-900 text-white py-16">
+         <footer className="bg-gray-900 text-white py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                <div className="grid md:grid-cols-4 gap-8">
                   <div>
@@ -697,86 +695,115 @@ const LandingPage = () => {
                      <div className="flex space-x-4">{/* Social media icons would go here */}</div>
                   </div>
 
+                  {/* product */}
                   <div>
-                     <h4 className="font-semibold mb-4">Product</h4>
+                     <h4 className="font-semibold mb-4"></h4>
                      <ul className="space-y-2 text-gray-400">
                         <li>
                            <a href="#features" className="hover:text-white transition-colors">
                               Features
                            </a>
                         </li>
+                        <li className="relative group">
+                           <a href="#" className="hover:text-white transition-colors cursor-pointer flex items-center">
+                              Updates
+                              {/* Down arrow icon */}
+                              <svg
+                                 className="ml-1 w-4 h-4 fill-current"
+                                 viewBox="0 0 20 20"
+                                 xmlns="http://www.w3.org/2000/svg"
+                              >
+                                 <path d="M5.25 7.5l4.5 4.5 4.5-4.5H5.25z" />
+                              </svg>
+                           </a>
+
+                           {/* Dropdown menu */}
+                           <ul className="absolute left-0 mt-2 w-40 bg-slate-900 rounded-md shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity duration-200 z-10">
+                              <li>
+                                 <a
+                                    href="#"
+                                    className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors"
+                                 >
+                                    Version 2.0
+                                 </a>
+                              </li>
+                              <li>
+                                 <a
+                                    href="#"
+                                    className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors"
+                                 >
+                                    Version 3.1 mega
+                                 </a>
+                              </li>
+                           </ul>
+                        </li>
+                     </ul>
+                  </div>
+
+                  <div>
+                     <h4 className="font-semibold mb-4"></h4>
+                     <ul className="space-y-2 text-gray-400">
                         <li>
                            <a href="#pricing" className="hover:text-white transition-colors">
                               Pricing
                            </a>
                         </li>
+                        {/* <li>
+                                    <a href="#" className="hover:text-white transition-colors">
+                                       Help Center
+                                    </a>
+                                 </li>
+                                 <li>
+                                    <a href="#" className="hover:text-white transition-colors">
+                                       API Docs
+                                    </a>
+                                 </li>
+                                 <li>
+                                    <a href="#" className="hover:text-white transition-colors">
+                                       Blog
+                                    </a>
+                                 </li>
+                                 <li>
+                                    <a href="#" className="hover:text-white transition-colors">
+                                       Templates
+                                    </a>
+                                 </li> */}
+                     </ul>
+                  </div>
+
+                  <div>
+                     <h4 className="font-semibold mb-4"></h4>
+                     <ul className="space-y-2 text-gray-400">
                         <li>
                            <a href="#security" className="hover:text-white transition-colors">
                               Security
                            </a>
                         </li>
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              Updates
-                           </a>
-                        </li>
-                     </ul>
-                  </div>
-
-                  <div>
-                     <h4 className="font-semibold mb-4">Resources</h4>
-                     <ul className="space-y-2 text-gray-400">
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              Help Center
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              API Docs
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              Blog
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              Templates
-                           </a>
-                        </li>
-                     </ul>
-                  </div>
-
-                  <div>
-                     <h4 className="font-semibold mb-4">Company</h4>
-                     <ul className="space-y-2 text-gray-400">
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              About
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              Careers
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              Contact
-                           </a>
-                        </li>
-                        <li>
-                           <a href="#" className="hover:text-white transition-colors">
-                              Press
-                           </a>
-                        </li>
+                        {/* <li>
+                                    <a href="#" className="hover:text-white transition-colors">
+                                       About
+                                    </a>
+                                 </li>
+                                 <li>
+                                    <a href="#" className="hover:text-white transition-colors">
+                                       Careers
+                                    </a>
+                                 </li>
+                                 <li>
+                                    <a href="#" className="hover:text-white transition-colors">
+                                       Contact
+                                    </a>
+                                 </li>
+                                 <li>
+                                    <a href="#" className="hover:text-white transition-colors">
+                                       Press
+                                    </a>
+                                 </li> */}
                      </ul>
                   </div>
                </div>
 
-               <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+               <div className="border-t border-gray-800 mt-4 pt-8 flex flex-col md:flex-row justify-between items-center">
                   <p className="text-gray-400 text-sm">© 2024 Smart Todo. All rights reserved.</p>
                   <div className="flex space-x-6 mt-4 md:mt-0">
                      <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">

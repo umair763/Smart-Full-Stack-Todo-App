@@ -29,6 +29,7 @@ const AppRoutes = () => {
       <Routes>
          {/* Landing Page - accessible to both authenticated and unauthenticated users */}
          <Route element={<LandingPageLayout />}>
+            <Route path="/home" element={<LandingPage />} />
             <Route path="/" element={<LandingPage />} />
          </Route>
 
