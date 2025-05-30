@@ -16,23 +16,18 @@
 		{
 			"source": "/socket.io/:path*",
 			"destination": "/server/index.js"
-		}
-	],
-	"routes": [
-		{
-			"src": "/assets/(.*)",
-			"dest": "/client/dist/assets/$1"
 		},
 		{
-			"src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-			"dest": "/client/dist/$1"
+			"source": "/assets/:path*",
+			"destination": "/client/dist/assets/:path*"
 		},
 		{
-			"handle": "filesystem"
+			"source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+			"destination": "/client/dist/$1"
 		},
 		{
-			"src": "/(.*)",
-			"dest": "/client/dist/index.html"
+			"source": "/(.*)",
+			"destination": "/client/dist/index.html"
 		}
 	]
 }
