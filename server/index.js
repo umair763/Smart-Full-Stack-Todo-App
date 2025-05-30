@@ -200,12 +200,10 @@ mongoose.connection.on("disconnected", () => {
     console.warn("MongoDB disconnected. Attempting to reconnect...");
 });
 
-// Debug route to check if server is running
+// Debug/API routes should come first
 app.get("/", (req, res) => {
     res.json({ message: "Todo API is running" });
 });
-
-// Debug route for Socket.io
 app.get("/socket-check", (req, res) => {
     res.json({
         message: "Socket.io is running",
@@ -213,8 +211,6 @@ app.get("/socket-check", (req, res) => {
         connectedUsers: [...connectedUsers.entries()].map(([userId, socketId]) => ({ userId, socketId })),
     });
 });
-
-// Debug route to check routes
 app.get("/api/debug", (req, res) => {
     res.json({
         message: "API Debug Route",
@@ -300,7 +296,7 @@ app.use((err, req, res, next) => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Serve static files from the dist directory
+// Serve static files from the dist directory (should be after all API routes)
 app.use(express.static(path.join(__dirname, "..", "dist")));
 
 // Fallback: serve index.html for any unknown route (for React Router)
