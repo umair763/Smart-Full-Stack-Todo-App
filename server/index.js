@@ -16,6 +16,8 @@ import streakRoutes from "./routes/streakRoutes.js";
 
 import noteRoutes from "./routes/noteRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
@@ -31,7 +33,21 @@ export { dbEvents };
 app.use(
     cors({
         origin: (origin, callback) => {
-            // Allow any origin in development
+            const allowedOrigins = [
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "https://smart-full-stack-todo-app.vercel.app",
+                "https://todo-app-full-stack-frontend.vercel.app",
+            ];
+
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.indexOf(origin) === -1) {
+                const msg = "The CORS policy for this site does not allow access from the specified Origin.";
+                return callback(new Error(msg), false);
+            }
+
             return callback(null, true);
         },
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -52,7 +68,12 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // Setup Socket.io AFTER CORS middleware
 const io = new Server(server, {
     cors: {
-        origin: "*", // In production, limit to your frontend URL
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "https://smart-full-stack-todo-app.vercel.app",
+            "https://todo-app-full-stack-frontend.vercel.app",
+        ],
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -153,6 +174,7 @@ app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
 // MongoDB Configuration
+const PORT = process.env.PORT || 5000;
 const MONGO_URI =
     process.env.NODE_ENV === "production"
         ? process.env.MONGO_URI_DEPLOYED
@@ -275,9 +297,16 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Use server.listen instead of app.listen for Socket.io
-server.listen(process.env.PORT || 5000, () => {
-    console.log(`Server running on port ${process.env.PORT || 5000}`);
-    console.log(`API available at http://localhost:${process.env.PORT || 5000}/api`);
-    console.log(`Socket.io running on ws://localhost:${process.env.PORT || 5000}/socket.io/`);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the dist directory
+app.use(express.static(path.join(__dirname, "..", "dist")));
+
+// Fallback: serve index.html for any unknown route (for React Router)
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "dist", "index.html"));
 });
+
+// ADD this line for Vercel compatibility:
+export default app;
