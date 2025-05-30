@@ -3,7 +3,10 @@
 	"builds": [
 		{
 			"src": "server/index.js",
-			"use": "@vercel/node"
+			"use": "@vercel/node",
+			"config": {
+				"includeFiles": ["server/**"]
+			}
 		},
 		{
 			"src": "client/package.json",
@@ -39,4 +42,4 @@
 		"GOOGLE_CLIENT_SECRET": "@GOOGLE_CLIENT_SECRET",
 		"BASE_URL_DEPLOYED": "@BASE_URL_DEPLOYED"
 	}
-} 
+}
