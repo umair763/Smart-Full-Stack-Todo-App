@@ -9,7 +9,7 @@ export default defineConfig({
       strictPort: true, // Fail if port is already in use
    },
    build: {
-      outDir: '../dist', // Output to the root dist directory
+      outDir: 'dist', // Output to the client/dist directory
       emptyOutDir: true,
    },
 });
