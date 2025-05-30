@@ -1,25 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
 
+// https://vitejs.dev/config/
 export default defineConfig({
    plugins: [react()],
-   build: {
-      outDir: 'dist',
-      assetsDir: 'assets',
-      rollupOptions: {
-         output: {
-            manualChunks: undefined,
-         },
-      },
-   },
    server: {
-      port: 5173,
+      port: 5174, // Set the specific port
+      strictPort: true, // Fail if port is already in use
    },
-   resolve: {
-      alias: {
-         '@': path.resolve(__dirname, './src'),
-      },
+   build: {
+      outDir: '../dist', // Output to the root dist directory
+      emptyOutDir: true,
    },
-   base: './',
 });
