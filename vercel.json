@@ -7,14 +7,6 @@
 			"config": {
 				"includeFiles": ["server/**", "dist/**"]
 			}
-		},
-		{
-			"src": "client/package.json",
-			"use": "@vercel/static-build",
-			"config": {
-				"distDir": "../dist",
-				"installCommand": "npm install --legacy-peer-deps"
-			}
 		}
 	],
 	"routes": [
