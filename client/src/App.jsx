@@ -1,22 +1,19 @@
 import React from 'react';
 import { Toaster } from 'react-hot-toast';
-import { SocketProvider } from './context/SocketContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider } from './app/context/ThemeContext';
 import AppRoutes from './app/routes/routes';
-import NotificationToast from './components/NotificationToast';
-import EnhancedBackground from './components/EnhancedBackground';
-import './styles/background.css';
+import NotificationToast from './app/components/NotificationToast';
+import EnhancedBackground from './app/components/EnhancedBackground';
+import './app/styles/background.css';
 
 function App() {
    return (
       <>
          <ThemeProvider>
-            <SocketProvider>
-               <EnhancedBackground />
-               <Toaster position="top-right" />
-               <NotificationToast />
-               <AppRoutes />
-            </SocketProvider>
+            <EnhancedBackground />
+            <Toaster position="top-right" />
+            <NotificationToast />
+            <AppRoutes />
          </ThemeProvider>
       </>
    );
