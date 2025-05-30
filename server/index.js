@@ -181,7 +181,7 @@ mongoose.connection.on("disconnected", () => {
 
 // Debug route to check if server is running
 app.get("/", (req, res) => {
-    res.json({ message: "Todo API is running" });
+    res.json({ message: "Todo API is running" }); 
 });
 
 // Debug route for Socket.io
