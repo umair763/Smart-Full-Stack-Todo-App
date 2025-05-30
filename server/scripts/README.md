@@ -11,7 +11,7 @@ This script populates your Smart Todo App database with realistic test data for 
 
 ## 🚀 How to run:
 
-### Prerequisites:
+### Prerequisites:    
 
 1. **Create a user account first** by:
     - Starting the application (`npm run dev`)
