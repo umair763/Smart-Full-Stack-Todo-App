@@ -11,6 +11,9 @@ import { GOOGLE_CLIENT_ID } from './config/env';
 
 createRoot(document.getElementById('root')).render(
    <React.StrictMode>
+      <div style={{ background: 'yellow', color: 'black', padding: '8px', zIndex: 9999, position: 'relative' }}>
+         DEBUG: React Rendered
+      </div>
       <BrowserRouter>
          <AuthProvider>
             <SocketProvider>
