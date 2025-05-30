@@ -4,7 +4,7 @@ const isProduction = import.meta.env.PROD;
 export const config = {
    // API Configuration
    API_URL: isProduction
-      ? 'https://smart-full-stack-todo-app.vercel.app/api' 
+      ? 'https://smart-full-stack-todo-app.vercel.app/api'
       : import.meta.env.VITE_API_URL || 'http://localhost:5000',
 
    // Base URL for the application
