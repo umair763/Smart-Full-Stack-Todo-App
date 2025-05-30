@@ -11,5 +11,12 @@ export default defineConfig({
    build: {
       outDir: 'dist', // Output to the client/dist directory
       emptyOutDir: true,
+      assetsDir: 'assets',
+      rollupOptions: {
+         output: {
+            manualChunks: undefined,
+         },
+      },
    },
+   base: '/', // Ensure assets are loaded from the root path
 });
