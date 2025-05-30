@@ -1,3 +1,6 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
 export default defineConfig({
    plugins: [react()],
    build: {
@@ -5,8 +8,7 @@ export default defineConfig({
       emptyOutDir: true,
    },
    server: {
-      port: 5174,
+      port: 5173,
       historyApiFallback: true,
    },
-   base: '/',
 });
