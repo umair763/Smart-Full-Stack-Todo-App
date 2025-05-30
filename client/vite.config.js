@@ -8,7 +8,7 @@ export default defineConfig({
       strictPort: true,
    },
    build: {
-      outDir: '../dist', // Changed to output directly to dist
+      outDir: 'dist', // Changed to output directly to dist
       emptyOutDir: true,
       assetsDir: 'assets',
       rollupOptions: {
