@@ -27,11 +27,15 @@
 			"dest": "/server/index.js"
 		},
 		{
-			"handle": "filesystem"
+			"src": "/assets/(.*)",
+			"dest": "/dist/assets/$1"
 		},
 		{
 			"src": "/(.*)",
 			"dest": "/dist/index.html"
 		}
-	]
+	],
+	"env": {
+		"NODE_ENV": "production"
+	}
 }
