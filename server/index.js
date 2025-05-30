@@ -153,6 +153,7 @@ app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
 // MongoDB Configuration
+const PORT = process.env.PORT || 5000;
 const MONGO_URI =
     process.env.NODE_ENV === "production"
         ? process.env.MONGO_URI_DEPLOYED
@@ -275,9 +276,8 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Use server.listen instead of app.listen for Socket.io
-server.listen(process.env.PORT || 5000, () => {
-    console.log(`Server running on port ${process.env.PORT || 5000}`);
-    console.log(`API available at http://localhost:${process.env.PORT || 5000}/api`);
-    console.log(`Socket.io running on ws://localhost:${process.env.PORT || 5000}/socket.io/`);
+// Start the server
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });
