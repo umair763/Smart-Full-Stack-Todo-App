@@ -15,8 +15,17 @@ export default defineConfig({
       rollupOptions: {
          output: {
             manualChunks: undefined,
+            assetFileNames: 'assets/[name].[ext]',
+            chunkFileNames: 'assets/[name].js',
+            entryFileNames: 'assets/[name].js',
          },
       },
+      sourcemap: true,
    },
-   base: './', // Changed from '/' to './' for better path resolution
+   base: '/', // Changed from '/' to './' for better path resolution
+   resolve: {
+      alias: {
+         '@': '/src',
+      },
+   },
 });
