@@ -9,25 +9,15 @@
 			"src": "client/package.json",
 			"use": "@vercel/static-build",
 			"config": {
-				"distDir": "dist"
+				"distDir": "dist",
+				"installCommand": "npm install --legacy-peer-deps"
 			}
 		}
 	],
 	"routes": [
-		{
-			"src": "/api/(.*)",
-			"dest": "/server/index.js"
-		},
-		{
-			"src": "/socket.io/(.*)",
-			"dest": "/server/index.js"
-		},
-		{
-			"handle": "filesystem"
-		},
-		{
-			"src": "/(.*)",
-			"dest": "/client/dist/index.html"
-		}
+		{ "src": "/api/(.*)", "dest": "/server/index.js" },
+		{ "src": "/socket.io/(.*)", "dest": "/server/index.js" },
+		{ "handle": "filesystem" },
+		{ "src": "/(.*)", "dest": "/client/dist/index.html" }
 	]
 }
