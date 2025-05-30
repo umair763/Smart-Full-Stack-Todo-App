@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
 import NoteModal from './NoteModal';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../config/env';
 
 function NotesList({ taskId }) {
    const [notes, setNotes] = useState([]);
@@ -29,7 +27,7 @@ function NotesList({ taskId }) {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/notes`, {
+         const response = await fetch(`${API_URL}/api/tasks/${taskId}/notes`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -72,7 +70,7 @@ function NotesList({ taskId }) {
          let response;
          if (noteId) {
             // Update existing note
-            response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`, {
+            response = await fetch(`${API_URL}/api/notes/${noteId}`, {
                method: 'PUT',
                headers: {
                   Authorization: `Bearer ${token}`,
@@ -82,7 +80,7 @@ function NotesList({ taskId }) {
             });
          } else {
             // Create new note
-            response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/notes`, {
+            response = await fetch(`${API_URL}/api/tasks/${taskId}/notes`, {
                method: 'POST',
                headers: {
                   Authorization: `Bearer ${token}`,
@@ -118,7 +116,7 @@ function NotesList({ taskId }) {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`, {
+         const response = await fetch(`${API_URL}/api/notes/${noteId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,

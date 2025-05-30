@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../../../config/env';
 
 function GoogleSignIn() {
    const { login } = useAuth();
@@ -19,7 +17,7 @@ function GoogleSignIn() {
 
       try {
          // Send the credential token to backend
-         const backendResponse = await fetch(`${API_BASE_URL}/api/users/google-signin`, {
+         const backendResponse = await fetch(`${API_URL}/api/users/google-signin`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',

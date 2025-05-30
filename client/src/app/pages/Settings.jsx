@@ -22,9 +22,7 @@ import {
    FiMonitor,
 } from 'react-icons/fi';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../../config/env';
 
 // Tab configuration with icons and colors
 const tabs = [
@@ -98,7 +96,7 @@ function Settings() {
                return;
             }
 
-            const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+            const response = await fetch(`${API_URL}/api/users/profile`, {
                method: 'GET',
                headers: {
                   Authorization: `Bearer ${token}`,
@@ -141,7 +139,7 @@ function Settings() {
 
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/profile-image`, {
+         const response = await fetch(`${API_URL}/api/users/profile-image`, {
             method: 'PUT',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -187,7 +185,7 @@ function Settings() {
 
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/username`, {
+         const response = await fetch(`${API_URL}/api/users/username`, {
             method: 'PUT',
             headers: {
                'Content-Type': 'application/json',
@@ -224,7 +222,7 @@ function Settings() {
       setExportLoading(true);
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/export-data`, {
+         const response = await fetch(`${API_URL}/api/users/export-data`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -272,7 +270,7 @@ function Settings() {
 
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/account`, {
+         const response = await fetch(`${API_URL}/api/users/account`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,

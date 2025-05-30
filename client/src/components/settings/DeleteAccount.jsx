@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/context/AuthContext';
 import DeleteAccountModal from '../DeleteAccountModal';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../../config/env';
 
 function DeleteAccount() {
    const [error, setError] = useState('');
@@ -37,7 +35,7 @@ function DeleteAccount() {
             throw new Error('No authentication token found');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/users/account`, {
+         const response = await fetch(`${API_URL}/api/users/account`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,

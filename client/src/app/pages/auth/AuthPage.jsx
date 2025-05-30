@@ -6,9 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
+import { API_URL } from '../../../config/env';
 
 // Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = API_URL || 'http://localhost:5000';
 
 function AuthPage() {
    const location = useLocation();

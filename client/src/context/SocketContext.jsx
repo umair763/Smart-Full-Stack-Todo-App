@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
+import { SOCKET_URL } from '../config/env';
 
 const SocketContext = createContext();
 
@@ -11,7 +12,7 @@ export const SocketProvider = ({ children }) => {
    const [isConnected, setIsConnected] = useState(false);
 
    useEffect(() => {
-      const socketInstance = io(import.meta.env.VITE_SERVER_URL, {
+      const socketInstance = io(SOCKET_URL, {
          withCredentials: true,
       });
 

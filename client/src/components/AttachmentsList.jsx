@@ -3,9 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FiPaperclip, FiDownload, FiTrash2, FiFile, FiImage, FiFileText } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../config/env';
 
 function AttachmentsList({ taskId }) {
    const [attachments, setAttachments] = useState([]);
@@ -30,7 +28,7 @@ function AttachmentsList({ taskId }) {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/attachments`, {
+         const response = await fetch(`${API_URL}/api/tasks/${taskId}/attachments`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -92,7 +90,7 @@ function AttachmentsList({ taskId }) {
          const formData = new FormData();
          formData.append('file', file);
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/attachments`, {
+         const response = await fetch(`${API_URL}/api/tasks/${taskId}/attachments`, {
             method: 'POST',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -128,7 +126,7 @@ function AttachmentsList({ taskId }) {
          }
 
          // Create a download link
-         const downloadUrl = `${API_BASE_URL}/api/attachments/${attachmentId}/download`;
+         const downloadUrl = `${API_URL}/api/attachments/${attachmentId}/download`;
 
          // Create a temporary anchor element
          const a = document.createElement('a');
@@ -171,7 +169,7 @@ function AttachmentsList({ taskId }) {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/attachments/${attachmentId}`, {
+         const response = await fetch(`${API_URL}/api/attachments/${attachmentId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,

@@ -4,9 +4,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../../../config/env';
 
 function RegisterUser() {
    const [formData, setFormData] = useState({
@@ -91,7 +89,7 @@ function RegisterUser() {
 
       try {
          // Send registration request
-         const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+         const response = await fetch(`${API_URL}/api/users/register`, {
             method: 'POST',
             body: submitData,
             // Don't set Content-Type header as FormData sets it automatically with boundary

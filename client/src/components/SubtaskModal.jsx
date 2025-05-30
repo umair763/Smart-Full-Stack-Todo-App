@@ -4,9 +4,7 @@ import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
 import { HiX, HiCalendar, HiClock, HiPlus, HiPencilAlt } from 'react-icons/hi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../config/env';
 
 function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subtask = null }) {
    const [formData, setFormData] = useState({
@@ -63,8 +61,8 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
          }
 
          const url = isEditing
-            ? `${API_BASE_URL}/api/tasks/${parentTaskId}/subtasks/${subtask._id}`
-            : `${API_BASE_URL}/api/tasks/${parentTaskId}/subtasks`;
+            ? `${API_URL}/api/tasks/${parentTaskId}/subtasks/${subtask._id}`
+            : `${API_URL}/api/tasks/${parentTaskId}/subtasks`;
 
          const method = isEditing ? 'PUT' : 'POST';
 

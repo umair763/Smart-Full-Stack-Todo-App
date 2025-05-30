@@ -8,9 +8,7 @@ import DeleteTaskForm from '../../components/DeleteTaskForm';
 import Modal from '../../components/Modal';
 import ReminderModal from '../../components/ReminderModal';
 import DeleteTaskModal from '../../components/DeleteTaskModal';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../../config/env';
 
 function Dashboard() {
    const [tasks, setTasks] = useState([]);
@@ -43,7 +41,7 @@ function Dashboard() {
             throw new Error('No authentication token found');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
+         const response = await fetch(`${API_URL}/api/tasks`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -103,7 +101,7 @@ function Dashboard() {
    const addTask = async (task) => {
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
+         const response = await fetch(`${API_URL}/api/tasks`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -147,7 +145,7 @@ function Dashboard() {
          const token = localStorage.getItem('token');
 
          // First attempt to delete without confirmation
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
+         const response = await fetch(`${API_URL}/api/tasks/${deleteModal.taskId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -157,7 +155,7 @@ function Dashboard() {
 
          if (response.status === 409) {
             // Task has dependents, force delete with cascade
-            const cascadeResponse = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
+            const cascadeResponse = await fetch(`${API_URL}/api/tasks/${deleteModal.taskId}`, {
                method: 'DELETE',
                headers: {
                   Authorization: `Bearer ${token}`,
@@ -209,7 +207,7 @@ function Dashboard() {
    const handleSetReminder = async (reminderData) => {
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
+         const response = await fetch(`${API_URL}/api/reminders`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',

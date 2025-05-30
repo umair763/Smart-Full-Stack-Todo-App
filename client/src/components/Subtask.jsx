@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { FiTrash2 } from 'react-icons/fi';
 import { HiCalendar, HiCheck, HiPencilAlt } from 'react-icons/hi';
 import DeleteSubtaskModal from './DeleteSubtaskModal';
-
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../config/env';
 
 function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
    const [completed, setCompleted] = useState(subtask.status || false);
@@ -32,7 +30,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${subtask.taskId}/subtasks/${subtask._id}/status`, {
+         const response = await fetch(`${API_URL}/api/tasks/${subtask.taskId}/subtasks/${subtask._id}/status`, {
             method: 'PATCH',
             headers: {
                Authorization: `Bearer ${token}`,
