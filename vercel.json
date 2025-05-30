@@ -22,12 +22,15 @@
 			"dest": "/server/index.js"
 		},
 		{
-			"src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|webp|map))",
-			"dest": "/client/dist/$1"
+			"handle": "filesystem"
 		},
 		{
 			"src": "/assets/(.*)",
 			"dest": "/client/dist/assets/$1"
+		},
+		{
+			"src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|webp|map))",
+			"dest": "/client/dist/$1"
 		},
 		{
 			"src": "/(.*)",
