@@ -31,7 +31,21 @@ export { dbEvents };
 app.use(
     cors({
         origin: (origin, callback) => {
-            // Allow any origin in development
+            const allowedOrigins = [
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "https://smart-full-stack-todo-app.vercel.app",
+                "https://todo-app-full-stack-frontend.vercel.app",
+            ];
+
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.indexOf(origin) === -1) {
+                const msg = "The CORS policy for this site does not allow access from the specified Origin.";
+                return callback(new Error(msg), false);
+            }
+
             return callback(null, true);
         },
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -52,7 +66,12 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // Setup Socket.io AFTER CORS middleware
 const io = new Server(server, {
     cors: {
-        origin: "*", // In production, limit to your frontend URL
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "https://smart-full-stack-todo-app.vercel.app",
+            "https://todo-app-full-stack-frontend.vercel.app",
+        ],
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -181,7 +200,7 @@ mongoose.connection.on("disconnected", () => {
 
 // Debug route to check if server is running
 app.get("/", (req, res) => {
-    res.json({ message: "Todo API is running" }); 
+    res.json({ message: "Todo API is running" });
 });
 
 // Debug route for Socket.io
