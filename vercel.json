@@ -1,40 +1,11 @@
 {
 	"version": 2,
-	"buildCommand": "npm run vercel-build",
+	"buildCommand": "cd client && npm install && npm run build",
 	"outputDirectory": "client/dist",
-	"builds": [
-		{
-			"src": "server/index.js",
-			"use": "@vercel/node"
-		}
-	],
 	"routes": [
 		{
-			"src": "/api/(.*)",
-			"dest": "/server/index.js"
-		},
-		{
-			"src": "/socket.io/(.*)",
-			"dest": "/server/index.js"
-		},
-		{
-			"src": "/socket-check",
-			"dest": "/server/index.js"
-		},
-		{
-			"handle": "filesystem"
-		},
-		{
-			"src": "/assets/(.*)",
-			"dest": "/client/dist/assets/$1"
-		},
-		{
-			"src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|webp|map))",
-			"dest": "/client/dist/$1"
-		},
-		{
 			"src": "/(.*)",
-			"dest": "/client/dist/index.html"
+			"dest": "/index.html"
 		}
 	]
 }
