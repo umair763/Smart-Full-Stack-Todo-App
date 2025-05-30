@@ -5,22 +5,15 @@
 			"src": "client/package.json",
 			"use": "@vercel/static-build",
 			"config": {
-				"distDir": "dist",
-				"framework": "vite"
+				"distDir": "dist"
 			}
 		},
 		{
 			"src": "server/index.js",
-			"use": "@vercel/node",
-			"config": {
-				"maxLambdaSize": "50mb"
-			}
+			"use": "@vercel/node"
 		}
 	],
 	"routes": [
-		{
-			"handle": "filesystem"
-		},
 		{
 			"src": "/api/(.*)",
 			"dest": "server/index.js"
@@ -30,9 +23,7 @@
 			"dest": "client/dist/index.html"
 		}
 	],
-	"functions": {
-		"server/index.js": {
-			"maxDuration": 30
-		}
-	}
+	"outputDirectory": "client/dist",
+	"installCommand": "cd client && npm install && cd ../server && npm install",
+	"buildCommand": "cd client && npm run build"
 }
