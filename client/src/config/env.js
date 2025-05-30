@@ -1,13 +1,8 @@
 // Environment configuration
 const isProduction = import.meta.env.PROD;
 
-export const API_URL = isProduction
-   ? 'https://smart-full-stack-todo-app.vercel.app/api'
-   : import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-export const SOCKET_URL = isProduction
-   ? 'https://smart-full-stack-todo-app.vercel.app'
-   : import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+export const API_URL = import.meta.env.VITE_API_URL;
+export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 
 export const BASE_URL = isProduction ? 'https://smart-full-stack-todo-app.vercel.app' : 'http://localhost:5173';
 
