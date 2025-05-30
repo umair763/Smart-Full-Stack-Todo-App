@@ -2,32 +2,23 @@
 	"version": 2,
 	"buildCommand": "cd client && npm install && npm run build",
 	"outputDirectory": "client/dist",
-	"builds": [
-		{
-			"src": "server/index.js",
-			"use": "@vercel/node"
-		},
-		{
-			"src": "client/dist/**/*",
-			"use": "@vercel/static"
+	"functions": {
+		"server/index.js": {
+			"maxDuration": 30
 		}
-	],
-	"routes": [
+	},
+	"rewrites": [
 		{
-			"src": "/api/(.*)",
-			"dest": "/server/index.js"
+			"source": "/api/(.*)",
+			"destination": "/api/server"
 		},
 		{
-			"src": "/socket.io/(.*)",
-			"dest": "/server/index.js"
+			"source": "/socket.io/(.*)",
+			"destination": "/api/server"
 		},
 		{
-			"src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-			"dest": "/client/dist/$1"
-		},
-		{
-			"src": "/(.*)",
-			"dest": "/client/dist/index.html"
+			"source": "/(.*)",
+			"destination": "/client/dist/index.html"
 		}
 	]
 }
