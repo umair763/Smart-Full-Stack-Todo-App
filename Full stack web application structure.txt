@@ -5,17 +5,24 @@
 │   │   ├── assets
 │   │   ├── app
 │   │   │     ├── pages
-│   │   │     │    ├── auth
+│   │   │     │    ├── auth            
+│   │   │     │    │     └── AuthPage.jsx
 │   │   │     │    │     └── LoginForm.jsx
 │   │   │     │    │     └── Registeruser.jsx
 │   │   │     │    │     └──GoogleSignIn.jsx
+│   │   │     │    └──Dashboard.jsx
+│   │   │     │    └──Insights.jsx
+│   │   │     │    └──LandingPage.jsx
+│   │   │     │    └──Settings.jsx
 │   │   │     ├── layout.jsx
 │   │   │     │     └── header.jsx 
 │   │   │     │     └── footer.jsx 
-│   │   │     │     └── sidebar.jsx 
+│   │   │     │     └── LandingPageLayout.jsx
 │   │   │     │     └── Layout.jsx 
 │   │   │     ├── context
 │   │   │     │     └──AuthContext.jsx 
+│   │   │     │     └──NotificationContext.jsx 
+│   │   │     │     └──SocketContext.jsx
 │   │   │     ├── routes
 │   │   │     │     └──routes.jsx 
 │   │   │     ├── component
@@ -26,6 +33,12 @@
 │   │   │     │     └──DisplayTodoList.jsx
 │   │   │     │     └──TodoListParser.jsx
 │   │   │     │     └──UserProfile.jsx
+│   │   │     │     ├── settings
+│   │   │     │     ├── styles
+│   │   ├── config
+│   │   │      └──env.js
+│   │   ├── services
+│   │   │      └──reminderService.js
 │   │   └── App.jsx.js
 │   │   └── main.jsx
 │   └── .env
@@ -34,19 +47,42 @@
 │   └── .gitignore
 │   └── vite.config.js
 server/
-├── db/
-│   └── mysql.js           # DB connection file
+├── controller/
+│   └── attachmentController.js
+│   └── dependencyController.js
+│   └── noteController.js
+│   └── notificationController.js
+│   └── reminderController.js
+│   └── streakController.js
+│   └── subtaskController.js
+│   └── taskController.js
+│   └── userController.js
+├── middleware/
+│   └── auth.js            
 ├── routes/
-│   └── auth.js            # Login/Register routes
-│   └── vote.js            # Vote and result routes
-│   └── admin.js           # Admin controls
-├── controllers/
-│   └── authController.js
-│   └── voteController.js
-│   └── adminController.js
+│   └── attachmentRoutes.js
+│   └── dependencyRoutes.js
+│   └── noteRoutes.js
+│   └── notificationRoutes.js
+│   └── reminderRoutes.js
+│   └── streakRoutes.js
+│   └── subtaskRoutes.js
+│   └── taskRoutes.js
+│   └── userRoutes.js
+├── models/
+│   └── Attachment.js
+│   └── Dependency.js
+│   └── Note.js
+│   └── Notification.js
+│   └── Reminder.js
+│   └── Streak.js
+│   └── Subtask.js
+│   └── Task.js
+│   └── User.js
 ├── .env
-├── index.js               # Main server entry
+├── index.js              
 ├── package.json
 └── README.md
+└── vercel.json
 
 

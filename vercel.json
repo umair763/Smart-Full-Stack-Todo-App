@@ -6,28 +6,28 @@
 		{
 			"src": "server/index.js",
 			"use": "@vercel/node"
+		},
+		{
+			"src": "client/dist/**/*",
+			"use": "@vercel/static"
 		}
 	],
-	"rewrites": [
+	"routes": [
 		{
-			"source": "/api/:path*",
-			"destination": "/server/index.js"
+			"src": "/api/(.*)",
+			"dest": "/server/index.js"
 		},
 		{
-			"source": "/socket.io/:path*",
-			"destination": "/server/index.js"
+			"src": "/socket.io/(.*)",
+			"dest": "/server/index.js"
 		},
 		{
-			"source": "/assets/:path*",
-			"destination": "/client/dist/assets/:path*"
+			"src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+			"dest": "/client/dist/$1"
 		},
 		{
-			"source": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-			"destination": "/client/dist/$1"
-		},
-		{
-			"source": "/(.*)",
-			"destination": "/client/dist/index.html"
+			"src": "/(.*)",
+			"dest": "/client/dist/index.html"
 		}
 	]
 }
