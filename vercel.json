@@ -6,7 +6,7 @@
 			"use": "@vercel/node"
 		},
 		{
-			"src": "package.json",
+			"src": "client/package.json",
 			"use": "@vercel/static-build",
 			"config": {
 				"distDir": "dist"
@@ -19,12 +19,20 @@
 			"dest": "server/index.js"
 		},
 		{
+			"src": "/socket.io/(.*)",
+			"dest": "server/index.js"
+		},
+		{
 			"src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-			"dest": "/dist/$1"
+			"dest": "/client/dist/$1"
+		},
+		{
+			"src": "/assets/(.*)",
+			"dest": "/client/dist/assets/$1"
 		},
 		{
 			"src": "/(.*)",
-			"dest": "/dist/index.html"
+			"dest": "/client/dist/index.html"
 		}
 	]
 }
