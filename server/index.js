@@ -16,6 +16,8 @@ import streakRoutes from "./routes/streakRoutes.js";
 
 import noteRoutes from "./routes/noteRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
@@ -293,6 +295,17 @@ app.use((err, req, res, next) => {
         message: "Internal server error",
         error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
+});
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the dist directory
+app.use(express.static(path.join(__dirname, "..", "dist")));
+
+// Fallback: serve index.html for any unknown route (for React Router)
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "dist", "index.html"));
 });
 
 // Start the server
