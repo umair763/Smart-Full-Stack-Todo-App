@@ -152,8 +152,11 @@ io.sendNotification = (userId, notification) => {
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp";
+// MongoDB Configuration
+const MONGO_URI =
+    process.env.NODE_ENV === "production"
+        ? process.env.MONGO_URI_DEPLOYED
+        : process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp";
 
 // Connect to MongoDB
 mongoose
@@ -273,8 +276,8 @@ app.use((err, req, res, next) => {
 });
 
 // Use server.listen instead of app.listen for Socket.io
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`API available at http://localhost:${PORT}/api`);
-    console.log(`Socket.io running on ws://localhost:${PORT}/socket.io/`);
+server.listen(process.env.PORT || 5000, () => {
+    console.log(`Server running on port ${process.env.PORT || 5000}`);
+    console.log(`API available at http://localhost:${process.env.PORT || 5000}/api`);
+    console.log(`Socket.io running on ws://localhost:${process.env.PORT || 5000}/socket.io/`);
 });

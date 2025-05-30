@@ -7,10 +7,7 @@ import './index.css';
 import { AuthProvider } from './app/context/AuthContext';
 import { SocketProvider } from './app/context/SocketContext';
 import { NotificationProvider } from './app/context/NotificationContext';
-
-// Get Google Client ID from environment variable or use the hardcoded one as fallback
-const CLIENT_ID =
-   import.meta.env.VITE_GOOGLE_CLIENT_ID || '726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com';
+import { config } from './config/env';
 
 createRoot(document.getElementById('root')).render(
    <React.StrictMode>
@@ -18,7 +15,7 @@ createRoot(document.getElementById('root')).render(
          <AuthProvider>
             <SocketProvider>
                <NotificationProvider>
-                  <GoogleOAuthProvider clientId={CLIENT_ID}>
+                  <GoogleOAuthProvider clientId={config.GOOGLE_CLIENT_ID}>
                      <App />
                   </GoogleOAuthProvider>
                </NotificationProvider>
