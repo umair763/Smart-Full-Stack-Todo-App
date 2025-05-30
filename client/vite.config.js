@@ -18,5 +18,5 @@ export default defineConfig({
          },
       },
    },
-   base: '/', // Ensure assets are loaded from the root path
+   base: './', // Changed from '/' to './' for better path resolution
 });
