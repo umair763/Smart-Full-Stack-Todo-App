@@ -201,9 +201,9 @@ mongoose.connection.on("disconnected", () => {
 });
 
 // Debug/API routes should come first
-app.get("/", (req, res) => {
-    res.json({ message: "Todo API is running" });
-});
+// app.get("/", (req, res) => {
+//     res.json({ message: "Todo API is running" });
+// });
 app.get("/socket-check", (req, res) => {
     res.json({
         message: "Socket.io is running",
