@@ -9,40 +9,23 @@
 			"src": "client/package.json",
 			"use": "@vercel/static-build",
 			"config": {
-				"distDir": "dist",
-				"installCommand": "npm install --legacy-peer-deps",
-				"outputDirectory": "client/dist"
+				"distDir": "client/dist",
+				"installCommand": "npm install --legacy-peer-deps"
 			}
 		}
 	],
 	"routes": [
 		{
 			"src": "/api/(.*)",
-			"dest": "/server/index.js"
+			"dest": "server/index.js"
 		},
 		{
 			"src": "/socket.io/(.*)",
-			"dest": "/server/index.js"
-		},
-		{
-			"src": "/static/(.*)",
-			"headers": {
-				"Cache-Control": "s-maxage=31536000, immutable"
-			},
-			"dest": "/client/dist/static/$1"
+			"dest": "server/index.js"
 		},
 		{
 			"src": "/(.*)",
-			"dest": "/client/dist/$1",
-			"headers": {
-				"Cache-Control": "s-maxage=0"
-			}
-		}
-	],
-	"rewrites": [
-		{
-			"source": "/(.*)",
-			"destination": "/client/dist/index.html"
+			"dest": "/client/dist/$1"
 		}
 	]
 }
