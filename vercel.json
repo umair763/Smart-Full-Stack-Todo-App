@@ -1,31 +1,10 @@
 {
-	"version": 2,
 	"builds": [
 		{
-			"src": "server/index.js",
-			"use": "@vercel/node"
-		},
-		{
 			"src": "client/package.json",
-			"use": "@vercel/static-build",
-			"config": {
-				"distDir": "client/dist",
-				"installCommand": "npm install --legacy-peer-deps"
-			}
+			"use": "@vercel/node",
+			"config": { "distDir": "dist" }
 		}
 	],
-	"routes": [
-		{
-			"src": "/api/(.*)",
-			"dest": "server/index.js"
-		},
-		{
-			"src": "/socket.io/(.*)",
-			"dest": "server/index.js"
-		},
-		{
-			"src": "/(.*)",
-			"dest": "/client/dist/$1"
-		}
-	]
+	"routes": [{ "src": "/(.*)", "dest": "/client/dist/$1" }]
 }
