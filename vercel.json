@@ -1,23 +1,48 @@
 {
 	"version": 2,
-	"buildCommand": "cd client && npm install --legacy-peer-deps && npm run build",
-	"outputDirectory": "client/dist",
 	"builds": [
 		{
 			"src": "server/index.js",
 			"use": "@vercel/node"
+		},
+		{
+			"src": "client/package.json",
+			"use": "@vercel/static-build",
+			"config": {
+				"distDir": "dist",
+				"installCommand": "npm install --legacy-peer-deps",
+				"outputDirectory": "client/dist"
+			}
 		}
 	],
 	"routes": [
-		{ "src": "/api/(.*)", "dest": "/server/index.js" },
-		{ "src": "/socket.io/(.*)", "dest": "/server/index.js" },
-		{ "src": "/socket-check", "dest": "/server/index.js" },
-		{ "handle": "filesystem" },
-		{ "src": "/assets/(.*)", "dest": "/client/dist/assets/$1" },
-		{ "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|webp|map))", "dest": "/client/dist/$1" },
-		{ "src": "/(.*)", "dest": "/client/dist/index.html" }
+		{
+			"src": "/api/(.*)",
+			"dest": "/server/index.js"
+		},
+		{
+			"src": "/socket.io/(.*)",
+			"dest": "/server/index.js"
+		},
+		{
+			"src": "/static/(.*)",
+			"headers": {
+				"Cache-Control": "s-maxage=31536000, immutable"
+			},
+			"dest": "/client/dist/static/$1"
+		},
+		{
+			"src": "/(.*)",
+			"dest": "/client/dist/$1",
+			"headers": {
+				"Cache-Control": "s-maxage=0"
+			}
+		}
 	],
-	"env": {
-		"NODE_ENV": "production"
-	}
+	"rewrites": [
+		{
+			"source": "/(.*)",
+			"destination": "/client/dist/index.html"
+		}
+	]
 }
