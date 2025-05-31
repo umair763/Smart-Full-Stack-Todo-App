@@ -9,14 +9,12 @@ export default defineConfig({
       strictPort: true,
    },
    build: {
-      outDir: '../dist',
+      outDir: 'dist',
       emptyOutDir: true,
       assetsDir: 'assets',
       rollupOptions: {
          output: {
-            manualChunks: {
-               vendor: ['react', 'react-dom', 'react-router-dom', '@mui/material', '@emotion/react', '@emotion/styled'],
-            },
+            manualChunks: undefined,
          },
       },
    },

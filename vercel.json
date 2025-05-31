@@ -5,34 +5,29 @@
 			"src": "client/package.json",
 			"use": "@vercel/static-build",
 			"config": {
-				"distDir": "dist",
-				"buildCommand": "cd client && npm install && npm run build"
+				"distDir": "dist"
 			}
 		},
 		{
 			"src": "server/index.js",
-			"use": "@vercel/node"
+			"use": "@vercel/node",
+			"config": {
+				"maxLambdaSize": "50mb"
+			}
 		}
 	],
 	"routes": [
-		{
-			"src": "/socket.io/(.*)",
-			"dest": "/server/index.js"
-		},
 		{
 			"src": "/api/(.*)",
 			"dest": "/server/index.js"
 		},
 		{
-			"handle": "filesystem"
-		},
-		{
-			"src": "/assets/(.*)",
-			"dest": "/dist/assets/$1"
+			"src": "/socket.io/(.*)",
+			"dest": "/server/index.js"
 		},
 		{
 			"src": "/(.*)",
-			"dest": "/dist/index.html"
+			"dest": "/client/dist/index.html"
 		}
 	]
 }
