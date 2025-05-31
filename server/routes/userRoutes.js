@@ -6,7 +6,7 @@ import auth from "../middleware/auth.js";
 const router = express.Router();
 
 // Public routes
-router.post("/register", userController.profileImageUploadMiddleware, userController.register);
+router.post("/register", userController.register);
 router.post("/login", userController.login);
 router.post("/google-signin", userController.googleSignIn);
 

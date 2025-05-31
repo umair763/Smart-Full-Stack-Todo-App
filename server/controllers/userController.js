@@ -127,7 +127,7 @@ export const googleSignIn = async (req, res) => {
         try {
             const ticket = await client.verifyIdToken({
                 idToken: token,
-                audience: "726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com",
+                audience: process.env.GOOGLE_CLIENT_ID,
             });
 
             const { email, name, picture, sub: googleId } = ticket.getPayload();

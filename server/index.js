@@ -289,12 +289,6 @@ app.use("/api/streaks", streakRoutes);
 app.use("/api", noteRoutes);
 app.use("/api", attachmentRoutes);
 
-// Add Cross-Origin-Opener-Policy header to all responses
-app.use((req, res, next) => {
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-    next();
-});
-
 // Add a global error handler
 app.use((err, req, res, next) => {
     console.error("Server error:", err);
