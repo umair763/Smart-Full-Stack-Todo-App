@@ -1,9 +1,20 @@
 // Environment configuration
 const isProduction = import.meta.env.PROD;
 
-export const API_URL = import.meta.env.VITE_API_URL;
-export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+// Get the current domain for production
+const getDomain = () => {
+   if (typeof window !== 'undefined') {
+      return window.location.origin;
+   }
+   return 'https://smart-full-stack-todo-app.vercel.app';
+};
 
-export const BASE_URL = isProduction ? 'https://smart-full-stack-todo-app.vercel.app' : 'http://localhost:5173';
+export const API_URL = isProduction
+   ? `${getDomain()}/api`
+   : import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+export const SOCKET_URL = isProduction ? getDomain() : import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+
+export const BASE_URL = isProduction ? getDomain() : 'http://localhost:5173';
 
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.GOOGLE_CLIENT_ID;

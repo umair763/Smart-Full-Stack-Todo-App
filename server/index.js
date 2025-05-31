@@ -13,7 +13,6 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 import dependencyRoutes from "./routes/dependencyRoutes.js";
 import streakRoutes from "./routes/streakRoutes.js";
-
 import noteRoutes from "./routes/noteRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
 import path from "path";
@@ -28,6 +27,13 @@ const server = http.createServer(app);
 const dbEvents = new EventEmitter();
 // Export dbEvents for use in controllers
 export { dbEvents };
+
+// Get the current domain dynamically
+const getCurrentDomain = (req) => {
+    const protocol = req.headers["x-forwarded-proto"] || "https";
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    return `${protocol}://${host}`;
+};
 
 // Improved CORS configuration
 app.use(
@@ -200,10 +206,16 @@ mongoose.connection.on("disconnected", () => {
     console.warn("MongoDB disconnected. Attempting to reconnect...");
 });
 
-// Debug/API routes should come first
-// app.get("/", (req, res) => {
-//     res.json({ message: "Todo API is running" });
-// });
+// Health check route
+app.get("/", (req, res) => {
+    res.json({
+        message: "Todo API is running",
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || "development",
+    });
+});
+
+// Debug/API routes
 app.get("/socket-check", (req, res) => {
     res.json({
         message: "Socket.io is running",
@@ -211,9 +223,12 @@ app.get("/socket-check", (req, res) => {
         connectedUsers: [...connectedUsers.entries()].map(([userId, socketId]) => ({ userId, socketId })),
     });
 });
+
 app.get("/api/debug", (req, res) => {
     res.json({
         message: "API Debug Route",
+        environment: process.env.NODE_ENV,
+        timestamp: new Date().toISOString(),
         routes: {
             users: [
                 { method: "POST", path: "/api/users/google-signin" },
@@ -253,21 +268,6 @@ app.get("/api/debug", (req, res) => {
                 { method: "POST", path: "/api/streaks/update" },
                 { method: "GET", path: "/api/streaks/history" },
             ],
-            sockets: [
-                { event: "connection", description: "New client connected" },
-                { event: "authenticate", description: "Authenticate user with socket" },
-                { event: "disconnect", description: "Client disconnected" },
-                { event: "taskCreated", description: "Task created notification" },
-                { event: "taskUpdated", description: "Task updated notification" },
-                { event: "taskDeleted", description: "Task deleted notification" },
-                { event: "taskStatusChanged", description: "Task status changed notification" },
-                { event: "subtaskCreated", description: "Subtask created notification" },
-                { event: "subtaskUpdated", description: "Subtask updated notification" },
-                { event: "subtaskDeleted", description: "Subtask deleted notification" },
-                { event: "subtaskStatusChanged", description: "Subtask status changed notification" },
-                { event: "dependencyCreated", description: "Dependency created notification" },
-                { event: "dependencyDeleted", description: "Dependency deleted notification" },
-            ],
         },
     });
 });
@@ -280,7 +280,6 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/dependencies", dependencyRoutes);
 app.use("/api/streaks", streakRoutes);
-
 app.use("/api", noteRoutes);
 app.use("/api", attachmentRoutes);
 
@@ -293,24 +292,21 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Only serve static files when not in Vercel (since Vercel handles static files separately)
-// if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
-//     const __filename = fileURLToPath(import.meta.url);
-//     const __dirname = path.dirname(__filename);
-    
-//     // Serve static files from the dist directory
-//     app.use(express.static(path.join(__dirname, "..", "client", "dist")));
-    
-//     // Handle client-side routing - serve index.html for all non-API routes
-//     app.get("*", (req, res) => {
-//         // Don't serve index.html for API routes
-//         if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
-//             return res.status(404).json({ message: 'Route not found' });
-//         }
-//         res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
-//     });
-// }
+// Handle 404 for API routes
+app.use("/api/*", (req, res) => {
+    res.status(404).json({
+        message: "API route not found",
+        path: req.path,
+        method: req.method,
+    });
+});
 
-// ADD this line for Vercel compatibility:
+// For Vercel: Export the Express app as default
 export default app;
-   
+
+// For local development: Start the server
+if (process.env.NODE_ENV !== "production") {
+    server.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}

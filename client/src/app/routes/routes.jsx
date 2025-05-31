@@ -7,7 +7,7 @@ import LandingPage from '../pages/LandingPage';
 import Dashboard from '../pages/Dashboard';
 import Settings from '../pages/Settings';
 import Insights from '../pages/Insights';
-import { useAuth } from '../context/AuthContext';   
+import { useAuth } from '../context/AuthContext';
 
 const AppRoutes = () => {
    const { isLoggedIn, loading } = useAuth();
@@ -37,7 +37,8 @@ const AppRoutes = () => {
             <>
                <Route path="/auth/login" element={<AuthPage />} />
                <Route path="/auth/register" element={<AuthPage />} />
-               <Route path="*" element={<Navigate to="/" />} />
+               {/* Redirect all other routes to home when not logged in */}
+               <Route path="*" element={<Navigate to="/" replace />} />
             </>
          ) : (
             <>
@@ -46,8 +47,9 @@ const AppRoutes = () => {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/insights" element={<Insights />} />
                </Route>
-               <Route path="/app" element={<Navigate to="/dashboard" />} />
-               <Route path="*" element={<Navigate to="/dashboard" />} />
+               <Route path="/app" element={<Navigate to="/dashboard" replace />} />
+               {/* Redirect all other routes to dashboard when logged in */}
+               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </>
          )}
       </Routes>

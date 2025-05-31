@@ -24,7 +24,12 @@
 		},
 		{
 			"src": "/(.*)",
-			"dest": "/index.html"
+			"dest": "/client/dist/index.html"
 		}
-	]
+	],
+	"functions": {
+		"server/index.js": {
+			"maxDuration": 30
+		}
+	}
 }
