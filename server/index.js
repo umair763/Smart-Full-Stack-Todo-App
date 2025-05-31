@@ -51,7 +51,6 @@ app.use(
                 "https://todo-app-full-stack-frontend.vercel.app",
                 "https://smart-todo-task-management-frontend.vercel.app",
                 "https://smart-todo-task-management-backend.vercel.app", // Add your backend URL
-
             ];
 
             // Allow requests with no origin (like mobile apps or curl requests)
@@ -289,6 +288,12 @@ app.use("/api/dependencies", dependencyRoutes);
 app.use("/api/streaks", streakRoutes);
 app.use("/api", noteRoutes);
 app.use("/api", attachmentRoutes);
+
+// Add Cross-Origin-Opener-Policy header to all responses
+app.use((req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    next();
+});
 
 // Add a global error handler
 app.use((err, req, res, next) => {
