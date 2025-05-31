@@ -294,22 +294,22 @@ app.use((err, req, res, next) => {
 });
 
 // Only serve static files when not in Vercel (since Vercel handles static files separately)
-if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
+// if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
+//     const __filename = fileURLToPath(import.meta.url);
+//     const __dirname = path.dirname(__filename);
     
-    // Serve static files from the dist directory
-    app.use(express.static(path.join(__dirname, "..", "client", "dist")));
+//     // Serve static files from the dist directory
+//     app.use(express.static(path.join(__dirname, "..", "client", "dist")));
     
-    // Handle client-side routing - serve index.html for all non-API routes
-    app.get("*", (req, res) => {
-        // Don't serve index.html for API routes
-        if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
-            return res.status(404).json({ message: 'Route not found' });
-        }
-        res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
-    });
-}
+//     // Handle client-side routing - serve index.html for all non-API routes
+//     app.get("*", (req, res) => {
+//         // Don't serve index.html for API routes
+//         if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) {
+//             return res.status(404).json({ message: 'Route not found' });
+//         }
+//         res.sendFile(path.join(__dirname, "..", "client", "dist", "index.html"));
+//     });
+// }
 
 // ADD this line for Vercel compatibility:
 export default app;

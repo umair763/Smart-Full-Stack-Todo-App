@@ -1,16 +1,11 @@
 {
-    "name": "mern-server",
+    "name": "todo-app-server",
     "version": "1.0.0",
-    "description": "Server for a MERN stack application",
-    "main": "index.js",
     "type": "module",
+    "main": "index.js",
     "scripts": {
         "start": "node index.js",
-        "dev": "nodemon index.js",
-        "test": "jest",
-        "seed": "node scripts/seedData.js",
-        "create-test-user": "node scripts/createTestUser.js",
-        "setup-test-data": "node scripts/setupTestData.js"
+        "dev": "nodemon index.js"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
