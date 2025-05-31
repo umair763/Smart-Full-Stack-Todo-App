@@ -46,10 +46,8 @@ app.use(
                 "https://todo-app-full-stack-frontend.vercel.app",
             ];
 
-            // Allow requests with no origin (like mobile apps, Vercel serverless, or curl requests)
-            if (!origin || process.env.NODE_ENV === "production") {
-                return callback(null, true);
-            }
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin) return callback(null, true);
 
             if (allowedOrigins.indexOf(origin) === -1) {
                 const msg = "The CORS policy for this site does not allow access from the specified Origin.";
@@ -76,14 +74,18 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // Setup Socket.io AFTER CORS middleware
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "https://smart-full-stack-todo-app.vercel.app",
+            "https://todo-app-full-stack-frontend.vercel.app",
+        ],
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization"],
     },
     transports: ["websocket", "polling"],
     path: "/socket.io/",
-    addTrailingSlash: false,
 });
 
 // Store connected users
@@ -299,10 +301,8 @@ app.use("/api/*", (req, res) => {
     });
 });
 
-// Export for Vercel serverless
+// For Vercel: Export the Express app as default
 export default app;
-// Also export the server instance for local development
-export { server };
 
 // For local development: Start the server
 if (process.env.NODE_ENV !== "production") {
