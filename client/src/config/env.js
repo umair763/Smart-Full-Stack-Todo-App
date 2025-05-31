@@ -1,10 +1,10 @@
 // Environment configuration for the frontend
 const isDevelopment = import.meta.env.MODE === 'development';
 
-// API Base URLs
+// API Base URLs (do NOT include /api at the end)
 export const API_BASE_URL = isDevelopment
-   ? 'http://localhost:5000/api' // Local development
-   : 'https://smart-todo-task-management-backend.vercel.app/api'; // Production
+   ? 'http://localhost:5000' // Local development
+   : 'https://smart-todo-task-management-backend.vercel.app'; // Production
 
 // Socket.io URLs
 export const SOCKET_URL = isDevelopment
@@ -32,7 +32,7 @@ export default {
 export const getApiUrl = (endpoint) => {
    // Remove leading slash if present to avoid double slashes
    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-   return `${API_BASE_URL}/${cleanEndpoint}`;
+   return `${API_BASE_URL}/api/${cleanEndpoint}`;
 };
 
 // Log configuration in development
