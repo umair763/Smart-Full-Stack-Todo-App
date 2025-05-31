@@ -5,7 +5,8 @@
 			"src": "client/package.json",
 			"use": "@vercel/static-build",
 			"config": {
-				"distDir": "client/dist"
+				"distDir": "dist",
+				"buildCommand": "cd client && npm install && npm run build"
 			}
 		},
 		{
@@ -27,11 +28,11 @@
 		},
 		{
 			"src": "/assets/(.*)",
-			"dest": "/client/dist/assets/$1"
+			"dest": "/dist/assets/$1"
 		},
 		{
 			"src": "/(.*)",
-			"dest": "/client/dist/index.html"
+			"dest": "/dist/index.html"
 		}
 	]
 }
