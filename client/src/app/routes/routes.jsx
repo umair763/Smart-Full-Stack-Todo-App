@@ -7,7 +7,7 @@ import LandingPage from '../pages/LandingPage';
 import Dashboard from '../pages/Dashboard';
 import Settings from '../pages/Settings';
 import Insights from '../pages/Insights';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';   
 
 const AppRoutes = () => {
    const { isLoggedIn, loading } = useAuth();
