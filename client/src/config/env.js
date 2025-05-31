@@ -1,12 +1,12 @@
 // Environment configuration
 const isProduction = import.meta.env.PROD;
 
-// Get the current domain for production
+// Get the current domain for production (frontend only)
 const getDomain = () => {
    if (typeof window !== 'undefined') {
       return window.location.origin;
    }
-   return 'smart-todo-task-management-backend-9ilz3i6xf.vercel.app';
+   return '';
 };
 
 export const API_URL = isProduction
