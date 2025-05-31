@@ -1,11 +1,13 @@
 {
-    "name": "todo-app-server",
+    "name": "smart-todo-server",
     "version": "1.0.0",
-    "type": "module",
+    "description": "Backend for Smart Todo App",
     "main": "index.js",
+    "type": "module",
     "scripts": {
         "start": "node index.js",
-        "dev": "nodemon index.js"
+        "dev": "node index.js",
+        "build": "echo 'No build step needed for Node.js'"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
