@@ -44,6 +44,7 @@ app.use(
                 "http://localhost:5174",
                 "https://smart-full-stack-todo-app.vercel.app",
                 "https://todo-app-full-stack-frontend.vercel.app",
+                "https://smart-todo-task-management-frontend.vercel.app",
             ];
 
             // Allow requests with no origin (like mobile apps or curl requests)
@@ -79,6 +80,7 @@ const io = new Server(server, {
             "http://localhost:5174",
             "https://smart-full-stack-todo-app.vercel.app",
             "https://todo-app-full-stack-frontend.vercel.app",
+            "https://smart-todo-task-management-frontend.vercel.app",
         ],
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         credentials: true,
