@@ -15,7 +15,9 @@ createRoot(document.getElementById('root')).render(
          <AuthProvider>
             <SocketProvider>
                <NotificationProvider>
-                  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                  <GoogleOAuthProvider
+                     clientId={'726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com'}
+                  >
                      <App />
                   </GoogleOAuthProvider>
                </NotificationProvider>
