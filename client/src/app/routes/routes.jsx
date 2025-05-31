@@ -9,7 +9,7 @@ import Settings from '../pages/Settings';
 import Insights from '../pages/Insights';
 import { useAuth } from '../context/AuthContext';
 
-const AppRoutes = () => {
+const AppRoutes = () => { 
    const { isLoggedIn, loading } = useAuth();
 
    // Show loading spinner while checking authentication
