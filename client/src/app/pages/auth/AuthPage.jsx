@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
-import { API_BASE_URL } from '../../../config/env';
+import { getApiUrl } from '../../../config/env';
 
 // Use the consistent API base URL
 // const API_BASE_URL = API_URL || 'http://localhost:5000';
@@ -54,7 +54,7 @@ function AuthPage() {
          const token = localStorage.getItem('token');
          if (token) {
             try {
-               const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+               const response = await fetch(getApiUrl('users/profile'), {
                   method: 'GET',
                   headers: {
                      'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ function AuthPage() {
       }
 
       try {
-         const response = await fetch(`${API_BASE_URL}/api/users/login`, {
+         const response = await fetch(getApiUrl('users/login'), {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -178,7 +178,7 @@ function AuthPage() {
       }
 
       try {
-         const response = await fetch(`${API_BASE_URL}/api/users/register`, {
+         const response = await fetch(getApiUrl('users/register'), {
             method: 'POST',
             body: submitData,
          });
