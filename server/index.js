@@ -35,6 +35,10 @@ const getCurrentDomain = (req) => {
     return `${protocol}://${host}`;
 };
 
+// Middleware for JSON
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
 // Improved CORS configuration
 app.use(
     cors({
@@ -42,9 +46,12 @@ app.use(
             const allowedOrigins = [
                 "http://localhost:5173",
                 "http://localhost:5174",
+                "http://localhost:3000",
                 "https://smart-full-stack-todo-app.vercel.app",
                 "https://todo-app-full-stack-frontend.vercel.app",
                 "https://smart-todo-task-management-frontend.vercel.app",
+                "https://smart-todo-task-management-backend.vercel.app", // Add your backend URL
+
             ];
 
             // Allow requests with no origin (like mobile apps or curl requests)
@@ -58,7 +65,7 @@ app.use(
             return callback(null, true);
         },
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allowedHeaders: ["Content-Type", "Authorization"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
         credentials: true,
         preflightContinue: false,
         optionsSuccessStatus: 204,
@@ -68,23 +75,21 @@ app.use(
 // Handle preflight requests explicitly
 app.options("*", cors());
 
-// Middleware for JSON
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-// Setup Socket.io AFTER CORS middleware
+// Also update your Socket.io CORS configuration
 const io = new Server(server, {
     cors: {
         origin: [
             "http://localhost:5173",
             "http://localhost:5174",
+            "http://localhost:3000",
             "https://smart-full-stack-todo-app.vercel.app",
             "https://todo-app-full-stack-frontend.vercel.app",
             "https://smart-todo-task-management-frontend.vercel.app",
+            "https://smart-todo-task-management-backend.vercel.app",
         ],
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         credentials: true,
-        allowedHeaders: ["Content-Type", "Authorization"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     },
     transports: ["websocket", "polling"],
     path: "/socket.io/",
