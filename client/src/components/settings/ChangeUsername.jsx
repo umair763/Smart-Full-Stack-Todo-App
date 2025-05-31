@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../app/context/AuthContext';
-import { API_URL } from '../../config/env';
+import { API_BASE_URL } from '../../config/env';
 
 // Use the consistent API base URL
-const API_BASE_URL = API_URL || 'http://localhost:5000';
+// const API_BASE_URL = API_URL || 'http://localhost:5000';
 
 const ChangeUsername = () => {
    const [username, setUsername] = useState('');

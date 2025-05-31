@@ -8,7 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import ModernSortTabs from './ModernSortTabs';
 import DeleteTaskModal from './DeleteTaskModal';
 import { HiSortAscending, HiClipboardList, HiChevronUp, HiChevronDown, HiCalendar } from 'react-icons/hi';
-import { API_URL } from '../config/env';
+import { API_BASE_URL } from '../config/env';
 
 function TodoListParser({ searchTerm = '' }) {
    const [todoList, setTodoList] = useState([]);
@@ -283,7 +283,7 @@ function TodoListParser({ searchTerm = '' }) {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_URL}/api/tasks`, {
+         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -315,7 +315,7 @@ function TodoListParser({ searchTerm = '' }) {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_URL}/api/dependencies`, {
+         const response = await fetch(`${API_BASE_URL}/api/dependencies`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -361,7 +361,7 @@ function TodoListParser({ searchTerm = '' }) {
          }
 
          // First attempt to delete without confirmation
-         const response = await fetch(`${API_URL}/api/tasks/${deleteModal.taskId}`, {
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -371,7 +371,7 @@ function TodoListParser({ searchTerm = '' }) {
 
          if (response.status === 409) {
             // Task has dependents, force delete with cascade
-            const cascadeResponse = await fetch(`${API_URL}/api/tasks/${deleteModal.taskId}`, {
+            const cascadeResponse = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
                method: 'DELETE',
                headers: {
                   Authorization: `Bearer ${token}`,
@@ -437,7 +437,7 @@ function TodoListParser({ searchTerm = '' }) {
             throw new Error('Invalid time format. Expected format: HH:MM AM/PM');
          }
 
-         const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
             method: 'PUT',
             headers: {
                Authorization: `Bearer ${token}`,

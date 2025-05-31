@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
 import { HiX, HiCalendar, HiClock, HiPlus, HiPencilAlt } from 'react-icons/hi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
-import { API_URL } from '../config/env';
+import { API_BASE_URL } from '../config/env';
 
 function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subtask = null }) {
    const [formData, setFormData] = useState({
@@ -61,8 +61,8 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
          }
 
          const url = isEditing
-            ? `${API_URL}/api/tasks/${parentTaskId}/subtasks/${subtask._id}`
-            : `${API_URL}/api/tasks/${parentTaskId}/subtasks`;
+            ? `${API_BASE_URL}/api/tasks/${parentTaskId}/subtasks/${subtask._id}`
+            : `${API_BASE_URL}/api/tasks/${parentTaskId}/subtasks`;
 
          const method = isEditing ? 'PUT' : 'POST';
 

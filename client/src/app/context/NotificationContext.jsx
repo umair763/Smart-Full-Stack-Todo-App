@@ -3,10 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
-import { API_URL } from '../../config/env';
-
-// API base URL
-const API_BASE_URL = API_URL || 'http://localhost:5000';
+import { API_BASE_URL } from '../../config/env';
 
 // Create the notification context
 const NotificationContext = createContext();

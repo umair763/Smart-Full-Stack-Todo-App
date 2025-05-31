@@ -5,10 +5,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
-import { API_URL } from '../../../config/env';
+import { API_BASE_URL } from '../../../config/env';
 
 // Use the consistent API base URL
-const API_BASE_URL = API_URL || 'http://localhost:5000';
+// const API_BASE_URL = API_URL || 'http://localhost:5000';
 
 function LoginForm() {
    const [formData, setFormData] = useState({

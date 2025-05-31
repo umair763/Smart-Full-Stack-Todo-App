@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../app/context/AuthContext';
 import DeleteAccountModal from '../DeleteAccountModal';
-import { API_URL } from '../../config/env';
+import { API_BASE_URL } from '../../config/env';
 
 function DeleteAccount() {
    const [error, setError] = useState('');
@@ -35,7 +35,7 @@ function DeleteAccount() {
             throw new Error('No authentication token found');
          }
 
-         const response = await fetch(`${API_URL}/api/users/account`, {
+         const response = await fetch(`${API_BASE_URL}/api/users/account`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
