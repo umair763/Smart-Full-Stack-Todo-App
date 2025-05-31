@@ -5,25 +5,29 @@
 			"src": "client/package.json",
 			"use": "@vercel/static-build",
 			"config": {
-				"distDir": "dist"
+				"distDir": "client/dist"
 			}
 		},
 		{
 			"src": "server/index.js",
-			"use": "@vercel/node",
-			"config": {
-				"maxLambdaSize": "50mb"
-			}
+			"use": "@vercel/node"
 		}
 	],
 	"routes": [
+		{
+			"src": "/socket.io/(.*)",
+			"dest": "/server/index.js"
+		},
 		{
 			"src": "/api/(.*)",
 			"dest": "/server/index.js"
 		},
 		{
-			"src": "/socket.io/(.*)",
-			"dest": "/server/index.js"
+			"handle": "filesystem"
+		},
+		{
+			"src": "/assets/(.*)",
+			"dest": "/client/dist/assets/$1"
 		},
 		{
 			"src": "/(.*)",

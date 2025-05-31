@@ -4,11 +4,14 @@ const isProduction = import.meta.env.PROD;
 // Get the current domain for production
 const getDomain = () => {
    if (typeof window !== 'undefined') {
-      return window.location.origin;
+      const protocol = window.location.protocol;
+      const host = window.location.host;
+      return `${protocol}//${host}`;
    }
    return 'https://smart-full-stack-todo-app.vercel.app';
 };
 
+// API and Socket URLs
 export const API_URL = isProduction
    ? `${getDomain()}/api`
    : import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
