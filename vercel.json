@@ -34,6 +34,10 @@
 		}
 	],
 	"env": {
-		"NODE_ENV": "production"
+		"env": {
+			"NODE_ENV": "production",
+			"VITE_API_URL": "https://smart-full-stack-todo-app.vercel.app/api",
+			"VITE_SOCKET_URL": "https://smart-full-stack-todo-app.vercel.app"
+		}
 	}
 }
