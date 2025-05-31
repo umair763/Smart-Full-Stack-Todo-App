@@ -7,7 +7,7 @@ import './index.css';
 import { AuthProvider } from './app/context/AuthContext';
 import { SocketProvider } from './app/context/SocketContext';
 import { NotificationProvider } from './app/context/NotificationContext';
-import { config } from './config/env';
+import { GOOGLE_CLIENT_ID } from './config/env';
 
 createRoot(document.getElementById('root')).render(
    <React.StrictMode>
@@ -15,7 +15,7 @@ createRoot(document.getElementById('root')).render(
          <AuthProvider>
             <SocketProvider>
                <NotificationProvider>
-                  <GoogleOAuthProvider clientId={config.GOOGLE_CLIENT_ID}>
+                  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
                      <App />
                   </GoogleOAuthProvider>
                </NotificationProvider>

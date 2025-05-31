@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import toast from 'react-hot-toast';
-import { config } from '../../config/env';
+import { SOCKET_URL } from '../../config/env';
 
 // Create context
 const SocketContext = createContext(null);
@@ -14,7 +14,7 @@ export const SocketProvider = ({ children }) => {
    // Initialize socket connection
    useEffect(() => {
       // Create socket instance
-      const newSocket = io(config.SOCKET_URL, {
+      const newSocket = io(SOCKET_URL, {
          path: '/socket.io',
          transports: ['websocket', 'polling'],
          reconnection: true,
