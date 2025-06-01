@@ -16,14 +16,6 @@ export const SocketProvider = ({ children }) => {
    useEffect(() => {
       const socketInstance = io(BACKEND_URL, {
          withCredentials: true,
-         transports: ['websocket', 'polling'],
-         path: '/socket.io/',
-         reconnection: true,
-         reconnectionAttempts: 5,
-         reconnectionDelay: 1000,
-         timeout: 20000,
-         autoConnect: true,
-         forceNew: true,
       });
 
       socketInstance.on('connect', () => {
@@ -31,14 +23,9 @@ export const SocketProvider = ({ children }) => {
          console.log('Socket connected');
       });
 
-      socketInstance.on('connect_error', (error) => {
-         console.error('Socket connection error:', error);
+      socketInstance.on('disconnect', () => {
          setIsConnected(false);
-      });
-
-      socketInstance.on('disconnect', (reason) => {
-         setIsConnected(false);
-         console.log('Socket disconnected:', reason);
+         console.log('Socket disconnected');
       });
 
       socketInstance.on('db_change', (data) => {
@@ -66,9 +53,7 @@ export const SocketProvider = ({ children }) => {
       setSocket(socketInstance);
 
       return () => {
-         if (socketInstance) {
-            socketInstance.disconnect();
-         }
+         socketInstance.disconnect();
       };
    }, []);
 

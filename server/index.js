@@ -58,13 +58,6 @@ const io = new Server(server, {
     pingTimeout: 60000,
     pingInterval: 25000,
     connectTimeout: 45000,
-    allowEIO3: true,
-    cookie: {
-        name: "io",
-        httpOnly: true,
-        sameSite: "none",
-        secure: true,
-    },
 });
 
 // Store connected users
@@ -108,21 +101,12 @@ async function connectDB() {
     }
 
     if (!cached.promise) {
-        const opts = {
+        cached.promise = mongoose.connect(MONGO_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             bufferCommands: false,
-            maxPoolSize: 10,
+            maxPoolSize: 5,
             serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 45000,
-            family: 4,
-            retryWrites: true,
-            w: "majority",
-        };
-
-        cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
-            console.log("MongoDB connected successfully");
-            return mongoose;
         });
     }
 
@@ -131,25 +115,9 @@ async function connectDB() {
         return cached.conn;
     } catch (e) {
         cached.promise = null;
-        console.error("MongoDB connection error:", e);
         throw e;
     }
 }
-
-// Middleware to ensure database connection
-app.use(async (req, res, next) => {
-    try {
-        await connectDB();
-        next();
-    } catch (error) {
-        console.error("Database connection failed:", error);
-        res.status(500).json({
-            success: false,
-            message: "Database connection failed",
-            error: process.env.NODE_ENV === "development" ? error.message : undefined,
-        });
-    }
-});
 
 // Health check
 app.get("/health", async (req, res) => {
