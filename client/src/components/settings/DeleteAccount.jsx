@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../app/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { HiExclamationTriangle } from 'react-icons/hi';
+import { HiExclamation } from 'react-icons/hi';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
@@ -46,7 +46,7 @@ function DeleteAccount() {
    return (
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
          <div className="flex items-center space-x-3 mb-4">
-            <HiExclamationTriangle className="w-6 h-6 text-red-500" />
+            <HiExclamation className="w-6 h-6 text-red-500" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Delete Account</h2>
          </div>
 
