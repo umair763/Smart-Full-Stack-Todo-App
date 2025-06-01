@@ -56,9 +56,9 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // CORS configuration
 app.use(
     cors({
-        origin: FRONTEND_URL,
+        origin: [FRONTEND_URL, "http://localhost:5173"],
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Cascade-Delete"],
         credentials: true,
         preflightContinue: false,
         optionsSuccessStatus: 204,
@@ -71,13 +71,16 @@ app.options("*", cors());
 // Socket.io configuration
 const io = new Server(server, {
     cors: {
-        origin: FRONTEND_URL,
+        origin: [FRONTEND_URL, "http://localhost:5173"],
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     },
     transports: ["websocket", "polling"],
     path: "/socket.io/",
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    connectTimeout: 45000,
 });
 
 // Store connected users
