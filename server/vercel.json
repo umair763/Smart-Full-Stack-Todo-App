@@ -1,11 +1,12 @@
 {
     "version": 2,
-    "builds": [
-        {
-            "src": "index.js",
-            "use": "@vercel/node"
+    "functions": {
+        "index.js": {
+            "memory": 1024,
+            "maxDuration": 10,
+            "runtime": "nodejs18.x"
         }
-    ],
+    },
     "routes": [
         {
             "src": "/socket.io/(.*)",
@@ -40,11 +41,5 @@
     ],
     "env": {
         "NODE_ENV": "production"
-    },
-    "functions": {
-        "index.js": {
-            "memory": 1024,
-            "maxDuration": 10
-        }
     }
 }
