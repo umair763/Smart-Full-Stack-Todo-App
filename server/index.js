@@ -1,10 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import bodyParser from "body-parser";
-import http from "http";
-import { Server } from "socket.io";
-import { EventEmitter } from "events";
 import dotenv from "dotenv";
 import userRoutes from "./routes/userRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
@@ -20,11 +16,6 @@ import attachmentRoutes from "./routes/attachmentRoutes.js";
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
-
-// Create an EventEmitter for database changes
-const dbEvents = new EventEmitter();
-export { dbEvents };
 
 // Environment variables with fallbacks
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://smart-todo-task-management-frontend.vercel.app";
@@ -35,15 +26,13 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 // Validate required environment variables
 if (!MONGO_URI) {
     console.error("❌ MONGODB_URI is not set");
-    process.exit(1);
+    // Don't exit in serverless environment, let it fail gracefully
 }
 if (!JWT_SECRET) {
     console.error("❌ JWT_SECRET is not set");
-    process.exit(1);
 }
 if (!GOOGLE_CLIENT_ID) {
     console.error("❌ GOOGLE_CLIENT_ID is not set");
-    process.exit(1);
 }
 
 // Middleware for JSON
@@ -65,75 +54,63 @@ app.use(
 // Handle preflight requests explicitly
 app.options("*", cors());
 
-// Socket.io configuration
-const io = new Server(server, {
-    cors: {
-        origin: [FRONTEND_URL, "http://localhost:5173"],
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        credentials: true,
-        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    },
-    transports: ["websocket", "polling"],
-    path: "/socket.io/",
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    connectTimeout: 45000,
-});
-
-// Store connected users
-const connectedUsers = new Map();
-
-// Socket.io connection handler
-io.on("connection", (socket) => {
-    console.log("New client connected:", socket.id);
-
-    socket.on("authenticate", (userId) => {
-        console.log(`User ${userId} authenticated with socket ${socket.id}`);
-        connectedUsers.set(userId, socket.id);
-    });
-
-    socket.on("disconnect", () => {
-        console.log("Client disconnected:", socket.id);
-        for (const [userId, socketId] of connectedUsers.entries()) {
-            if (socketId === socket.id) {
-                connectedUsers.delete(userId);
-                console.log(`User ${userId} disconnected`);
-                break;
-            }
-        }
-    });
-});
-
-// Make io accessible to route handlers
-app.set("io", io);
-app.set("connectedUsers", connectedUsers);
-
 // Set environment variables for use in other files
-process.env.JWT_SECRET = JWT_SECRET;
-process.env.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
+if (JWT_SECRET) process.env.JWT_SECRET = JWT_SECRET;
+if (GOOGLE_CLIENT_ID) process.env.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
 
-// MongoDB connection with caching for serverless
+// MongoDB connection with enhanced caching for serverless
 let cachedConnection = null;
+let connectionPromise = null;
 
 const connectToDatabase = async () => {
+    // If we already have a cached connection and it's ready, use it
     if (cachedConnection && mongoose.connection.readyState === 1) {
         console.log("Using cached database connection");
         return cachedConnection;
     }
 
+    // If there's already a connection attempt in progress, wait for it
+    if (connectionPromise) {
+        console.log("Waiting for existing connection attempt");
+        return connectionPromise;
+    }
+
+    // If connection exists but not ready, wait for it
+    if (mongoose.connection.readyState === 2) {
+        console.log("Connection in progress, waiting...");
+        return new Promise((resolve, reject) => {
+            mongoose.connection.once("connected", () => resolve(cachedConnection));
+            mongoose.connection.once("error", reject);
+        });
+    }
+
     try {
         console.log("Creating new database connection");
-        cachedConnection = await mongoose.connect(MONGO_URI, {
+
+        // Create the connection promise
+        connectionPromise = mongoose.connect(MONGO_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 5000,
+            serverSelectionTimeoutMS: 10000, // Increased timeout
             socketTimeoutMS: 45000,
-            maxPoolSize: 10,
+            maxPoolSize: 5, // Reduced for serverless
+            minPoolSize: 1,
+            maxIdleTimeMS: 30000,
+            bufferCommands: false, // Disable mongoose buffering
+            bufferMaxEntries: 0,
         });
+
+        cachedConnection = await connectionPromise;
         console.log("✅ Connected to MongoDB");
+
+        // Clear the promise after successful connection
+        connectionPromise = null;
+
         return cachedConnection;
     } catch (error) {
         console.error("❌ MongoDB connection error:", error);
+        connectionPromise = null; // Clear failed promise
+        cachedConnection = null; // Clear failed connection
         throw error;
     }
 };
@@ -148,17 +125,31 @@ app.use(async (req, res, next) => {
         res.status(500).json({
             success: false,
             message: "Database connection failed",
-            error: process.env.NODE_ENV === "development" ? error.message : undefined,
+            error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
         });
     }
 });
 
 // Add health check endpoint
 app.get("/health", (req, res) => {
+    const dbStatus = mongoose.connection.readyState;
+    const dbStatusText = {
+        0: "disconnected",
+        1: "connected",
+        2: "connecting",
+        3: "disconnecting",
+    };
+
     res.status(200).json({
         status: "ok",
+        message: "Smart Todo API is running in production",
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || "development",
+        database: {
+            status: dbStatusText[dbStatus] || "unknown",
+            readyState: dbStatus,
+        },
+        version: "1.0.0",
     });
 });
 
@@ -166,8 +157,23 @@ app.get("/health", (req, res) => {
 app.get("/", (req, res) => {
     res.status(200).json({
         success: true,
-        message: "Smart Todo API is running",
+        message: "Smart Todo API is running in production",
         timestamp: new Date().toISOString(),
+        version: "1.0.0",
+        endpoints: {
+            health: "/health",
+            api: {
+                users: "/api/users",
+                tasks: "/api/tasks",
+                subtasks: "/api/subtasks",
+                notifications: "/api/notifications",
+                reminders: "/api/reminders",
+                dependencies: "/api/dependencies",
+                streaks: "/api/streaks",
+                notes: "/api/notes",
+                attachments: "/api/attachments",
+            },
+        },
     });
 });
 
@@ -188,7 +194,7 @@ app.use((err, req, res, next) => {
     res.status(err.status || 500).json({
         success: false,
         message: err.message || "Internal Server Error",
-        error: process.env.NODE_ENV === "development" ? err : undefined,
+        error: process.env.NODE_ENV === "development" ? err.stack : undefined,
     });
 });
 
@@ -197,10 +203,23 @@ app.use((req, res) => {
     res.status(404).json({
         success: false,
         message: "Route not found",
+        availableRoutes: [
+            "/",
+            "/health",
+            "/api/users",
+            "/api/tasks",
+            "/api/subtasks",
+            "/api/notifications",
+            "/api/reminders",
+            "/api/dependencies",
+            "/api/streaks",
+            "/api/notes",
+            "/api/attachments",
+        ],
     });
 });
 
-// Error handling for unhandled rejections
+// Error handling for unhandled rejections (with better logging)
 process.on("unhandledRejection", (err) => {
     console.error("❌ Unhandled Promise Rejection:", err);
 });
@@ -209,21 +228,16 @@ process.on("uncaughtException", (err) => {
     console.error("❌ Uncaught Exception:", err);
 });
 
+// Graceful shutdown for serverless
+process.on("SIGTERM", async () => {
+    console.log("SIGTERM received, closing database connection...");
+    try {
+        await mongoose.connection.close();
+        console.log("Database connection closed.");
+    } catch (error) {
+        console.error("Error closing database connection:", error);
+    }
+});
+
 // Export the Express app for Vercel
 export default app;
-
-// Only start the server if not in a serverless environment
-if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
-    const PORT = process.env.PORT || 5000;
-    connectToDatabase()
-        .then(() => {
-            server.listen(PORT, () => {
-                console.log(`🚀 Server is running on port ${PORT}`);
-                console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-            });
-        })
-        .catch((error) => {
-            console.error("Failed to start server:", error);
-            process.exit(1);
-        });
-}
