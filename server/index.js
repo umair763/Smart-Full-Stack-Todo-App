@@ -192,24 +192,56 @@ const MONGO_URI =
         ? process.env.MONGO_URI_DEPLOYED
         : process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp";
 
-// Connect to MongoDB
+// Connect to MongoDB with improved options
 mongoose
     .connect(MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 30000,
-        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 50000, // Increased timeout
+        socketTimeoutMS: 45000, // Socket timeout
+        connectTimeoutMS: 50000, // Connection timeout
+        maxPoolSize: 10, // Maximum number of connections in the pool
+        minPoolSize: 5, // Minimum number of connections in the pool
+        retryWrites: true,
+        retryReads: true,
+        w: "majority", // Write concern
+        wtimeoutMS: 2500, // Write concern timeout
     })
-    .then(() => console.log("MongoDB connected successfully"))
-    .catch((err) => console.error("MongoDB connection error:", err));
+    .then(() => {
+        console.log("Connected to MongoDB successfully");
+        // Start the server only after successful database connection
+        server.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    })
+    .catch((error) => {
+        console.error("MongoDB connection error:", error);
+        process.exit(1); // Exit if cannot connect to database
+    });
 
-// Add error handler for MongoDB connection
+// Handle MongoDB connection events
 mongoose.connection.on("error", (err) => {
     console.error("MongoDB connection error:", err);
 });
 
 mongoose.connection.on("disconnected", () => {
-    console.warn("MongoDB disconnected. Attempting to reconnect...");
+    console.log("MongoDB disconnected");
+});
+
+mongoose.connection.on("reconnected", () => {
+    console.log("MongoDB reconnected");
+});
+
+// Handle process termination
+process.on("SIGINT", async () => {
+    try {
+        await mongoose.connection.close();
+        console.log("MongoDB connection closed through app termination");
+        process.exit(0);
+    } catch (err) {
+        console.error("Error during MongoDB connection closure:", err);
+        process.exit(1);
+    }
 });
 
 // Health check route
@@ -309,10 +341,3 @@ app.use("/api/*", (req, res) => {
 
 // For Vercel: Export the Express app as default
 export default app;
-
-// For local development: Start the server
-if (process.env.NODE_ENV !== "production") {
-    server.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-    });
-}
