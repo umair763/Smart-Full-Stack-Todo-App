@@ -11,7 +11,9 @@ import Streak from "../models/Streak.js";
 import { OAuth2Client } from "google-auth-library";
 import multer from "multer";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// Hardcoded Google Client ID - Replace this with your actual Google Client ID
+const GOOGLE_CLIENT_ID = "726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com";
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Configure multer for profile image upload
 const storage = multer.memoryStorage();
@@ -124,17 +126,23 @@ export const googleSignIn = async (req, res) => {
             });
         }
 
+        console.log("Received Google token:", token.substring(0, 20) + "...");
+        console.log("Using Google Client ID:", GOOGLE_CLIENT_ID);
+
         try {
             const ticket = await client.verifyIdToken({
                 idToken: token,
-                audience: process.env.GOOGLE_CLIENT_ID,
+                audience: GOOGLE_CLIENT_ID,
             });
 
+            console.log("Token verification successful");
             const { email, name, picture, sub: googleId } = ticket.getPayload();
+            console.log("Token payload:", { email, name, googleId });
 
             // Find or create user
             let user = await User.findOne({ email });
             if (!user) {
+                console.log("Creating new user for Google sign-in");
                 user = new User({
                     username: name,
                     email,
@@ -161,6 +169,11 @@ export const googleSignIn = async (req, res) => {
             });
         } catch (error) {
             console.error("Google token verification error:", error);
+            console.error("Error details:", {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+            });
             return res.status(401).json({
                 message: "Invalid Google token",
                 code: "INVALID_GOOGLE_TOKEN",
