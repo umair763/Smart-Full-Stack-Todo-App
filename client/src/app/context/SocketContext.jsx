@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import io from 'socket.io-client';
 import toast from 'react-hot-toast';
-import { SOCKET_URL } from '../../config/env';
+
+// Get socket URL from environment variable
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'https://smart-todo-task-management-backend.vercel.app';
 
 // Create context
 const SocketContext = createContext(null);
