@@ -117,7 +117,7 @@ export const login = async (req, res) => {
 // Google Sign In
 export const googleSignIn = async (req, res) => {
     try {
-        const { token } = req.body;
+        const { token, clientId } = req.body;
 
         if (!token) {
             return res.status(400).json({
@@ -127,12 +127,15 @@ export const googleSignIn = async (req, res) => {
         }
 
         console.log("Received Google token:", token.substring(0, 20) + "...");
-        console.log("Using Google Client ID:", GOOGLE_CLIENT_ID);
+        console.log("Using Google Client ID:", clientId);
 
         try {
+            // Create a new client with the provided client ID
+            const client = new OAuth2Client(clientId);
+
             const ticket = await client.verifyIdToken({
                 idToken: token,
-                audience: GOOGLE_CLIENT_ID,
+                audience: clientId,
             });
 
             console.log("Token verification successful");
@@ -153,7 +156,7 @@ export const googleSignIn = async (req, res) => {
             }
 
             // Generate token
-            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "your-secret-key", {
                 expiresIn: "7d",
             });
 

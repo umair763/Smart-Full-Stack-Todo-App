@@ -21,9 +21,12 @@ function GoogleSignIn() {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
+               Accept: 'application/json',
             },
-            body: JSON.stringify({ token: credential }),
-            credentials: 'include',
+            body: JSON.stringify({
+               token: credential,
+               clientId: '726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com', // Send client ID from frontend
+            }),
          });
 
          if (!backendResponse.ok) {
@@ -55,7 +58,7 @@ function GoogleSignIn() {
    return (
       <div className="pt-1">
          {error && <div className="text-red-500 text-sm mb-2 text-center">{error}</div>}
-         <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} useOneTap={false} />
+         <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} useOneTap={false} flow="implicit" />
       </div>
    );
 }
