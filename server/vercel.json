@@ -1,135 +1,27 @@
 {
     "version": 2,
-    "name": "smart-todo-backend",
-    "builds": [
-        {
-            "src": "index.js",
-            "use": "@vercel/node@3.0.0"
+    "functions": {
+        "index.js": {
+            "runtime": "nodejs18.x",
+            "maxDuration": 30
         }
-    ],
-    "routes": [
+    },
+    "rewrites": [
         {
-            "src": "/health",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
+            "source": "/api/(.*)",
+            "destination": "/index.js"
         },
         {
-            "src": "/api/users/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
+            "source": "/health",
+            "destination": "/index.js"
         },
         {
-            "src": "/api/tasks/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
+            "source": "/socket.io/(.*)",
+            "destination": "/index.js"
         },
         {
-            "src": "/api/subtasks/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/api/notifications/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/api/reminders/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/api/dependencies/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/api/streaks/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/api/notes/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/api/attachments/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/socket.io/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
+            "source": "/(.*)",
+            "destination": "/index.js"
         }
-    ],
-    "env": {
-        "NODE_ENV": "production"
-    }
+    ]
 }
