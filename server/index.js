@@ -6,7 +6,7 @@ import { Server } from "socket.io";
 import { EventEmitter } from "events";
 import dotenv from "dotenv";
 
-// Import and use routes
+// Import routes
 import userRoutes from "./routes/userRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import subtaskRoutes from "./routes/subtaskRoutes.js";
@@ -30,6 +30,12 @@ export { dbEvents };
 // Environment variables
 const MONGO_URI = process.env.MONGODB_URI;
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://smart-todo-task-management-frontend.vercel.app";
+
+// Validate required environment variables
+if (!MONGO_URI) {
+    console.error("❌ MONGODB_URI is not set");
+    process.exit(1);
+}
 
 // Basic middleware
 app.use(express.json({ limit: "10mb" }));
@@ -88,36 +94,89 @@ io.on("connection", (socket) => {
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
-// MongoDB connection cache
-let cached = global.mongoose;
+// MongoDB connection state
+let isConnected = false;
+let connectionPromise = null;
 
-if (!cached) {
-    cached = global.mongoose = { conn: null, promise: null };
-}
-
-async function connectDB() {
-    if (cached.conn) {
-        return cached.conn;
+// Optimized MongoDB connection for serverless
+const connectDB = async () => {
+    if (isConnected) {
+        console.log("Using existing MongoDB connection");
+        return;
     }
 
-    if (!cached.promise) {
-        cached.promise = mongoose.connect(MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            bufferCommands: false,
-            maxPoolSize: 5,
-            serverSelectionTimeoutMS: 5000,
-        });
+    if (connectionPromise) {
+        console.log("Connection in progress, waiting...");
+        return connectionPromise;
     }
 
     try {
-        cached.conn = await cached.promise;
-        return cached.conn;
-    } catch (e) {
-        cached.promise = null;
-        throw e;
+        console.log("Establishing new MongoDB connection...");
+
+        connectionPromise = mongoose.connect(MONGO_URI, {
+            // Optimize for serverless
+            maxPoolSize: 1,
+            minPoolSize: 0,
+            maxIdleTimeMS: 30000,
+            bufferMaxEntries: 0,
+
+            // Connection timeouts
+            serverSelectionTimeoutMS: 8000,
+            socketTimeoutMS: 45000,
+            connectTimeoutMS: 10000,
+
+            // Heartbeat settings
+            heartbeatFrequencyMS: 10000,
+
+            // Use new parser and topology
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+
+        await connectionPromise;
+
+        isConnected = true;
+        console.log("✅ MongoDB connected successfully");
+
+        // Handle connection events
+        mongoose.connection.on("error", (err) => {
+            console.error("❌ MongoDB connection error:", err);
+            isConnected = false;
+            connectionPromise = null;
+        });
+
+        mongoose.connection.on("disconnected", () => {
+            console.log("⚠️  MongoDB disconnected");
+            isConnected = false;
+            connectionPromise = null;
+        });
+
+        return mongoose.connection;
+    } catch (error) {
+        console.error("❌ MongoDB connection failed:", error);
+        isConnected = false;
+        connectionPromise = null;
+        throw error;
     }
-}
+};
+
+// Middleware to ensure database connection
+const ensureDBConnection = async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error("Database connection middleware error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Database connection failed",
+            error: process.env.NODE_ENV === "development" ? error.message : undefined,
+        });
+    }
+};
+
+// Apply database middleware to all routes
+app.use("/api", ensureDBConnection);
 
 // Health check
 app.get("/health", async (req, res) => {
