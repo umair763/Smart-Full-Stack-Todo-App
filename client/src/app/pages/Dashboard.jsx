@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '../../components/ThemeToggle';
 import AddTaskForm from '../../components/AddTaskForm';
 import DisplayTodoList from '../../components/DisplayTodoList';
-import NotificationList from '../../components/NotificationList';
+import NotificationCenter from '../../components/NotificationCenter';
 import UserProfile from '../../components/UserProfile';
 
 // Hardcoded backend URL
@@ -212,7 +212,7 @@ function Dashboard() {
                   exit={{ opacity: 0, y: -20 }}
                   className="fixed top-16 right-4 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg"
                >
-                  <NotificationList />
+                  <NotificationCenter />
                </motion.div>
             )}
          </AnimatePresence>
