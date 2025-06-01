@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { FiMaximize, FiMinimize } from 'react-icons/fi';
 
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function DependencyGraph({ taskId, fullScreen = false, onToggleFullScreen }) {
    const [dependencies, setDependencies] = useState({ prerequisites: [], dependents: [] });
@@ -34,7 +34,7 @@ function DependencyGraph({ taskId, fullScreen = false, onToggleFullScreen }) {
 
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/dependencies/task/${taskId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/dependencies/task/${taskId}`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },
@@ -57,7 +57,7 @@ function DependencyGraph({ taskId, fullScreen = false, onToggleFullScreen }) {
    const fetchAllTasks = async () => {
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },

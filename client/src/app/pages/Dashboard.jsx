@@ -1,287 +1,252 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import TodoListParser from '../../components/TodoListParser';
-import AddTask from '../../components/AddTask';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
+import { useSocket } from '../context/SocketContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import ThemeToggle from '../../components/ThemeToggle';
 import AddTaskForm from '../../components/AddTaskForm';
-import DeleteTaskForm from '../../components/DeleteTaskForm';
-import Modal from '../../components/Modal';
-import ReminderModal from '../../components/ReminderModal';
-import DeleteTaskModal from '../../components/DeleteTaskModal';
-import { API_BASE_URL } from '../../config/env';
+import DisplayTodoList from '../../components/DisplayTodoList';
+import NotificationList from '../../components/NotificationList';
+import UserProfile from '../../components/UserProfile';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function Dashboard() {
    const [tasks, setTasks] = useState([]);
-   const [isAddFormVisible, setIsAddFormVisible] = useState(false);
-   const [isDeleteFormVisible, setIsDeleteFormVisible] = useState(false);
-   const [isLoading, setIsLoading] = useState(true);
-   const [apiError, setApiError] = useState('');
-   const [searchTerm, setSearchTerm] = useState('');
-   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
-   const [selectedTask, setSelectedTask] = useState(null);
-
-   // Simple delete modal state
-   const [deleteModal, setDeleteModal] = useState({
-      isOpen: false,
-      taskId: null,
-      taskName: '',
-      isDeleting: false,
-   });
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState(null);
+   const [deleteModal, setDeleteModal] = useState({ show: false, taskId: null });
+   const [showNotifications, setShowNotifications] = useState(false);
+   const { token, logout } = useAuth();
+   const { notifications, unreadCount } = useNotifications();
+   const { socket } = useSocket();
+   const navigate = useNavigate();
 
    useEffect(() => {
+      if (!token) {
+         navigate('/login');
+         return;
+      }
+
       fetchTasks();
-   }, []);
+      setupSocketListeners();
+
+      return () => {
+         if (socket) {
+            socket.off('taskCreated');
+            socket.off('taskUpdated');
+            socket.off('taskDeleted');
+         }
+      };
+   }, [token, socket]);
+
+   const setupSocketListeners = () => {
+      if (socket) {
+         socket.on('taskCreated', (newTask) => {
+            setTasks((prev) => [...prev, newTask]);
+         });
+
+         socket.on('taskUpdated', (updatedTask) => {
+            setTasks((prev) => prev.map((task) => (task._id === updatedTask._id ? updatedTask : task)));
+         });
+
+         socket.on('taskDeleted', (deletedTaskId) => {
+            setTasks((prev) => prev.filter((task) => task._id !== deletedTaskId));
+         });
+      }
+   };
 
    const fetchTasks = async () => {
-      setIsLoading(true);
-      setApiError('');
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('No authentication token found');
-         }
-
-         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
-            method: 'GET',
+         const response = await fetch(`${BACKEND_URL}/api/tasks`, {
             headers: {
                Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
             },
          });
 
          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error('Failed to fetch tasks');
          }
 
          const data = await response.json();
          setTasks(data);
-      } catch (error) {
-         console.error('Error fetching tasks:', error);
-         setApiError('Failed to fetch tasks. Please try again.');
+      } catch (err) {
+         setError(err.message);
       } finally {
-         setIsLoading(false);
+         setLoading(false);
       }
    };
 
-   const isexceeded = (date, time) => {
-      const now = new Date();
-      const taskDate = new Date(`${date} ${time}`);
-      return taskDate < now;
-   };
-
-   const handleisAddFormVisible = () => {
-      setIsAddFormVisible(!isAddFormVisible);
-   };
-
-   const handleisDeleteFormVisible = () => {
-      setIsDeleteFormVisible(!isDeleteFormVisible);
-   };
-
-   const handleSearchChange = (searchValue) => {
-      setSearchTerm(searchValue);
-   };
-
-   function handleAddNewTasks(task) {
-      const newTask = {
-         ...task,
-         _id: Date.now(), // Temporary ID for optimistic update
-         completed: false,
-         createdAt: new Date().toISOString(),
-         userId: localStorage.getItem('userId'),
-      };
-
-      // Add task optimistically
-      setTasks((prevTasks) => [...prevTasks, newTask]);
-      setIsAddFormVisible(false);
-
-      // Make the API call
-      addTask(task);
-   }
-
-   const addTask = async (task) => {
+   const handleAddTask = async (newTask) => {
       try {
-         const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
                Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(task),
+            body: JSON.stringify(newTask),
          });
 
          if (!response.ok) {
             throw new Error('Failed to add task');
          }
 
-         // Refresh tasks to get the actual task with server-generated ID
-         fetchTasks();
-      } catch (error) {
-         console.error('Error adding task:', error);
-         setApiError('Failed to add task. Please try again.');
-         // Remove the optimistically added task on error
-         setTasks((prevTasks) => prevTasks.filter((t) => t._id !== Date.now()));
+         const data = await response.json();
+         setTasks((prev) => [...prev, data]);
+      } catch (err) {
+         setError(err.message);
       }
    };
 
-   const handleDeleteTask = async (taskId) => {
-      // Find the task to get its name for the modal
-      const taskToDelete = tasks.find((task) => task._id === taskId);
-
-      // Show confirmation modal first
-      setDeleteModal({
-         isOpen: true,
-         taskId: taskId,
-         taskName: taskToDelete?.task || 'Unknown Task',
-         isDeleting: false,
-      });
-   };
-
-   // Handle simple delete confirmation
-   const handleDeleteConfirm = async () => {
-      setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+   const handleDeleteTask = async () => {
+      if (!deleteModal.taskId) return;
 
       try {
-         const token = localStorage.getItem('token');
-
-         // First attempt to delete without confirmation
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${deleteModal.taskId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
             },
-         });
-
-         if (response.status === 409) {
-            // Task has dependents, force delete with cascade
-            const cascadeResponse = await fetch(`${API_BASE_URL}/api/tasks/${deleteModal.taskId}`, {
-               method: 'DELETE',
-               headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-               },
-               body: JSON.stringify({ confirmCascade: true }),
-            });
-
-            if (!cascadeResponse.ok) {
-               const errorData = await cascadeResponse.json();
-               throw new Error(errorData.message || 'Failed to delete task');
-            }
-         } else if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to delete task');
-         }
-
-         // Regular deletion (no dependents) - Remove the task from local state
-         setTasks((prevTasks) => prevTasks.filter((task) => task._id !== deleteModal.taskId));
-         setIsDeleteFormVisible(false); // Close the form after successful deletion
-         setApiError('');
-
-         // Close the modal
-         setDeleteModal({
-            isOpen: false,
-            taskId: null,
-            taskName: '',
-            isDeleting: false,
-         });
-
-         // Note: We don't create a success notification here because the backend already sends one
-      } catch (error) {
-         console.error('Error deleting task:', error);
-         setApiError(error.message || 'Failed to delete task. Please try again.');
-         setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
-      }
-   };
-
-   // Handle simple delete cancel
-   const handleDeleteCancel = () => {
-      setDeleteModal({
-         isOpen: false,
-         taskId: null,
-         taskName: '',
-         isDeleting: false,
-      });
-   };
-
-   const handleSetReminder = async (reminderData) => {
-      try {
-         const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
-            method: 'POST',
-            headers: {
-               'Content-Type': 'application/json',
-               Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(reminderData),
          });
 
          if (!response.ok) {
-            throw new Error('Failed to set reminder');
+            throw new Error('Failed to delete task');
          }
 
-         toast.success('Reminder set successfully');
-      } catch (error) {
-         console.error('Error setting reminder:', error);
-         toast.error('Failed to set reminder');
+         setTasks((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
+         setDeleteModal({ show: false, taskId: null });
+      } catch (err) {
+         setError(err.message);
       }
    };
 
+   const handleDeleteWithCascade = async () => {
+      if (!deleteModal.taskId) return;
+
+      try {
+         const cascadeResponse = await fetch(`${BACKEND_URL}/api/tasks/${deleteModal.taskId}`, {
+            method: 'DELETE',
+            headers: {
+               Authorization: `Bearer ${token}`,
+               'X-Cascade-Delete': 'true',
+            },
+         });
+
+         if (!cascadeResponse.ok) {
+            throw new Error('Failed to delete task and dependencies');
+         }
+
+         setTasks((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
+         setDeleteModal({ show: false, taskId: null });
+      } catch (err) {
+         setError(err.message);
+      }
+   };
+
+   const handleLogout = () => {
+      logout();
+      navigate('/login');
+   };
+
+   if (loading) {
+      return <div>Loading...</div>;
+   }
+
+   if (error) {
+      return <div>Error: {error}</div>;
+   }
+
    return (
-      <div className="w-full sm:w-11/12 md:w-10/12 lg:w-11/12 dark:from-gray-900 dark:to-gray-800 p-1 sm:p-2 md:p-3 lg:p-4 xl:p-6">
-         <div className="max-w-7xl mx-auto px-1 sm:px-2 md:px-4 lg:px-6">
-            {/* Main Content */}
-            <div className="space-y-2 sm:space-y-4 md:space-y-6">
-               <AddTask
-                  SetisAddFormVisible={handleisAddFormVisible}
-                  setisDeleteFormVisible={handleisDeleteFormVisible}
-                  onSearchChange={handleSearchChange}
-               />
-               {apiError && (
-                  <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-2 py-2 sm:px-3 sm:py-2 md:px-4 md:py-3 rounded text-xs sm:text-sm md:text-base">
-                     {apiError}
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+         <nav className="bg-white dark:bg-gray-800 shadow-lg">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+               <div className="flex justify-between h-16">
+                  <div className="flex items-center">
+                     <h1 className="text-xl font-bold text-gray-900 dark:text-white">Task Manager</h1>
                   </div>
-               )}
-
-               {isLoading ? (
-                  <div className="flex justify-center items-center h-24 sm:h-32 md:h-40">
-                     <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 md:h-12 md:w-12 border-t-2 border-b-2 border-white dark:border-gray-300"></div>
+                  <div className="flex items-center space-x-4">
+                     <ThemeToggle />
+                     <button
+                        onClick={() => setShowNotifications(!showNotifications)}
+                        className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                     >
+                        <span className="sr-only">Notifications</span>
+                        <svg
+                           className="h-6 w-6"
+                           fill="none"
+                           strokeLinecap="round"
+                           strokeLinejoin="round"
+                           strokeWidth="2"
+                           viewBox="0 0 24 24"
+                           stroke="currentColor"
+                        >
+                           <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        {unreadCount > 0 && (
+                           <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800" />
+                        )}
+                     </button>
+                     <UserProfile onLogout={handleLogout} />
                   </div>
-               ) : (
-                  <div className="bg-white/10 dark:bg-white/5 backdrop-blur-md rounded-xl p-2 sm:p-3 md:p-4 lg:p-6">
-                     <TodoListParser searchTerm={searchTerm} />
-                  </div>
-               )}
+               </div>
             </div>
-         </div>
+         </nav>
 
-         {/* Form Modals */}
-         <Modal isOpen={isAddFormVisible} onClose={handleisAddFormVisible}>
-            <AddTaskForm addTask={handleAddNewTasks} SetisAddFormVisible={handleisAddFormVisible} />
-         </Modal>
-         <Modal isOpen={isDeleteFormVisible} onClose={handleisDeleteFormVisible}>
-            <DeleteTaskForm
-               tasks={tasks}
-               deleteTask={handleDeleteTask}
-               setisDeleteFormVisible={handleisDeleteFormVisible}
-            />
-         </Modal>
-         <ReminderModal
-            isOpen={isReminderModalOpen}
-            onClose={() => {
-               setIsReminderModalOpen(false);
-               setSelectedTask(null);
-            }}
-            task={selectedTask}
-            onSetReminder={handleSetReminder}
-         />
-         <DeleteTaskModal
-            isOpen={deleteModal.isOpen}
-            onClose={handleDeleteCancel}
-            onConfirm={handleDeleteConfirm}
-            taskName={deleteModal.taskName}
-            isDeleting={deleteModal.isDeleting}
-         />
+         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div className="px-4 py-6 sm:px-0">
+               <AddTaskForm onAddTask={handleAddTask} />
+               <DisplayTodoList tasks={tasks} onDeleteTask={(taskId) => setDeleteModal({ show: true, taskId })} />
+            </div>
+         </main>
+
+         <AnimatePresence>
+            {showNotifications && (
+               <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="fixed top-16 right-4 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-lg"
+               >
+                  <NotificationList />
+               </motion.div>
+            )}
+         </AnimatePresence>
+
+         {deleteModal.show && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+               <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Delete Task</h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                     Are you sure you want to delete this task? This action cannot be undone.
+                  </p>
+                  <div className="flex justify-end space-x-4">
+                     <button
+                        onClick={() => setDeleteModal({ show: false, taskId: null })}
+                        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                     >
+                        Cancel
+                     </button>
+                     <button
+                        onClick={handleDeleteTask}
+                        className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
+                     >
+                        Delete
+                     </button>
+                     <button
+                        onClick={handleDeleteWithCascade}
+                        className="px-4 py-2 text-sm font-medium text-white bg-red-800 hover:bg-red-900 rounded-md"
+                     >
+                        Delete with Dependencies
+                     </button>
+                  </div>
+               </div>
+            </div>
+         )}
       </div>
    );
 }

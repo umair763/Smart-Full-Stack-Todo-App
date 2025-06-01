@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
-import { SOCKET_URL } from '../config/env';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 const SocketContext = createContext();
 
@@ -12,7 +14,7 @@ export const SocketProvider = ({ children }) => {
    const [isConnected, setIsConnected] = useState(false);
 
    useEffect(() => {
-      const socketInstance = io(SOCKET_URL, {
+      const socketInstance = io(BACKEND_URL, {
          withCredentials: true,
       });
 

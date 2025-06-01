@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ChangeProfileImage from '../../components/settings/ChangeProfileImage';
@@ -22,7 +23,9 @@ import {
    FiMonitor,
 } from 'react-icons/fi';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
-import { API_BASE_URL } from '../../config/env';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 // Tab configuration with icons and colors
 const tabs = [
@@ -67,6 +70,8 @@ function Settings() {
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState('');
    const [success, setSuccess] = useState('');
+   const [user, setUser] = useState(null);
+   const navigate = useNavigate();
 
    // Settings states
    const [exportLoading, setExportLoading] = useState(false);
@@ -87,65 +92,50 @@ function Settings() {
       }, 150);
    };
 
-   // Fetch user details
    useEffect(() => {
-      const fetchUserProfile = async () => {
-         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-               return;
-            }
-
-            const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
-               method: 'GET',
-               headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-               },
-               credentials: 'include',
-            });
-
-            if (!response.ok) {
-               throw new Error('Failed to fetch profile');
-            }
-
-            const data = await response.json();
-            setUserDetails(data);
-            setUsername(data.username);
-         } catch (err) {
-            setError('Error loading profile. Please try again.');
-            console.error(err);
-         } finally {
-            setLoading(false);
-         }
-      };
-
-      fetchUserProfile();
-   }, []);
-
-   // Handle profile image upload
-   const handleImageUpload = async (e) => {
-      e.preventDefault();
-      setError('');
-      setSuccess('');
-
-      if (!profileImage) {
-         setError('Please select an image');
+      if (!localStorage.getItem('token')) {
+         navigate('/login');
          return;
       }
 
-      const formData = new FormData();
-      formData.append('picture', profileImage);
+      fetchUserProfile();
+   }, [navigate]);
 
+   const fetchUserProfile = async () => {
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/profile-image`, {
-            method: 'PUT',
+         const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },
-            body: formData,
-            credentials: 'include',
+         });
+
+         if (!response.ok) {
+            throw new Error('Failed to fetch user profile');
+         }
+
+         const data = await response.json();
+         setUserDetails(data);
+         setUsername(data.username);
+         setUser(data);
+      } catch (err) {
+         setError('Error loading profile. Please try again.');
+         console.error(err);
+      } finally {
+         setLoading(false);
+      }
+   };
+
+   const handleProfileImageUpdate = async (imageUrl) => {
+      try {
+         const token = localStorage.getItem('token');
+         const response = await fetch(`${BACKEND_URL}/api/users/profile-image`, {
+            method: 'PUT',
+            headers: {
+               'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ profileImage: imageUrl }),
          });
 
          if (!response.ok) {
@@ -153,46 +143,24 @@ function Settings() {
          }
 
          const data = await response.json();
-         setSuccess('Profile image updated successfully');
-
-         // Update user details with new image
          setUserDetails(data.user);
-
-         // Clear the file input
-         setProfileImage(null);
-
-         // Reset the file input field
-         const fileInput = e.target.form.querySelector('input[type="file"]');
-         if (fileInput) {
-            fileInput.value = '';
-         }
+         setUser((prev) => ({ ...prev, profileImage: data.profileImage }));
       } catch (err) {
          setError('Error updating profile image. Please try again.');
          console.error(err);
       }
    };
 
-   // Handle username update
-   const handleUsernameUpdate = async (e) => {
-      e.preventDefault();
-      setError('');
-      setSuccess('');
-
-      if (!username) {
-         setError('Username cannot be empty');
-         return;
-      }
-
+   const handleUsernameUpdate = async (newUsername) => {
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/username`, {
+         const response = await fetch(`${BACKEND_URL}/api/users/username`, {
             method: 'PUT',
             headers: {
                'Content-Type': 'application/json',
                Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ username }),
-            credentials: 'include',
+            body: JSON.stringify({ username: newUsername }),
          });
 
          if (!response.ok) {
@@ -200,29 +168,25 @@ function Settings() {
          }
 
          const data = await response.json();
-         setSuccess('Username updated successfully');
-
-         // Update user details with new username
          setUserDetails(data.user);
+         setUser((prev) => ({ ...prev, username: data.username }));
       } catch (err) {
          setError('Error updating username. Please try again.');
          console.error(err);
       }
    };
 
-   // Handle theme change
    const handleThemeChange = (newTheme) => {
       changeTheme(newTheme);
       setSuccess('Theme updated successfully');
       setTimeout(() => setSuccess(''), 2000);
    };
 
-   // Handle data export
    const handleDataExport = async () => {
       setExportLoading(true);
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/export-data`, {
+         const response = await fetch(`${BACKEND_URL}/api/users/export-data`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -237,11 +201,11 @@ function Settings() {
          const url = window.URL.createObjectURL(blob);
          const a = document.createElement('a');
          a.href = url;
-         a.download = `todo-data-${new Date().toISOString().split('T')[0]}.json`;
+         a.download = 'user-data.json';
          document.body.appendChild(a);
          a.click();
-         document.body.removeChild(a);
          window.URL.revokeObjectURL(url);
+         document.body.removeChild(a);
 
          setSuccess('Data exported successfully');
       } catch (err) {
@@ -251,7 +215,6 @@ function Settings() {
       }
    };
 
-   // Handle account deletion
    const handleOpenDeleteModal = () => {
       setIsDeleteModalOpen(true);
       setError('');
@@ -270,11 +233,10 @@ function Settings() {
 
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/users/account`, {
+         const response = await fetch(`${BACKEND_URL}/api/users/account`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
             },
          });
 
@@ -286,14 +248,9 @@ function Settings() {
          const result = await response.json();
          console.log('Account deletion successful:', result);
 
-         // Successfully deleted account, now logout and redirect to landing page
          logout();
-
-         // Clear all local storage
          localStorage.clear();
-
-         // Redirect to landing page
-         window.location.href = '/';
+         navigate('/login');
       } catch (err) {
          console.error('Delete account error:', err);
          setError(err.message || 'An error occurred while deleting your account');
@@ -426,7 +383,13 @@ function Settings() {
                                     <p className="text-white/60 text-sm">{userDetails?.email}</p>
                                  </div>
 
-                                 <form onSubmit={handleImageUpload} className="space-y-4">
+                                 <form
+                                    onSubmit={(e) => {
+                                       e.preventDefault();
+                                       handleProfileImageUpdate(userDetails.picture);
+                                    }}
+                                    className="space-y-4"
+                                 >
                                     <div>
                                        <label className="block text-white font-medium mb-3 text-sm">
                                           Select new profile image
@@ -451,7 +414,13 @@ function Settings() {
                               {/* Enhanced Username Section */}
                               <div className="bg-white/5 dark:bg-white/3 rounded-xl p-6 border border-white/10 dark:border-white/5">
                                  <h4 className="text-white font-semibold mb-6 text-lg">Username Settings</h4>
-                                 <form onSubmit={handleUsernameUpdate} className="space-y-4">
+                                 <form
+                                    onSubmit={(e) => {
+                                       e.preventDefault();
+                                       handleUsernameUpdate(username);
+                                    }}
+                                    className="space-y-4"
+                                 >
                                     <div>
                                        <label className="block text-white font-medium mb-3 text-sm">Username</label>
                                        <input

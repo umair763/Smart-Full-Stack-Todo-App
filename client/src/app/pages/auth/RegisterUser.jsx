@@ -4,7 +4,9 @@ import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
-import { getApiUrl } from '../../../config/env';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function RegisterUser() {
    const [formData, setFormData] = useState({
@@ -89,7 +91,7 @@ function RegisterUser() {
 
       try {
          // Send registration request
-         const response = await fetch(getApiUrl('users/register'), {
+         const response = await fetch(`${BACKEND_URL}/api/users/register`, {
             method: 'POST',
             body: submitData,
             // Don't set Content-Type header as FormData sets it automatically with boundary

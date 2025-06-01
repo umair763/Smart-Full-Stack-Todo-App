@@ -14,8 +14,11 @@ import Note from "../models/Note.js";
 // Connect to MongoDB
 const connectDB = async () => {
     try {
-        const connectionString = process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp";
-        console.log(`🔗 Connecting to: ${connectionString}`);
+        const connectionString = process.env.MONGODB_URI;
+        if (!connectionString) {
+            throw new Error("MONGODB_URI is not defined in environment variables");
+        }
+        console.log(`🔗 Connecting to MongoDB...`);
 
         await mongoose.connect(connectionString);
         console.log("✅ MongoDB connected successfully");

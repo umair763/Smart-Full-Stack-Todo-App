@@ -1,63 +1,42 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../app/context/AuthContext';
-import { API_BASE_URL } from '../../config/env';
+import { HiCamera } from 'react-icons/hi';
 
-// Use the consistent API base URL
-// const API_BASE_URL = API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
-const ChangeProfileImage = () => {
+function ChangeProfileImage() {
    const [selectedFile, setSelectedFile] = useState(null);
    const [previewUrl, setPreviewUrl] = useState(null);
-   const [isUploading, setIsUploading] = useState(false);
-   const [error, setError] = useState('');
-   const [success, setSuccess] = useState('');
-   const fileInputRef = useRef(null);
-   const { user } = useAuth();
+   const [loading, setLoading] = useState(false);
+   const [error, setError] = useState(null);
+   const [success, setSuccess] = useState(false);
+   const { token } = useAuth();
 
    const handleFileChange = (e) => {
       const file = e.target.files[0];
-      if (!file) return;
-
-      // Validate file type
-      if (!file.type.match('image.*')) {
-         setError('Please select an image file');
-         return;
+      if (file) {
+         setSelectedFile(file);
+         setPreviewUrl(URL.createObjectURL(file));
       }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-         setError('File size should not exceed 5MB');
-         return;
-      }
-
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setError('');
    };
 
-   const handleUpload = async () => {
-      if (!selectedFile) {
-         setError('Please select an image first');
-         return;
-      }
+   const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (!selectedFile) return;
 
-      setIsUploading(true);
-      setError('');
-      setSuccess('');
+      setLoading(true);
+      setError(null);
+      setSuccess(false);
+
+      const formData = new FormData();
+      formData.append('profileImage', selectedFile);
 
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const formData = new FormData();
-         formData.append('picture', selectedFile);
-
-         const response = await fetch(`${API_BASE_URL}/api/users/update-profile-image`, {
-            method: 'POST',
+         const response = await fetch(`${BACKEND_URL}/api/users/update-profile-image`, {
+            method: 'PUT',
             headers: {
                Authorization: `Bearer ${token}`,
             },
@@ -65,68 +44,66 @@ const ChangeProfileImage = () => {
          });
 
          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update profile image');
+            throw new Error('Failed to update profile image');
          }
 
-         setSuccess('Profile image updated successfully!');
-         // Clear the selected file
+         setSuccess(true);
          setSelectedFile(null);
-         if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-         }
+         setPreviewUrl(null);
       } catch (err) {
-         setError(err.message || 'Failed to update profile image');
+         setError(err.message);
       } finally {
-         setIsUploading(false);
+         setLoading(false);
       }
    };
 
    return (
-      <div>
-         <h3 className="text-2xl font-bold text-white mb-6 font-proza">Change Profile Image</h3>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+         <div className="flex items-center space-x-3 mb-4">
+            <HiCamera className="w-6 h-6 text-blue-500" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Change Profile Image</h2>
+         </div>
 
-         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
-         {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</div>
-         )}
-
-         <div className="mb-6 flex justify-center">
-            {previewUrl ? (
-               <img
-                  src={previewUrl || '/placeholder.svg'}
-                  alt="Preview"
-                  className="w-32 h-32 rounded-full object-cover border-4 border-white"
+         <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+               <label htmlFor="profileImage" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Select Image
+               </label>
+               <input
+                  type="file"
+                  id="profileImage"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="mt-1 block w-full text-sm text-gray-500 dark:text-gray-400
+                     file:mr-4 file:py-2 file:px-4
+                     file:rounded-md file:border-0
+                     file:text-sm file:font-semibold
+                     file:bg-blue-50 file:text-blue-700
+                     dark:file:bg-blue-900 dark:file:text-blue-300
+                     hover:file:bg-blue-100 dark:hover:file:bg-blue-800"
                />
-            ) : (
-               <div className="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center border-4 border-white">
-                  <span className="text-gray-500">No Image</span>
+            </div>
+
+            {previewUrl && (
+               <div className="mt-2">
+                  <img src={previewUrl} alt="Preview" className="w-32 h-32 object-cover rounded-full" />
                </div>
             )}
-         </div>
 
-         <div className="mb-6">
-            <label className="block text-white font-medium mb-2">Select Image</label>
-            <input
-               type="file"
-               ref={fileInputRef}
-               onChange={handleFileChange}
-               accept="image/*"
-               className="block w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-            />
-         </div>
+            {error && <div className="text-red-500 text-sm">{error}</div>}
 
-         <button
-            onClick={handleUpload}
-            disabled={isUploading || !selectedFile}
-            className={`w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors ${
-               isUploading || !selectedFile ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-         >
-            {isUploading ? 'Uploading...' : 'Upload Image'}
-         </button>
+            {success && <div className="text-green-500 text-sm">Profile image updated successfully!</div>}
+
+            <button
+               type="submit"
+               disabled={loading || !selectedFile}
+               className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+            >
+               {loading ? 'Updating...' : 'Update Profile Image'}
+            </button>
+         </form>
       </div>
    );
-};
+}
 
 export default ChangeProfileImage;

@@ -1,6 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import ThemeToggle from '../../components/ThemeToggle';
 import {
    LineChart,
    Line,
@@ -34,8 +37,8 @@ import {
 } from 'react-icons/hi';
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 // Color palette for charts
 const COLORS = {
@@ -54,7 +57,7 @@ const COLORS = {
 const CHART_COLORS = [COLORS.primary, COLORS.success, COLORS.warning, COLORS.danger, COLORS.info, COLORS.purple];
 
 function Insights() {
-   const [filter, setFilter] = useState('weekly');
+   const [filter, setFilter] = useState('week');
    const [viewMode, setViewMode] = useState('overview'); // overview, detailed, trends
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState('');
@@ -75,9 +78,17 @@ function Insights() {
    const [streakData, setStreakData] = useState({ current: 0, longest: 0 });
    const [streakMetrics, setStreakMetrics] = useState({});
 
+   const { token } = useAuth();
+   const navigate = useNavigate();
+
    useEffect(() => {
+      if (!token) {
+         navigate('/login');
+         return;
+      }
+
       fetchAllData();
-   }, [filter]);
+   }, [token, filter]);
 
    const fetchAllData = async (isRefresh = false) => {
       if (isRefresh) {
@@ -88,21 +99,15 @@ function Insights() {
       setError('');
 
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
          const headers = {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
          };
 
          // Fetch all data in parallel
          const [statsResponse, streakResponse, analyticsResponse] = await Promise.all([
-            fetch(`${API_BASE_URL}/api/tasks/stats?period=${filter}`, { headers }),
-            fetch(`${API_BASE_URL}/api/streaks`, { headers }),
-            fetch(`${API_BASE_URL}/api/streaks/analytics?period=${filter}`, { headers }),
+            fetch(`${BACKEND_URL}/api/tasks/stats?period=${filter}`, { headers }),
+            fetch(`${BACKEND_URL}/api/streaks`, { headers }),
+            fetch(`${BACKEND_URL}/api/streaks/analytics?period=${filter}`, { headers }),
          ]);
 
          if (!statsResponse.ok || !streakResponse.ok || !analyticsResponse.ok) {
@@ -315,419 +320,136 @@ function Insights() {
    }
 
    return (
-      <div
-         className="w-11/12 p-6 mx-auto bg-gradient-to-br from-slate-900/80 via-purple-900/80 to-slate-900/80 dark:from-gray-900/80 dark:via-gray-800/80 dark:to-gray-900/80 flex flex-col overflow-hidden rounded-xl">
-         <div className="flex flex-col h-full space-y-4 overflow-hidden">
-            {/* Compact Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 flex-shrink-0">
-               <div className="space-y-1">
-                  <h1 className="text-2xl lg:text-3xl font-bold text-white flex items-center gap-2 font-proza">
-                     <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg">
-                        <HiChartBar className="h-6 w-6 text-white" />
-                     </div>
-                     Task Insights
-                  </h1>
-                  <p className="text-white/70 text-sm">Real-time analytics and productivity tracking</p>
-               </div>
-
-               <div className="flex flex-col sm:flex-row gap-2">
-                  {/* View Mode Toggle */}
-                  <div className="flex bg-white/10 backdrop-blur-sm rounded-lg p-1 border border-white/20">
-                     {['overview', 'detailed', 'trends'].map((mode) => (
-                        <button
-                           key={mode}
-                           onClick={() => setViewMode(mode)}
-                           className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 capitalize ${
-                              viewMode === mode
-                                 ? 'bg-white text-purple-600 shadow-md'
-                                 : 'text-white/70 hover:text-white hover:bg-white/10'
-                           }`}
-                        >
-                           {mode}
-                        </button>
-                     ))}
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+         <nav className="bg-white dark:bg-gray-800 shadow-lg">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+               <div className="flex justify-between h-16">
+                  <div className="flex items-center">
+                     <h1 className="text-xl font-bold text-gray-900 dark:text-white">Insights</h1>
                   </div>
-
-                  {/* Time Filter */}
-                  <div className="relative">
+                  <div className="flex items-center space-x-4">
+                     <ThemeToggle />
                      <select
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
-                        className="mt-1 appearance-none bg-white/40 backdrop-blur-sm text-gray-950 px-3 py-1.5 pr-8 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer text-xs"
+                        className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md px-3 py-2"
                      >
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
+                        <option value="week">Last Week</option>
+                        <option value="month">Last Month</option>
+                        <option value="year">Last Year</option>
                      </select>
-                     <HiFilter className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70 pointer-events-none" />
-                  </div>
-
-                  {/* Refresh Button */}
-                  <button
-                     onClick={handleRefresh}
-                     disabled={refreshing}
-                     className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-xl text-xs"
-                  >
-                     <HiRefresh className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                     <span className="hidden sm:inline">Refresh</span>
-                  </button>
-               </div>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-               <div className="bg-red-500/20 backdrop-blur-sm border border-red-500/50 text-red-100 px-4 py-3 rounded-lg flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                     <HiExclamationCircle className="h-5 w-5 text-red-400" />
-                     <div>
-                        <div className="font-medium text-sm">Error loading data</div>
-                        <div className="text-xs text-red-200">{error}</div>
-                     </div>
                   </div>
                </div>
-            )}
-
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4">
-               {/* Overview Mode */}
-               {viewMode === 'overview' && (
-                  <>
-                     {/* Key Metrics Grid */}
-                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        <StatCard
-                           icon={HiChartBar}
-                           title="Total Tasks"
-                           value={totalTasks}
-                           color="from-purple-500 to-indigo-600"
-                           formula="Count of all tasks"
-                        />
-                        <StatCard
-                           icon={HiCheckCircle}
-                           title="Completed"
-                           value={completedTasks}
-                           subtitle={`${Math.round(completionRate)}% completion rate`}
-                           color="from-green-500 to-emerald-600"
-                           formula="(Completed ÷ Total) × 100"
-                        />
-                        <StatCard
-                           icon={HiClock}
-                           title="Pending"
-                           value={pendingTasks}
-                           color="from-yellow-500 to-orange-600"
-                           formula="Total - Completed"
-                        />
-                        <StatCard
-                           icon={HiExclamationCircle}
-                           title="Overdue"
-                           value={overdueTasks}
-                           color="from-red-500 to-pink-600"
-                           formula="Past due date & incomplete"
-                        />
-                     </div>
-
-                     {/* Charts Grid */}
-                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {/* Task Completion Trend */}
-                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-lg font-bold text-white flex items-center gap-2 font-proza">
-                                 <HiTrendingUp className="h-5 w-5 text-purple-400" />
-                                 Completion Trends
-                              </h3>
-                              <div className="text-xs text-white/60 capitalize">{filter} view</div>
-                           </div>
-                           <div className="h-48">
-                              <ResponsiveContainer width="100%" height="100%">
-                                 <AreaChart key={`${filter}-${stats.length}`} data={stats}>
-                                    <defs>
-                                       <linearGradient id="completedGradient" x1="0" y1="0" x2="0" y2="1">
-                                          <stop offset="5%" stopColor={COLORS.success} stopOpacity={0.8} />
-                                          <stop offset="95%" stopColor={COLORS.success} stopOpacity={0.1} />
-                                       </linearGradient>
-                                       <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
-                                          <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.8} />
-                                          <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0.1} />
-                                       </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                    <XAxis
-                                       dataKey="name"
-                                       stroke="rgba(255,255,255,0.7)"
-                                       fontSize={10}
-                                       interval={0}
-                                       angle={filter === 'weekly' ? 0 : -45}
-                                       textAnchor={filter === 'weekly' ? 'middle' : 'end'}
-                                       height={filter === 'weekly' ? 30 : 60}
-                                    />
-                                    <YAxis stroke="rgba(255,255,255,0.7)" fontSize={10} domain={[0, 'dataMax + 1']} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Legend />
-                                    <Area
-                                       type="monotone"
-                                       dataKey="total"
-                                       stroke={COLORS.primary}
-                                       fillOpacity={1}
-                                       fill="url(#totalGradient)"
-                                       name="Total Tasks"
-                                       strokeWidth={2}
-                                    />
-                                    <Area
-                                       type="monotone"
-                                       dataKey="completed"
-                                       stroke={COLORS.success}
-                                       fillOpacity={1}
-                                       fill="url(#completedGradient)"
-                                       name="Completed"
-                                       strokeWidth={2}
-                                    />
-                                 </AreaChart>
-                              </ResponsiveContainer>
-                           </div>
-                        </div>
-
-                        {/* Priority Distribution */}
-                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-lg font-bold text-white flex items-center gap-2 font-proza">
-                                 <HiChartPie className="h-5 w-5 text-indigo-400" />
-                                 Priority Distribution
-                              </h3>
-                           </div>
-                           <div className="h-48">
-                              <ResponsiveContainer width="100%" height="100%">
-                                 <PieChart>
-                                    <Pie
-                                       data={priorityDistribution}
-                                       cx="50%"
-                                       cy="50%"
-                                       innerRadius={40}
-                                       outerRadius={80}
-                                       paddingAngle={5}
-                                       dataKey="value"
-                                    >
-                                       {priorityDistribution.map((entry, index) => (
-                                          <Cell key={`cell-${index}`} fill={entry.color} />
-                                       ))}
-                                    </Pie>
-                                    <Tooltip
-                                       contentStyle={{
-                                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                                          border: 'none',
-                                          borderRadius: '8px',
-                                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                                          fontSize: '12px',
-                                       }}
-                                    />
-                                    <Legend />
-                                 </PieChart>
-                              </ResponsiveContainer>
-                           </div>
-                        </div>
-                     </div>
-
-                     {/* Productivity Score & Streaks */}
-                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <div className="flex items-center gap-2 mb-3">
-                              <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg">
-                                 <HiLightningBolt className="h-5 w-5 text-white" />
-                              </div>
-                              <div>
-                                 <h3 className="text-lg font-bold text-white font-proza">Productivity Score</h3>
-                                 <p className="text-white/60 text-xs">Weekly avg × 40% + Monthly avg × 30% + Bonuses</p>
-                              </div>
-                           </div>
-                           <div className="text-3xl font-bold text-white mb-2">{productivityScore}/100</div>
-                           <div className="w-full bg-white/20 rounded-full h-2">
-                              <div
-                                 className="bg-gradient-to-r from-yellow-500 to-orange-600 h-2 rounded-full transition-all duration-1000"
-                                 style={{ width: `${productivityScore}%` }}
-                              ></div>
-                           </div>
-                        </div>
-
-                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <div className="flex items-center gap-2 mb-3">
-                              <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
-                                 <HiStar className="h-5 w-5 text-white" />
-                              </div>
-                              <div>
-                                 <h3 className="text-lg font-bold text-white font-proza">Current Streak</h3>
-                                 <p className="text-white/60 text-xs">Consecutive days with ≥50% completion</p>
-                              </div>
-                           </div>
-                           <div className="text-3xl font-bold text-white">{streakData.current}</div>
-                           <div className="text-white/60 text-xs">
-                              {streakData.isActive
-                                 ? 'Active streak'
-                                 : `${streakData.daysSinceLastActivity || 0} days ago`}
-                           </div>
-                        </div>
-
-                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <div className="flex items-center gap-2 mb-3">
-                              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg">
-                                 <HiStar className="h-5 w-5 text-white" />
-                              </div>
-                              <div>
-                                 <h3 className="text-lg font-bold text-white font-proza">Longest Streak</h3>
-                                 <p className="text-white/60 text-xs">Personal best record</p>
-                              </div>
-                           </div>
-                           <div className="text-3xl font-bold text-white">{streakData.longest}</div>
-                           <div className="text-white/60 text-xs">days</div>
-                        </div>
-                     </div>
-                  </>
-               )}
-
-               {/* Detailed Mode */}
-               {viewMode === 'detailed' && (
-                  <div className="space-y-4">
-                     {/* Detailed Bar Chart */}
-                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 font-proza">
-                           <HiChartBar className="h-5 w-5 text-blue-400" />
-                           Detailed Task Analysis
-                        </h3>
-                        <div className="h-64">
-                           <ResponsiveContainer width="100%" height="100%">
-                              <BarChart key={`bar-${filter}-${stats.length}`} data={stats}>
-                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                 <XAxis
-                                    dataKey="name"
-                                    stroke="rgba(255,255,255,0.7)"
-                                    fontSize={10}
-                                    interval={0}
-                                    angle={filter === 'weekly' ? 0 : -45}
-                                    textAnchor={filter === 'weekly' ? 'middle' : 'end'}
-                                    height={filter === 'weekly' ? 30 : 60}
-                                 />
-                                 <YAxis stroke="rgba(255,255,255,0.7)" fontSize={10} domain={[0, 'dataMax + 1']} />
-                                 <Tooltip content={<CustomTooltip />} />
-                                 <Legend />
-                                 <Bar
-                                    dataKey="completed"
-                                    fill={COLORS.success}
-                                    name="Completed"
-                                    radius={[4, 4, 0, 0]}
-                                 />
-                                 <Bar dataKey="pending" fill={COLORS.warning} name="Pending" radius={[4, 4, 0, 0]} />
-                              </BarChart>
-                           </ResponsiveContainer>
-                        </div>
-                     </div>
-
-                     {/* Priority Breakdown */}
-                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        {priorityDistribution.map((priority, index) => (
-                           <div
-                              key={index}
-                              className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20"
-                           >
-                              <h4 className="text-white font-semibold mb-2">{priority.name}</h4>
-                              <div className="text-2xl font-bold text-white mb-1">{priority.value}</div>
-                              <div className="text-sm text-white/70">
-                                 {priority.completed} completed (
-                                 {priority.value > 0 ? Math.round((priority.completed / priority.value) * 100) : 0}%)
-                              </div>
-                              <div className="w-full bg-white/20 rounded-full h-2 mt-2">
-                                 <div
-                                    className="h-2 rounded-full transition-all duration-1000"
-                                    style={{
-                                       width: `${
-                                          priority.value > 0 ? (priority.completed / priority.value) * 100 : 0
-                                       }%`,
-                                       backgroundColor: priority.color,
-                                    }}
-                                 ></div>
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                  </div>
-               )}
-
-               {/* Trends Mode */}
-               {viewMode === 'trends' && (
-                  <div className="space-y-4">
-                     {/* Weekly Productivity Trends */}
-                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 font-proza">
-                           <HiTrendingUp className="h-5 w-5 text-green-400" />
-                           Productivity Trends
-                        </h3>
-                        <div className="h-64">
-                           <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={weeklyTrends}>
-                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                 <XAxis dataKey="day" stroke="rgba(255,255,255,0.7)" fontSize={10} />
-                                 <YAxis stroke="rgba(255,255,255,0.7)" fontSize={10} />
-                                 <Tooltip content={<CustomTooltip />} />
-                                 <Legend />
-                                 <Line
-                                    type="monotone"
-                                    dataKey="productivity"
-                                    stroke={COLORS.secondary}
-                                    strokeWidth={3}
-                                    dot={{ fill: COLORS.secondary, strokeWidth: 2, r: 4 }}
-                                    activeDot={{ r: 6, stroke: COLORS.secondary, strokeWidth: 2 }}
-                                    name="Productivity %"
-                                 />
-                              </LineChart>
-                           </ResponsiveContainer>
-                        </div>
-                     </div>
-
-                     {/* Streak Metrics */}
-                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <h4 className="text-white font-semibold mb-3 font-proza">Streak Statistics</h4>
-                           <div className="space-y-2">
-                              <div className="flex justify-between">
-                                 <span className="text-white/70 text-sm">Total Active Days:</span>
-                                 <span className="text-white font-medium">{streakMetrics.totalActiveDays || 0}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                 <span className="text-white/70 text-sm">Avg Tasks/Day:</span>
-                                 <span className="text-white font-medium">{streakMetrics.averageTasksPerDay || 0}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                 <span className="text-white/70 text-sm">Weekly Average:</span>
-                                 <span className="text-white font-medium">{streakMetrics.weeklyAverage || 0}%</span>
-                              </div>
-                              <div className="flex justify-between">
-                                 <span className="text-white/70 text-sm">Monthly Average:</span>
-                                 <span className="text-white font-medium">{streakMetrics.monthlyAverage || 0}%</span>
-                              </div>
-                           </div>
-                        </div>
-
-                        <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                           <h4 className="text-white font-semibold mb-3 font-proza">Calculation Formulas</h4>
-                           <div className="space-y-2 text-xs text-white/60">
-                              <div>
-                                 • <strong>Active Day:</strong> ≥1 task + ≥50% completion
-                              </div>
-                              <div>
-                                 • <strong>Productivity Score:</strong> Weekly×40% + Monthly×30% + Bonuses
-                              </div>
-                              <div>
-                                 • <strong>Streak Bonus:</strong> Current streak × 2 (max 20 pts)
-                              </div>
-                              <div>
-                                 • <strong>Consistency Bonus:</strong> Active days × 2 pts
-                              </div>
-                              <div>
-                                 • <strong>Volume Bonus:</strong> Tasks completed ÷ 10 (max 15 pts)
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               )}
             </div>
-         </div>
+         </nav>
+
+         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div className="px-4 py-6 sm:px-0">
+               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  {/* Task Completion Chart */}
+                  <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                     <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Task Completion</h2>
+                     <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                           <LineChart data={stats}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Line
+                                 type="monotone"
+                                 dataKey="completed"
+                                 stroke={COLORS.success}
+                                 name="Completed Tasks"
+                              />
+                              <Line type="monotone" dataKey="total" stroke={COLORS.primary} name="Total Tasks" />
+                           </LineChart>
+                        </ResponsiveContainer>
+                     </div>
+                  </div>
+
+                  {/* Streak Chart */}
+                  <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                     <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Streak Progress</h2>
+                     <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                           <BarChart data={streakMetrics}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="day" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Bar dataKey="streak" fill={COLORS.secondary} name="Current Streak" />
+                           </BarChart>
+                        </ResponsiveContainer>
+                     </div>
+                  </div>
+
+                  {/* Stats Overview */}
+                  <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                     <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Task Statistics</h2>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                           <p className="text-sm text-gray-500 dark:text-gray-400">Completion Rate</p>
+                           <p className="text-2xl font-semibold text-gray-900 dark:text-white">{completionRate}%</p>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                           <p className="text-sm text-gray-500 dark:text-gray-400">Total Tasks</p>
+                           <p className="text-2xl font-semibold text-gray-900 dark:text-white">{totalTasks}</p>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                           <p className="text-sm text-gray-500 dark:text-gray-400">Completed Tasks</p>
+                           <p className="text-2xl font-semibold text-gray-900 dark:text-white">{completedTasks}</p>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                           <p className="text-sm text-gray-500 dark:text-gray-400">Current Streak</p>
+                           <p className="text-2xl font-semibold text-gray-900 dark:text-white">
+                              {streakData.current} days
+                           </p>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Productivity Score */}
+                  <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                     <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Productivity Score</h2>
+                     <div className="flex items-center justify-center h-48">
+                        <div className="relative">
+                           <svg className="w-32 h-32">
+                              <circle
+                                 className="text-gray-200 dark:text-gray-700"
+                                 strokeWidth="8"
+                                 stroke="currentColor"
+                                 fill="transparent"
+                                 r="56"
+                                 cx="64"
+                                 cy="64"
+                              />
+                              <circle
+                                 className="text-blue-600"
+                                 strokeWidth="8"
+                                 strokeDasharray={352}
+                                 strokeDashoffset={352 - (352 * productivityScore) / 100}
+                                 strokeLinecap="round"
+                                 stroke="currentColor"
+                                 fill="transparent"
+                                 r="56"
+                                 cx="64"
+                                 cy="64"
+                              />
+                           </svg>
+                           <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                                 {productivityScore}%
+                              </span>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </main>
       </div>
    );
 }

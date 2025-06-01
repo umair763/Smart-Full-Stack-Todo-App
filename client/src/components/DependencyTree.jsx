@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { FiArrowRight, FiClock, FiCalendar, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 const DependencyTree = ({ taskId, onClose }) => {
    const [dependencies, setDependencies] = useState({ prerequisites: [], dependents: [] });
@@ -24,7 +24,7 @@ const DependencyTree = ({ taskId, onClose }) => {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/dependencies/task/${taskId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/dependencies/task/${taskId}`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },
@@ -88,7 +88,7 @@ const DependencyTree = ({ taskId, onClose }) => {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/dependencies/${dependencyId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/dependencies/${dependencyId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,

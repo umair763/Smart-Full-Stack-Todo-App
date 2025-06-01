@@ -30,8 +30,8 @@ import DependencyModal from './DependencyModal';
 import DependencyTree from './DependencyTree';
 import ReminderModal from './ReminderModal'; // Declare the ReminderModal variable
 
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange, dependencies, onDependencyChange }) {
    const [completed, setCompleted] = useState(list.completed || false);
@@ -237,7 +237,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/subtasks`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/subtasks`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -270,7 +270,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/dependencies/task/${list._id}`, {
+         const response = await fetch(`${BACKEND_URL}/api/dependencies/task/${list._id}`, {
             method: 'GET',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -319,7 +319,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/status`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/status`, {
             method: 'PATCH',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -425,7 +425,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          let response;
          if (subtaskId) {
             // Update existing subtask
-            response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/subtasks/${subtaskId}`, {
+            response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/subtasks/${subtaskId}`, {
                method: 'PUT',
                headers: {
                   Authorization: `Bearer ${token}`,
@@ -435,7 +435,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             });
          } else {
             // Create new subtask
-            response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/subtasks`, {
+            response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/subtasks`, {
                method: 'POST',
                headers: {
                   Authorization: `Bearer ${token}`,
@@ -491,7 +491,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/subtasks/${subtaskId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/subtasks/${subtaskId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -572,7 +572,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             return;
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/reminders`, {
+         const response = await fetch(`${BACKEND_URL}/api/reminders`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -618,7 +618,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       setIsLoadingNotes(true);
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/notes`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/notes`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },
@@ -643,7 +643,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       setIsLoadingAttachments(true);
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/attachments`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/attachments`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },
@@ -668,7 +668,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
    const handleCreateNote = async (content) => {
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/notes`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/notes`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -698,7 +698,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          formData.append('file', file);
 
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${list._id}/attachments`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/attachments`, {
             method: 'POST',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -725,7 +725,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
    const handleDownloadAttachment = async (attachmentId) => {
       try {
          const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/attachments/${attachmentId}/download`, {
+         const response = await fetch(`${BACKEND_URL}/api/attachments/${attachmentId}/download`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },

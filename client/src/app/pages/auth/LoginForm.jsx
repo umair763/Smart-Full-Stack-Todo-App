@@ -5,10 +5,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
-import { getApiUrl } from '../../../config/env';
 
-// Use the consistent API base URL
-// const API_BASE_URL = API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function LoginForm() {
    const [formData, setFormData] = useState({
@@ -41,7 +40,7 @@ function LoginForm() {
          if (token) {
             try {
                // Validate the token with the backend
-               const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
+               const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
                   method: 'GET',
                   headers: {
                      'Content-Type': 'application/json',
@@ -79,7 +78,7 @@ function LoginForm() {
       try {
          console.log('Attempting login for:', formData.email);
 
-         const response = await fetch(getApiUrl('users/login'), {
+         const response = await fetch(`${BACKEND_URL}/api/users/login`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',

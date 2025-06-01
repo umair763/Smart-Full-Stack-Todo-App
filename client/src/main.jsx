@@ -1,26 +1,28 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import App from './App';
+import App from './App.jsx';
 import './index.css';
 import { AuthProvider } from './app/context/AuthContext';
-import { SocketProvider } from './app/context/SocketContext';
+import { ThemeProvider } from './app/context/ThemeContext';
 import { NotificationProvider } from './app/context/NotificationContext';
-import { GOOGLE_CLIENT_ID } from './config/env';
+import { SocketProvider } from './app/context/SocketContext';
 
-createRoot(document.getElementById('root')).render(
+// Hardcoded Google Client ID
+const GOOGLE_CLIENT_ID = '1093100000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
    <React.StrictMode>
       <BrowserRouter>
-         <AuthProvider>
-            <SocketProvider>
+         <ThemeProvider>
+            <AuthProvider>
                <NotificationProvider>
-                  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                  <SocketProvider>
                      <App />
-                  </GoogleOAuthProvider>
+                  </SocketProvider>
                </NotificationProvider>
-            </SocketProvider>
-         </AuthProvider>
+            </AuthProvider>
+         </ThemeProvider>
       </BrowserRouter>
    </React.StrictMode>
 );

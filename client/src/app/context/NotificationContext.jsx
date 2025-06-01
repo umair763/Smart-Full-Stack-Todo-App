@@ -3,7 +3,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSocket } from './SocketContext';
 import { useAuth } from './AuthContext';
-import { API_BASE_URL } from '../../config/env';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 // Create the notification context
 const NotificationContext = createContext();
@@ -19,7 +21,7 @@ export function NotificationProvider({ children }) {
    const [unreadCount, setUnreadCount] = useState(0);
 
    const { socket } = useSocket();
-   const { isLoggedIn, user } = useAuth();
+   const { token } = useAuth();
 
    // Auto-remove temporary notifications after delay
    useEffect(() => {
@@ -38,13 +40,13 @@ export function NotificationProvider({ children }) {
 
    // Load persistent notifications from MongoDB when user logs in
    useEffect(() => {
-      if (isLoggedIn && user) {
+      if (token) {
          fetchNotifications();
       } else {
          setPersistentNotifications([]);
          setUnreadCount(0);
       }
-   }, [isLoggedIn, user]);
+   }, [token]);
 
    // Set up socket listeners for notifications
    useEffect(() => {
@@ -114,11 +116,10 @@ export function NotificationProvider({ children }) {
    // Fetch all notifications
    const fetchNotifications = async () => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) return;
-         const response = await fetch(`${API_BASE_URL}/api/notifications`, {
-            headers: { Authorization: `Bearer ${token}` },
-            credentials: 'include',
+         const response = await fetch(`${BACKEND_URL}/api/notifications`, {
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
          });
          if (response.ok) {
             const data = await response.json();
@@ -146,10 +147,7 @@ export function NotificationProvider({ children }) {
    // Add a persistent notification (saved to MongoDB)
    const addPersistentNotification = async (notification) => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) return;
-
-         const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+         const response = await fetch(`${BACKEND_URL}/api/notifications`, {
             method: 'POST',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -187,20 +185,11 @@ export function NotificationProvider({ children }) {
    // Remove a notification
    const removeNotification = async (id) => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) return;
-
-         // Optimistically update UI immediately
-         const notificationToRemove = persistentNotifications.find((n) => n._id === id);
-         setPersistentNotifications((prev) => prev.filter((n) => n._id !== id));
-         if (notificationToRemove && !notificationToRemove.read) {
-            setUnreadCount((prev) => Math.max(0, prev - 1));
-         }
-
-         const response = await fetch(`${API_BASE_URL}/api/notifications/${id}`, {
+         const response = await fetch(`${BACKEND_URL}/api/notifications/${id}`, {
             method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-            credentials: 'include',
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
          });
 
          if (response.ok) {
@@ -222,17 +211,11 @@ export function NotificationProvider({ children }) {
    // Clear all notifications
    const clearNotifications = async () => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) return;
-
-         // Optimistically update UI immediately
-         setPersistentNotifications([]);
-         setUnreadCount(0);
-
-         const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+         const response = await fetch(`${BACKEND_URL}/api/notifications`, {
             method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-            credentials: 'include',
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
          });
 
          if (response.ok) {
@@ -254,17 +237,11 @@ export function NotificationProvider({ children }) {
    // Mark all as read
    const markAllAsRead = async () => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) return;
-
-         // Optimistically update UI immediately
-         setPersistentNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-         setUnreadCount(0);
-
-         const response = await fetch(`${API_BASE_URL}/api/notifications/mark-all-read`, {
-            method: 'PATCH',
-            headers: { Authorization: `Bearer ${token}` },
-            credentials: 'include',
+         const response = await fetch(`${BACKEND_URL}/api/notifications/read-all`, {
+            method: 'PUT',
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
          });
 
          if (response.ok) {
@@ -277,7 +254,7 @@ export function NotificationProvider({ children }) {
             fetchNotifications();
          }
       } catch (error) {
-         console.error('Error marking all as read:', error);
+         console.error('Error marking all notifications as read:', error);
          // Revert optimistic update on error
          fetchNotifications();
       }
@@ -286,26 +263,16 @@ export function NotificationProvider({ children }) {
    // Mark individual notification as read
    const markAsRead = async (id) => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) return;
+         const response = await fetch(`${BACKEND_URL}/api/notifications/${id}/read`, {
+            method: 'PUT',
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
+         });
 
-         // Optimistically update UI immediately
-         const notification = persistentNotifications.find((n) => n._id === id);
-         if (notification && !notification.read) {
+         if (response.ok) {
             setPersistentNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
             setUnreadCount((prev) => Math.max(0, prev - 1));
-
-            // Make API call to mark as read
-            const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
-               method: 'PATCH',
-               headers: { Authorization: `Bearer ${token}` },
-               credentials: 'include',
-            });
-
-            if (!response.ok) {
-               // If backend fails, revert optimistic update
-               fetchNotifications();
-            }
          }
       } catch (error) {
          console.error('Error marking notification as read:', error);
@@ -421,23 +388,11 @@ export function NotificationProvider({ children }) {
    // Remove a reminder notification
    const removeReminderNotification = async (reminderId) => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) return;
-
-         // Remove from UI immediately
-         setPersistentNotifications((prev) => prev.filter((n) => n.reminderId !== reminderId));
-         setUnreadCount((prev) => Math.max(0, prev - 1));
-
-         // Emit socket event for real-time update
-         if (socket) {
-            socket.emit('notificationDeleted', reminderId);
-         }
-
-         // Delete from backend
-         const response = await fetch(`${API_BASE_URL}/api/reminders/${reminderId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/reminders/${reminderId}`, {
             method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-            credentials: 'include',
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
          });
 
          if (!response.ok) {

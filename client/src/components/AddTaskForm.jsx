@@ -32,6 +32,9 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
       return `${hour12}:${minutes} ${ampm}`;
    };
 
+   // Hardcoded backend URL
+   const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
+
    // Search for tasks to set as dependencies
    const handleSearchTasks = async (searchValue) => {
       setSearchTerm(searchValue);
@@ -45,8 +48,7 @@ function AddTaskForm({ SetisAddFormVisible, addTask }) {
 
       try {
          const token = localStorage.getItem('token');
-         const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-         const response = await fetch(`${API_BASE_URL}/api/tasks?search=${encodeURIComponent(searchValue)}`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks?search=${encodeURIComponent(searchValue)}`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },

@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../app/context/AuthContext';
+import { HiPencilAlt, HiTrash, HiPlus } from 'react-icons/hi';
 import NoteModal from './NoteModal';
-import { API_BASE_URL } from '../config/env';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function NotesList({ taskId }) {
    const [notes, setNotes] = useState([]);
@@ -11,27 +14,17 @@ function NotesList({ taskId }) {
    const [error, setError] = useState(null);
    const [showNoteModal, setShowNoteModal] = useState(false);
    const [currentNote, setCurrentNote] = useState(null);
+   const { token } = useAuth();
 
-   // Fetch notes when component mounts or taskId changes
    useEffect(() => {
-      if (taskId) {
-         fetchNotes();
-      }
+      fetchNotes();
    }, [taskId]);
 
    const fetchNotes = async () => {
       try {
-         setLoading(true);
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/notes`, {
-            method: 'GET',
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/notes`, {
             headers: {
                Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
             },
          });
 
@@ -41,10 +34,8 @@ function NotesList({ taskId }) {
 
          const data = await response.json();
          setNotes(data);
-         setError(null);
       } catch (err) {
-         console.error('Error fetching notes:', err);
-         setError('Failed to load notes. Please try again.');
+         setError(err.message);
       } finally {
          setLoading(false);
       }
@@ -62,61 +53,29 @@ function NotesList({ taskId }) {
 
    const handleSaveNote = async (noteId, content) => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         let response;
-         if (noteId) {
-            // Update existing note
-            response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`, {
-               method: 'PUT',
-               headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-               },
-               body: JSON.stringify({ content }),
-            });
-         } else {
-            // Create new note
-            response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/notes`, {
-               method: 'POST',
-               headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-               },
-               body: JSON.stringify({ content }),
-            });
-         }
+         const response = await fetch(`${BACKEND_URL}/api/notes/${noteId}`, {
+            method: 'PUT',
+            headers: {
+               'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ content }),
+         });
 
          if (!response.ok) {
-            throw new Error(noteId ? 'Failed to update note' : 'Failed to create note');
+            throw new Error('Failed to update note');
          }
 
-         const data = await response.json();
-
-         if (noteId) {
-            // Update the note in the local state
-            setNotes(notes.map((note) => (note._id === noteId ? data : note)));
-         } else {
-            // Add the new note to the local state
-            setNotes([data, ...notes]);
-         }
+         setNotes((prev) => prev.map((note) => (note._id === noteId ? { ...note, content } : note)));
+         setCurrentNote(null);
       } catch (err) {
-         console.error('Error saving note:', err);
-         alert(err.message);
+         setError(err.message);
       }
    };
 
    const handleDeleteNote = async (noteId) => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/notes/${noteId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -127,11 +86,9 @@ function NotesList({ taskId }) {
             throw new Error('Failed to delete note');
          }
 
-         // Remove the note from the local state
-         setNotes(notes.filter((note) => note._id !== noteId));
+         setNotes((prev) => prev.filter((note) => note._id !== noteId));
       } catch (err) {
-         console.error('Error deleting note:', err);
-         alert(err.message);
+         setError(err.message);
       }
    };
 
@@ -148,56 +105,76 @@ function NotesList({ taskId }) {
    };
 
    return (
-      <div className="mt-4">
-         <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-semibold text-gray-800">Notes</h3>
-            <button
-               onClick={handleAddNote}
-               className="flex items-center text-sm bg-[#9406E6] text-white px-3 py-1 rounded-md hover:bg-[#7D05C3] transition-colors"
-            >
-               <FiPlus className="mr-1" />
-               Add Note
-            </button>
-         </div>
+      <div className="space-y-4">
+         <h3 className="text-lg font-medium text-gray-900 dark:text-white">Notes</h3>
 
-         {loading ? (
-            <div className="text-center py-4 text-gray-500">Loading notes...</div>
-         ) : error ? (
-            <div className="text-center py-4 text-red-500">{error}</div>
-         ) : notes.length === 0 ? (
-            <div className="text-center py-4 text-gray-500 italic">No notes yet. Add one to get started!</div>
-         ) : (
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-               {notes.map((note) => (
-                  <div key={note._id} className="bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-                     <div className="flex justify-between items-start">
-                        <div className="text-xs text-gray-500 mb-1">{formatDate(note.createdAt)}</div>
-                        <div className="flex space-x-1">
-                           <button
-                              onClick={() => handleEditNote(note)}
-                              className="text-blue-600 hover:text-blue-800"
-                              title="Edit note"
-                           >
-                              <FiEdit2 className="h-4 w-4" />
-                           </button>
-                           <button
-                              onClick={() => {
-                                 if (window.confirm('Are you sure you want to delete this note?')) {
-                                    handleDeleteNote(note._id);
-                                 }
-                              }}
-                              className="text-red-600 hover:text-red-800"
-                              title="Delete note"
-                           >
-                              <FiTrash2 className="h-4 w-4" />
-                           </button>
-                        </div>
-                     </div>
-                     <div className="text-gray-800 whitespace-pre-wrap break-words">{note.content}</div>
+         <form
+            onSubmit={(e) => {
+               e.preventDefault();
+               if (currentNote) {
+                  handleSaveNote(currentNote._id, currentNote.content);
+               }
+            }}
+            className="flex space-x-2"
+         >
+            <input
+               type="text"
+               value={currentNote?.content || ''}
+               onChange={(e) => setCurrentNote({ ...currentNote, content: e.target.value })}
+               placeholder="Add a note..."
+               className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            />
+            <button
+               type="submit"
+               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+            >
+               <HiPlus className="w-5 h-5" />
+            </button>
+         </form>
+
+         {error && <div className="text-red-500 text-sm">{error}</div>}
+
+         <div className="space-y-2">
+            {notes.map((note) => (
+               <div
+                  key={note._id}
+                  className="flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm"
+               >
+                  {currentNote === note._id ? (
+                     <input
+                        type="text"
+                        value={note.content}
+                        onChange={(e) => setCurrentNote({ ...note, content: e.target.value })}
+                        onBlur={() => handleSaveNote(note._id, note.content)}
+                        onKeyPress={(e) => {
+                           if (e.key === 'Enter') {
+                              handleSaveNote(note._id, note.content);
+                           }
+                        }}
+                        className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        autoFocus
+                     />
+                  ) : (
+                     <span className="text-gray-900 dark:text-white">{note.content}</span>
+                  )}
+
+                  <div className="flex items-center space-x-2">
+                     <button
+                        onClick={() => handleEditNote(note)}
+                        className="text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400"
+                     >
+                        <HiPencilAlt className="w-4 h-4" />
+                     </button>
+                     <button
+                        onClick={() => handleDeleteNote(note._id)}
+                        className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+                     >
+                        <HiTrash className="w-4 h-4" />
+                     </button>
                   </div>
-               ))}
-            </div>
-         )}
+               </div>
+            ))}
+         </div>
 
          {/* Note Modal */}
          <NoteModal

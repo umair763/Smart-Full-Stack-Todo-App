@@ -11,7 +11,9 @@ import User from "../models/User.js";
 // Connect to MongoDB
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp");
+        await mongoose.connect(
+            "mongodb+srv://MuhammadUmair:umair@11167@cluster0.jjtx3.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0/SmartTodoApp"
+        );
         console.log("✅ MongoDB connected successfully");
     } catch (error) {
         console.error("❌ MongoDB connection error:", error);

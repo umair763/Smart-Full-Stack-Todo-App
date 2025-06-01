@@ -1,135 +1,84 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../app/context/AuthContext';
-import { API_BASE_URL } from '../../config/env';
+import { HiUser } from 'react-icons/hi';
 
-// Use the consistent API base URL
-// const API_BASE_URL = API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
-const ChangeUsername = () => {
-   const [username, setUsername] = useState('');
-   const [currentUsername, setCurrentUsername] = useState('');
-   const [isLoading, setIsLoading] = useState(false);
-   const [error, setError] = useState('');
-   const [success, setSuccess] = useState('');
-   const { user } = useAuth();
-
-   useEffect(() => {
-      // Fetch current username
-      const fetchUserProfile = async () => {
-         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-               throw new Error('Authentication required');
-            }
-
-            const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
-               method: 'GET',
-               headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-               },
-            });
-
-            if (!response.ok) {
-               throw new Error('Failed to fetch user profile');
-            }
-
-            const data = await response.json();
-            setCurrentUsername(data.username);
-         } catch (err) {
-            setError(err.message || 'Failed to fetch user profile');
-         }
-      };
-
-      fetchUserProfile();
-   }, []);
+function ChangeUsername() {
+   const [newUsername, setNewUsername] = useState('');
+   const [loading, setLoading] = useState(false);
+   const [error, setError] = useState(null);
+   const [success, setSuccess] = useState(false);
+   const { token } = useAuth();
 
    const handleSubmit = async (e) => {
       e.preventDefault();
-      setIsLoading(true);
-      setError('');
-      setSuccess('');
-
-      if (!username.trim()) {
-         setError('Username cannot be empty');
-         setIsLoading(false);
-         return;
-      }
+      setLoading(true);
+      setError(null);
+      setSuccess(false);
 
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const response = await fetch(`${API_BASE_URL}/api/users/update-username`, {
-            method: 'POST',
+         const response = await fetch(`${BACKEND_URL}/api/users/update-username`, {
+            method: 'PUT',
             headers: {
-               Authorization: `Bearer ${token}`,
                'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ username }),
+            body: JSON.stringify({ username: newUsername }),
          });
 
          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update username');
+            throw new Error('Failed to update username');
          }
 
-         setSuccess('Username updated successfully!');
-         setCurrentUsername(username);
-         setUsername('');
+         setSuccess(true);
+         setNewUsername('');
       } catch (err) {
-         setError(err.message || 'Failed to update username');
+         setError(err.message);
       } finally {
-         setIsLoading(false);
+         setLoading(false);
       }
    };
 
    return (
-      <div>
-         <h3 className="text-2xl font-bold text-white mb-6 font-proza">Change Username</h3>
-
-         {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>}
-         {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</div>
-         )}
-
-         <div className="mb-6">
-            <p className="text-white mb-2">
-               Current Username: <span className="font-semibold">{currentUsername}</span>
-            </p>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+         <div className="flex items-center space-x-3 mb-4">
+            <HiUser className="w-6 h-6 text-blue-500" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Change Username</h2>
          </div>
 
-         <form onSubmit={handleSubmit}>
-            <div className="mb-6">
-               <label htmlFor="username" className="block text-white font-medium mb-2">
+         <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+               <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   New Username
                </label>
                <input
                   type="text"
                   id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter new username"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  required
                />
             </div>
 
+            {error && <div className="text-red-500 text-sm">{error}</div>}
+
+            {success && <div className="text-green-500 text-sm">Username updated successfully!</div>}
+
             <button
                type="submit"
-               disabled={isLoading}
-               className={`w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
-               }`}
+               disabled={loading}
+               className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
             >
-               {isLoading ? 'Updating...' : 'Update Username'}
+               {loading ? 'Updating...' : 'Update Username'}
             </button>
          </form>
       </div>
    );
-};
+}
 
 export default ChangeUsername;

@@ -1,62 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { FiTrash2 } from 'react-icons/fi';
 import { HiCalendar, HiCheck, HiPencilAlt } from 'react-icons/hi';
 import DeleteSubtaskModal from './DeleteSubtaskModal';
-import { API_BASE_URL } from '../config/env';
+import { useAuth } from '../app/context/AuthContext';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
    const [completed, setCompleted] = useState(subtask.status || false);
    const [isUpdating, setIsUpdating] = useState(false);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
    const [isDeleting, setIsDeleting] = useState(false);
+   const { token } = useAuth();
 
    // Handle subtask status toggle
-   async function handleSubtaskStatusToggle() {
-      // Prevent multiple rapid toggling
-      if (isUpdating) return;
-
+   const handleStatusChange = async () => {
       setIsUpdating(true);
 
       try {
-         // Optimistically update UI first
-         const newStatus = !completed;
-         setCompleted(newStatus);
-
-         // Use the dedicated endpoint for status updates
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${subtask.taskId}/subtasks/${subtask._id}/status`, {
-            method: 'PATCH',
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${subtask.taskId}/subtasks/${subtask._id}/status`, {
+            method: 'PUT',
             headers: {
-               Authorization: `Bearer ${token}`,
                'Content-Type': 'application/json',
+               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ status: newStatus }),
+            body: JSON.stringify({ completed: !completed }),
          });
 
          if (!response.ok) {
             throw new Error('Failed to update subtask status');
          }
 
-         // The UI will be updated through Socket.io notification
+         setCompleted(!completed);
+         onStatusChange(subtask._id, completed, null);
       } catch (error) {
-         // Revert UI state if the update fails
          console.error('Error updating subtask status:', error);
          setCompleted(!completed);
-
-         // Show notification (handled by parent)
-         if (onStatusChange) {
-            onStatusChange(subtask._id, completed, error.message);
-         }
+         onStatusChange(subtask._id, completed, error.message);
       } finally {
          setIsUpdating(false);
       }
-   }
+   };
 
    function handleEdit() {
       // Will be implemented with a modal form
@@ -151,7 +138,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
                {/* Completion Status */}
                <button
-                  onClick={handleSubtaskStatusToggle}
+                  onClick={handleStatusChange}
                   className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
                      completed ? 'bg-[#9406E6] text-white shadow-md' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/10'
                   }`}
@@ -273,7 +260,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
                   {/* Completion checkbox */}
                   <button
-                     onClick={handleSubtaskStatusToggle}
+                     onClick={handleStatusChange}
                      className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
                         completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
                      }`}

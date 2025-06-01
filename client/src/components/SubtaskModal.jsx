@@ -4,7 +4,10 @@ import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
 import { HiX, HiCalendar, HiClock, HiPlus, HiPencilAlt } from 'react-icons/hi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
-import { API_BASE_URL } from '../config/env';
+import { useAuth } from '../app/context/AuthContext';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subtask = null }) {
    const [formData, setFormData] = useState({
@@ -17,6 +20,7 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
 
    const [isLoading, setIsLoading] = useState(false);
    const [error, setError] = useState('');
+   const { token } = useAuth();
 
    // Check if we're editing an existing subtask
    const isEditing = Boolean(subtask);
@@ -55,14 +59,9 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
       setError('');
 
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
          const url = isEditing
-            ? `${API_BASE_URL}/api/tasks/${parentTaskId}/subtasks/${subtask._id}`
-            : `${API_BASE_URL}/api/tasks/${parentTaskId}/subtasks`;
+            ? `${BACKEND_URL}/api/tasks/${parentTaskId}/subtasks/${subtask._id}`
+            : `${BACKEND_URL}/api/tasks/${parentTaskId}/subtasks`;
 
          const method = isEditing ? 'PUT' : 'POST';
 

@@ -162,16 +162,18 @@ export const googleSignIn = async (req, res) => {
 
             const { email, name, picture, sub: googleId } = payload;
 
-            // Use the new findOrCreate method with retry logic
-            const user = await User.findOrCreate(
-                { email },
-                {
+            // Find or create user
+            let user = await User.findOne({ email });
+            if (!user) {
+                console.log("Creating new user for Google sign-in");
+                user = new User({
                     username: name,
                     email,
                     googleId,
                     profileImage: picture,
-                }
-            );
+                });
+                await user.save();
+            }
 
             // Generate token
             const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "your-secret-key", {

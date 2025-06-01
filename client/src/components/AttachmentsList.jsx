@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiPaperclip, FiDownload, FiTrash2, FiFile, FiImage, FiFileText } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import { API_BASE_URL } from '../config/env';
+import { useAuth } from '../app/context/AuthContext';
+import { HiPaperClip, HiTrash } from 'react-icons/hi';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function AttachmentsList({ taskId }) {
    const [attachments, setAttachments] = useState([]);
@@ -12,6 +16,7 @@ function AttachmentsList({ taskId }) {
    const [uploading, setUploading] = useState(false);
    const fileInputRef = useRef(null);
    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+   const { token } = useAuth();
 
    // Fetch attachments when component mounts or taskId changes
    useEffect(() => {
@@ -23,16 +28,9 @@ function AttachmentsList({ taskId }) {
    const fetchAttachments = async () => {
       try {
          setLoading(true);
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/attachments`, {
-            method: 'GET',
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/attachments`, {
             headers: {
                Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
             },
          });
 
@@ -82,15 +80,10 @@ function AttachmentsList({ taskId }) {
 
       try {
          setUploading(true);
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
          const formData = new FormData();
          formData.append('file', file);
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/attachments`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}/attachments`, {
             method: 'POST',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -104,7 +97,7 @@ function AttachmentsList({ taskId }) {
          }
 
          const data = await response.json();
-         setAttachments([data, ...attachments]);
+         setAttachments((prev) => [data, ...prev]);
          toast.success('File uploaded successfully');
       } catch (err) {
          console.error('Error uploading file:', err);
@@ -120,38 +113,14 @@ function AttachmentsList({ taskId }) {
 
    const handleDownload = async (attachmentId, filename) => {
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         // Create a download link
-         const downloadUrl = `${API_BASE_URL}/api/attachments/${attachmentId}/download`;
-
-         // Create a temporary anchor element
-         const a = document.createElement('a');
-         a.href = downloadUrl;
-         a.download = filename;
-
-         // Add authorization header to the download request
-         fetch(downloadUrl, {
-            headers: {
-               Authorization: `Bearer ${token}`,
-            },
-         })
-            .then((response) => response.blob())
-            .then((blob) => {
-               const url = window.URL.createObjectURL(blob);
-               a.href = url;
-               document.body.appendChild(a);
-               a.click();
-               window.URL.revokeObjectURL(url);
-               document.body.removeChild(a);
-            })
-            .catch((err) => {
-               console.error('Error downloading file:', err);
-               toast.error('Failed to download file');
-            });
+         const downloadUrl = `${BACKEND_URL}/api/attachments/${attachmentId}/download`;
+         const link = document.createElement('a');
+         link.href = downloadUrl;
+         link.setAttribute('download', filename);
+         link.setAttribute('Authorization', `Bearer ${token}`);
+         document.body.appendChild(link);
+         link.click();
+         document.body.removeChild(link);
       } catch (err) {
          console.error('Error initiating download:', err);
          toast.error(err.message || 'Failed to download file');
@@ -164,12 +133,7 @@ function AttachmentsList({ taskId }) {
       }
 
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const response = await fetch(`${API_BASE_URL}/api/attachments/${attachmentId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/attachments/${attachmentId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -181,7 +145,7 @@ function AttachmentsList({ taskId }) {
          }
 
          // Remove the attachment from the local state
-         setAttachments(attachments.filter((attachment) => attachment._id !== attachmentId));
+         setAttachments((prev) => prev.filter((attachment) => attachment._id !== attachmentId));
          toast.success('Attachment deleted successfully');
       } catch (err) {
          console.error('Error deleting attachment:', err);

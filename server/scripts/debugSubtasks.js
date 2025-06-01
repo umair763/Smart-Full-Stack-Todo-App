@@ -12,7 +12,8 @@ import Subtask from "../models/Subtask.js";
 // Connect to MongoDB
 const connectDB = async () => {
     try {
-        const connectionString = process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp";
+        const connectionString =
+            "mongodb+srv://MuhammadUmair:umair@11167@cluster0.jjtx3.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0/SmartTodoApp";
         await mongoose.connect(connectionString);
         console.log("✅ MongoDB connected successfully");
     } catch (error) {

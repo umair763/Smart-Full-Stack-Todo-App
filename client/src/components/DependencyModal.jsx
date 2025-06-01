@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { FiAlertTriangle, FiCalendar, FiClock, FiLink, FiArrowRight, FiInfo, FiCheckCircle } from 'react-icons/fi';
 
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
    const [availableTasks, setAvailableTasks] = useState([]);
@@ -33,7 +33,7 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
             throw new Error('Authentication required');
          }
 
-         const response = await fetch(`${API_BASE_URL}/api/tasks`, {
+         const response = await fetch(`${BACKEND_URL}/api/tasks`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },
@@ -77,7 +77,7 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
       try {
          const token = localStorage.getItem('token');
          if (!token) throw new Error('Authentication required');
-         const response = await fetch(`${API_BASE_URL}/api/dependencies/task/${task._id}`, {
+         const response = await fetch(`${BACKEND_URL}/api/dependencies/task/${task._id}`, {
             headers: { Authorization: `Bearer ${token}` },
          });
          if (!response.ok) throw new Error('Failed to fetch dependencies');
@@ -110,7 +110,7 @@ const DependencyModal = ({ isOpen, onClose, task, onAddDependency }) => {
          const prerequisiteTaskId = task._id;
          const dependentTaskId = selectedTaskId;
 
-         const response = await fetch(`${API_BASE_URL}/api/dependencies`, {
+         const response = await fetch(`${BACKEND_URL}/api/dependencies`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',

@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
-import { getApiUrl } from '../../../config/env';
 
-// Use the consistent API base URL
-// const API_BASE_URL = API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function AuthPage() {
    const location = useLocation();
@@ -54,7 +53,7 @@ function AuthPage() {
          const token = localStorage.getItem('token');
          if (token) {
             try {
-               const response = await fetch(getApiUrl('users/profile'), {
+               const response = await fetch(`${BACKEND_URL}/api/users/profile`, {
                   method: 'GET',
                   headers: {
                      'Content-Type': 'application/json',
@@ -123,7 +122,7 @@ function AuthPage() {
       }
 
       try {
-         const response = await fetch(getApiUrl('users/login'), {
+         const response = await fetch(`${BACKEND_URL}/api/users/login`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -178,7 +177,7 @@ function AuthPage() {
       }
 
       try {
-         const response = await fetch(getApiUrl('users/register'), {
+         const response = await fetch(`${BACKEND_URL}/api/users/register`, {
             method: 'POST',
             body: submitData,
          });
@@ -212,6 +211,31 @@ function AuthPage() {
    const switchMode = () => {
       const newPath = isLogin ? '/auth/register' : '/auth/login';
       navigate(newPath);
+   };
+
+   const handleGoogleSuccess = async (response) => {
+      try {
+         const result = await fetch(`${BACKEND_URL}/api/users/google-signin`, {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+               token: response.credential,
+            }),
+         });
+
+         const data = await result.json();
+
+         if (result.ok) {
+            localStorage.setItem('token', data.token);
+            navigate('/dashboard');
+         } else {
+            console.error('Google sign-in failed:', data.message);
+         }
+      } catch (error) {
+         console.error('Error during Google sign-in:', error);
+      }
    };
 
    // Animation variants
@@ -366,7 +390,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center">
-                                 <GoogleSignIn />
+                                 <GoogleSignIn onSuccess={handleGoogleSuccess} />
                               </div>
                            </form>
                         </div>
@@ -627,7 +651,7 @@ function AuthPage() {
                                  </div>
 
                                  <div className="flex justify-center">
-                                    <GoogleSignIn />
+                                    <GoogleSignIn onSuccess={handleGoogleSuccess} />
                                  </div>
                               </div>
                            </form>
@@ -718,7 +742,7 @@ function AuthPage() {
                            </div>
 
                            <div className="flex justify-center">
-                              <GoogleSignIn />
+                              <GoogleSignIn onSuccess={handleGoogleSuccess} />
                            </div>
 
                            <div className="text-center">
@@ -898,7 +922,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center mb-3">
-                                 <GoogleSignIn />
+                                 <GoogleSignIn onSuccess={handleGoogleSuccess} />
                               </div>
 
                               <div className="text-center">

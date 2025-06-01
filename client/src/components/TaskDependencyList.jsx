@@ -1,17 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../app/context/AuthContext';
 import { FiLink, FiUnlink, FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { HiTrash, HiPlus } from 'react-icons/hi';
 
-// Use the consistent API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function TaskDependencyList({ taskId }) {
    const [dependencies, setDependencies] = useState({ prerequisites: [], dependents: [] });
    const [isLoading, setIsLoading] = useState(true);
    const [error, setError] = useState(null);
    const [expandedSection, setExpandedSection] = useState('both'); // 'prerequisites', 'dependents', 'both', 'none'
+   const { token } = useAuth();
 
    useEffect(() => {
       fetchDependencies();
@@ -22,8 +25,7 @@ function TaskDependencyList({ taskId }) {
       setError(null);
 
       try {
-         const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/dependencies/task/${taskId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/dependencies/task/${taskId}`, {
             headers: {
                Authorization: `Bearer ${token}`,
             },
@@ -56,8 +58,7 @@ function TaskDependencyList({ taskId }) {
       }));
 
       try {
-         const token = localStorage.getItem('token');
-         const response = await fetch(`${API_BASE_URL}/api/dependencies/${dependencyId}`, {
+         const response = await fetch(`${BACKEND_URL}/api/dependencies/${dependencyId}`, {
             method: 'DELETE',
             headers: {
                Authorization: `Bearer ${token}`,
