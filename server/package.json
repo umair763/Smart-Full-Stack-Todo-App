@@ -7,8 +7,7 @@
     "scripts": {
         "start": "node index.js",
         "dev": "node index.js",
-        "build": "echo 'No build step needed for Node.js'",
-        "vercel-build": "echo 'No build step needed for Node.js'"
+        "build": "echo 'No build step needed for Node.js'"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
