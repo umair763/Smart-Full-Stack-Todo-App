@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useNotifications } from '../context/NotificationContext';
+import { useNotification } from '../context/NotificationContext';
 import { useSocket } from '../context/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -22,7 +22,7 @@ function Dashboard() {
    const [deleteModal, setDeleteModal] = useState({ show: false, taskId: null });
    const [showNotifications, setShowNotifications] = useState(false);
    const { token, logout } = useAuth();
-   const { notifications, unreadCount } = useNotifications();
+   const { notifications, unreadCount } = useNotification();
    const { socket } = useSocket();
    const navigate = useNavigate();
 
