@@ -192,7 +192,7 @@ const MONGO_URI =
         ? process.env.MONGO_URI_DEPLOYED
         : process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp";
 
-// Connect to MongoDB
+// Connect to MongoDB with improved error handling
 mongoose
     .connect(MONGO_URI, {
         useNewUrlParser: true,
@@ -200,16 +200,34 @@ mongoose
         serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 45000,
     })
-    .then(() => console.log("MongoDB connected successfully"))
-    .catch((err) => console.error("MongoDB connection error:", err));
+    .then(() => {
+        console.log("Connected to MongoDB successfully");
+        console.log("MongoDB URI:", MONGO_URI.replace(/\/\/[^:]+:[^@]+@/, "//<credentials>@")); // Hide credentials in logs
+    })
+    .catch((error) => {
+        console.error("MongoDB connection error:", error);
+        process.exit(1); // Exit if cannot connect to database
+    });
 
-// Add error handler for MongoDB connection
-mongoose.connection.on("error", (err) => {
-    console.error("MongoDB connection error:", err);
+// Handle MongoDB connection errors after initial connection
+mongoose.connection.on("error", (error) => {
+    console.error("MongoDB connection error:", error);
 });
 
 mongoose.connection.on("disconnected", () => {
-    console.warn("MongoDB disconnected. Attempting to reconnect...");
+    console.log("MongoDB disconnected");
+});
+
+// Handle process termination
+process.on("SIGINT", async () => {
+    try {
+        await mongoose.connection.close();
+        console.log("MongoDB connection closed through app termination");
+        process.exit(0);
+    } catch (error) {
+        console.error("Error during MongoDB connection closure:", error);
+        process.exit(1);
+    }
 });
 
 // Health check route
