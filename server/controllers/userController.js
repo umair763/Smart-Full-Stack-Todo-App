@@ -40,40 +40,10 @@ export const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
 
-        // Validate required fields
-        if (!username || !email || !password) {
-            return res.status(400).json({
-                message: "All fields are required",
-                details: {
-                    username: !username ? "Username is required" : null,
-                    email: !email ? "Email is required" : null,
-                    password: !password ? "Password is required" : null,
-                },
-            });
-        }
-
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({
-                message: "Invalid email format",
-            });
-        }
-
-        // Validate password length
-        if (password.length < 6) {
-            return res.status(400).json({
-                message: "Password must be at least 6 characters long",
-            });
-        }
-
         // Check if user already exists
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
-            return res.status(400).json({
-                message: "User already exists",
-                details: existingUser.email === email ? "Email already registered" : "Username already taken",
-            });
+            return res.status(400).json({ message: "User already exists" });
         }
 
         // Create new user
@@ -83,54 +53,26 @@ export const register = async (req, res) => {
             password,
         });
 
-        try {
-            await user.save();
-            console.log("User registered successfully:", { username, email });
+        await user.save();
 
-            // Generate token
-            const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-                expiresIn: "7d",
-            });
+        // Generate token
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+            expiresIn: "7d",
+        });
 
-            res.status(201).json({
-                message: "User registered successfully",
-                token,
-                user: {
-                    id: user._id,
-                    username: user.username,
-                    email: user.email,
-                    profileImage: user.profileImage,
-                },
-            });
-        } catch (saveError) {
-            console.error("Error saving user:", saveError);
-            if (saveError.code === 11000) {
-                return res.status(400).json({
-                    message: "User already exists",
-                    details: "Email or username is already taken",
-                });
-            }
-            throw saveError;
-        }
+        res.status(201).json({
+            message: "User registered successfully",
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                profileImage: user.profileImage,
+            },
+        });
     } catch (error) {
         console.error("Registration error:", error);
-        // Check for specific error types
-        if (error.name === "ValidationError") {
-            return res.status(400).json({
-                message: "Validation error",
-                details: Object.values(error.errors).map((err) => err.message),
-            });
-        }
-        if (error.name === "MongoError") {
-            return res.status(500).json({
-                message: "Database error",
-                details: error.message,
-            });
-        }
-        res.status(500).json({
-            message: "Error registering user",
-            details: process.env.NODE_ENV === "development" ? error.message : undefined,
-        });
+        res.status(500).json({ message: "Error registering user" });
     }
 };
 
