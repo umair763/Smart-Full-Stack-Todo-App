@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 import ChangeProfileImage from '../../components/settings/ChangeProfileImage';
 import ChangeUsername from '../../components/settings/ChangeUsername';
 import DeleteAccount from '../../components/settings/DeleteAccount';

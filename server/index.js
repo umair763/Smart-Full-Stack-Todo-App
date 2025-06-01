@@ -30,15 +30,24 @@ const dbEvents = new EventEmitter();
 export { dbEvents };
 
 // Environment variables with fallbacks
-const FRONTEND_URL = process.env.FRONTEND_URL || "smart-todo-task-management-frontend.vercel.app";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://smart-todo-task-management-frontend.vercel.app";
 const MONGO_URI = process.env.MONGODB_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
 // Validate required environment variables
-if (!MONGO_URI) throw new Error("MONGODB_URI is required");
-if (!JWT_SECRET) throw new Error("JWT_SECRET is required");
-if (!GOOGLE_CLIENT_ID) throw new Error("GOOGLE_CLIENT_ID is required");
+if (!MONGO_URI) {
+    console.error("❌ MONGODB_URI is not set");
+    process.exit(1);
+}
+if (!JWT_SECRET) {
+    console.error("❌ JWT_SECRET is not set");
+    process.exit(1);
+}
+if (!GOOGLE_CLIENT_ID) {
+    console.error("❌ GOOGLE_CLIENT_ID is not set");
+    process.exit(1);
+}
 
 // Middleware for JSON
 app.use(express.json({ limit: "50mb" }));
@@ -153,6 +162,11 @@ app.set("connectedUsers", connectedUsers);
 process.env.JWT_SECRET = JWT_SECRET;
 process.env.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
 
+// Add health check endpoint
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 // Global error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -173,17 +187,28 @@ app.use((req, res) => {
 
 // Connect to MongoDB with retry logic
 const connectWithRetry = async () => {
-    try {
-        await mongoose.connect(MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 30000,
-        });
-        console.log("✅ Connected to MongoDB");
-    } catch (error) {
-        console.error("❌ MongoDB connection error:", error);
-        console.log("🔄 Retrying connection in 5 seconds...");
-        setTimeout(connectWithRetry, 5000);
+    let retries = 5;
+    while (retries > 0) {
+        try {
+            await mongoose.connect(MONGO_URI, {
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+                serverSelectionTimeoutMS: 30000,
+                retryWrites: true,
+                w: "majority",
+            });
+            console.log("✅ Connected to MongoDB");
+            return;
+        } catch (error) {
+            console.error(`❌ MongoDB connection error (${retries} retries left):`, error);
+            retries--;
+            if (retries === 0) {
+                console.error("❌ Failed to connect to MongoDB after multiple retries");
+                process.exit(1);
+            }
+            console.log(`🔄 Retrying connection in 5 seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+        }
     }
 };
 
@@ -207,17 +232,29 @@ connectWithRetry().then(() => {
     });
 });
 
-// Handle unhandled promise rejections
+// Enhanced error handling
 process.on("unhandledRejection", (err) => {
     console.error("❌ Unhandled Promise Rejection:", err);
-    // Don't crash the server, but log the error
+    // Log to error tracking service if available
 });
 
-// Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
     console.error("❌ Uncaught Exception:", err);
+    // Log to error tracking service if available
     // Give time for logging before exiting
     setTimeout(() => {
         process.exit(1);
     }, 1000);
+});
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+    console.log("SIGTERM received. Shutting down gracefully...");
+    server.close(() => {
+        console.log("Server closed");
+        mongoose.connection.close(false, () => {
+            console.log("MongoDB connection closed");
+            process.exit(0);
+        });
+    });
 });

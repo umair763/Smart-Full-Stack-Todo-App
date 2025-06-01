@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../app/context/ThemeContext';
 import '../styles/background.css';
 
 // CSS-only fallback background component

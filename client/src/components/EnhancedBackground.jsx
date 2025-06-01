@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, Suspense, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../app/context/ThemeContext';
 import * as THREE from 'three';
 import '../styles/background.css';
 import FallbackBackground from './FallbackBackground';
@@ -302,7 +302,7 @@ const EnhancedBackgroundPlane = ({ isDark, isLowPerformance }) => {
       if (meshRef.current) {
          const time = state.clock.elapsedTime;
          const speed = isLowPerformance ? 0.2 : 0.5;
-         
+
          meshRef.current.material.uniforms.uTime.value = time * speed;
          meshRef.current.material.uniforms.uMouse.value.set(mouse.x * 0.3, mouse.y * 0.3);
          meshRef.current.material.uniforms.uMouseVelocity.value = Math.sqrt(mouse.x ** 2 + mouse.y ** 2);
@@ -403,7 +403,7 @@ const EnhancedBackgroundPlane = ({ isDark, isLowPerformance }) => {
    );
 
    const segments = isLowPerformance ? 32 : 96; // Reduced segments for mobile
-   
+
    // Calculate plane size to ensure full screen coverage
    const planeWidth = Math.max(viewport.width * 1.5, isLowPerformance ? 50 : 80);
    const planeHeight = Math.max(viewport.height * 1.5, isLowPerformance ? 50 : 80);
@@ -503,7 +503,7 @@ function EnhancedBackground() {
 
    return (
       <ErrorBoundary>
-         <div 
+         <div
             className="dynamic-background-container"
             style={{
                position: 'fixed',
@@ -532,8 +532,7 @@ function EnhancedBackground() {
                   fontSize: '12px',
                   zIndex: 1000,
                }}
-            >
-            </div>
+            ></div>
 
             <Suspense fallback={<FallbackBackground />}>
                <Canvas
@@ -576,7 +575,7 @@ function EnhancedBackground() {
                      console.log('Enhanced Three.js Canvas created successfully');
                      console.log('Canvas size:', size);
                      console.log('Camera aspect:', camera.aspect);
-                     
+
                      // Ensure canvas fills the screen properly
                      gl.setSize(size.width, size.height, false);
                      camera.aspect = size.width / size.height;

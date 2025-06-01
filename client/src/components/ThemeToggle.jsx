@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../app/context/ThemeContext';
 import { FiSun, FiMoon, FiMonitor } from 'react-icons/fi';
 
 const ThemeToggle = ({ variant = 'default', size = 'medium' }) => {

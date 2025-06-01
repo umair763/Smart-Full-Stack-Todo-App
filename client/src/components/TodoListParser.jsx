@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import DisplayTodoList from './DisplayTodoList';
 import { useSocket } from '../app/context/SocketContext';
 import { useNotification } from '../app/context/NotificationContext';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../app/context/ThemeContext';
 import ModernSortTabs from './ModernSortTabs';
 import DeleteTaskModal from './DeleteTaskModal';
 import {
