@@ -202,20 +202,11 @@ app.use((req, res) => {
     });
 });
 
-// Enhanced error handling
-process.on("unhandledRejection", (err) => {
-    console.error("❌ Unhandled Promise Rejection:", err);
-});
-
-process.on("uncaughtException", (err) => {
-    console.error("❌ Uncaught Exception:", err);
-});
-
 // Export the Express app for Vercel
 export default app;
 
 // Only start the server if not in a serverless environment
-if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
     const PORT = process.env.PORT || 5000;
     connectToDatabase()
         .then(() => {
@@ -229,3 +220,20 @@ if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
             process.exit(1);
         });
 }
+
+// Add error handling for unhandled rejections
+process.on("unhandledRejection", (err) => {
+    console.error("❌ Unhandled Promise Rejection:", err);
+    // Don't exit the process in production
+    if (process.env.NODE_ENV !== "production") {
+        process.exit(1);
+    }
+});
+
+process.on("uncaughtException", (err) => {
+    console.error("❌ Uncaught Exception:", err);
+    // Don't exit the process in production
+    if (process.env.NODE_ENV !== "production") {
+        process.exit(1);
+    }
+});
