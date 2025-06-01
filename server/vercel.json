@@ -3,7 +3,7 @@
     "name": "smart-todo-backend",
     "builds": [
         {
-            "src": "index.js",
+            "src": "package.json",
             "use": "@vercel/node@3.0.0"
         }
     ],
