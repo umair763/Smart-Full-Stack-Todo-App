@@ -16,6 +16,7 @@ function GoogleSignIn() {
       setError(null);
 
       try {
+         console.log('Sending token to backend...');
          // Send the credential token to backend
          const backendResponse = await fetch(getApiUrl('users/google-signin'), {
             method: 'POST',
@@ -25,16 +26,16 @@ function GoogleSignIn() {
             },
             body: JSON.stringify({
                token: credential,
-               clientId: '726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com', // Send client ID from frontend
+               clientId: '726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com',
             }),
          });
 
-         if (!backendResponse.ok) {
-            const errorData = await backendResponse.json();
-            throw new Error(`Server returned ${backendResponse.status}: ${JSON.stringify(errorData)}`);
-         }
-
          const data = await backendResponse.json();
+         console.log('Backend response:', data);
+
+         if (!backendResponse.ok) {
+            throw new Error(`Server returned ${backendResponse.status}: ${JSON.stringify(data)}`);
+         }
 
          // On success, set the login state to true using AuthContext
          if (data && data.token) {
@@ -46,7 +47,21 @@ function GoogleSignIn() {
          }
       } catch (error) {
          console.error('Error during Google login:', error);
-         setError('Failed to login with Google. Please try again.');
+         let errorMessage = 'Failed to login with Google. Please try again.';
+
+         try {
+            const errorData = JSON.parse(error.message.split(': ')[1]);
+            if (errorData.details) {
+               errorMessage = errorData.details;
+            } else if (errorData.message) {
+               errorMessage = errorData.message;
+            }
+         } catch (e) {
+            // If parsing fails, use the original error message
+            console.error('Error parsing error message:', e);
+         }
+
+         setError(errorMessage);
       }
    };
 
@@ -58,7 +73,13 @@ function GoogleSignIn() {
    return (
       <div className="pt-1">
          {error && <div className="text-red-500 text-sm mb-2 text-center">{error}</div>}
-         <GoogleLogin onSuccess={handleLoginSuccess} onError={handleLoginFailure} useOneTap={false} flow="implicit" />
+         <GoogleLogin
+            onSuccess={handleLoginSuccess}
+            onError={handleLoginFailure}
+            useOneTap={false}
+            flow="implicit"
+            context="signin"
+         />
       </div>
    );
 }

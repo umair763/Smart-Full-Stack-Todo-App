@@ -133,14 +133,34 @@ export const googleSignIn = async (req, res) => {
             // Create a new client with the provided client ID
             const client = new OAuth2Client(clientId);
 
-            const ticket = await client.verifyIdToken({
-                idToken: token,
-                audience: clientId,
-            });
+            // Decode the token first to check its structure
+            const decodedToken = jwt.decode(token);
+            console.log("Decoded token payload:", decodedToken);
+
+            if (!decodedToken) {
+                throw new Error("Invalid token format");
+            }
+
+            // Verify the token
+            const ticket = await client
+                .verifyIdToken({
+                    idToken: token,
+                    audience: clientId,
+                })
+                .catch((error) => {
+                    console.error("Token verification error details:", {
+                        name: error.name,
+                        message: error.message,
+                        stack: error.stack,
+                    });
+                    throw error;
+                });
 
             console.log("Token verification successful");
-            const { email, name, picture, sub: googleId } = ticket.getPayload();
-            console.log("Token payload:", { email, name, googleId });
+            const payload = ticket.getPayload();
+            console.log("Token payload:", payload);
+
+            const { email, name, picture, sub: googleId } = payload;
 
             // Find or create user
             let user = await User.findOne({ email });
@@ -177,9 +197,27 @@ export const googleSignIn = async (req, res) => {
                 message: error.message,
                 stack: error.stack,
             });
+
+            // Check if it's a token expiration error
+            if (error.message && error.message.includes("Token used too late")) {
+                return res.status(401).json({
+                    message: "Token has expired",
+                    code: "TOKEN_EXPIRED",
+                });
+            }
+
+            // Check if it's an audience mismatch
+            if (error.message && error.message.includes("Invalid audience")) {
+                return res.status(401).json({
+                    message: "Invalid client ID",
+                    code: "INVALID_CLIENT_ID",
+                });
+            }
+
             return res.status(401).json({
                 message: "Invalid Google token",
                 code: "INVALID_GOOGLE_TOKEN",
+                details: error.message,
             });
         }
     } catch (error) {
@@ -187,6 +225,7 @@ export const googleSignIn = async (req, res) => {
         res.status(500).json({
             message: "Error signing in with Google",
             code: "GOOGLE_SIGNIN_ERROR",
+            details: error.message,
         });
     }
 };
