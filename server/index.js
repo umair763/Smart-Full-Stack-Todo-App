@@ -126,12 +126,9 @@ const connectToDatabase = async () => {
         cachedConnection = await mongoose.connect(MONGO_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 30000,
-            retryWrites: true,
-            w: "majority",
-            maxPoolSize: 10,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
+            maxPoolSize: 10,
         });
         console.log("✅ Connected to MongoDB");
         return cachedConnection;
@@ -151,6 +148,7 @@ app.use(async (req, res, next) => {
         res.status(500).json({
             success: false,
             message: "Database connection failed",
+            error: process.env.NODE_ENV === "development" ? error.message : undefined,
         });
     }
 });
@@ -186,11 +184,11 @@ app.use("/api/attachments", attachmentRoutes);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error("Error:", err);
     res.status(err.status || 500).json({
         success: false,
         message: err.message || "Internal Server Error",
-        error: process.env.NODE_ENV === "development" ? err : {},
+        error: process.env.NODE_ENV === "development" ? err : undefined,
     });
 });
 
@@ -200,6 +198,15 @@ app.use((req, res) => {
         success: false,
         message: "Route not found",
     });
+});
+
+// Error handling for unhandled rejections
+process.on("unhandledRejection", (err) => {
+    console.error("❌ Unhandled Promise Rejection:", err);
+});
+
+process.on("uncaughtException", (err) => {
+    console.error("❌ Uncaught Exception:", err);
 });
 
 // Export the Express app for Vercel
@@ -220,20 +227,3 @@ if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
             process.exit(1);
         });
 }
-
-// Add error handling for unhandled rejections
-process.on("unhandledRejection", (err) => {
-    console.error("❌ Unhandled Promise Rejection:", err);
-    // Don't exit the process in production
-    if (process.env.NODE_ENV !== "production") {
-        process.exit(1);
-    }
-});
-
-process.on("uncaughtException", (err) => {
-    console.error("❌ Uncaught Exception:", err);
-    // Don't exit the process in production
-    if (process.env.NODE_ENV !== "production") {
-        process.exit(1);
-    }
-});
