@@ -112,9 +112,65 @@ app.set("connectedUsers", connectedUsers);
 process.env.JWT_SECRET = JWT_SECRET;
 process.env.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
 
+// MongoDB connection with caching for serverless
+let cachedConnection = null;
+
+const connectToDatabase = async () => {
+    if (cachedConnection && mongoose.connection.readyState === 1) {
+        console.log("Using cached database connection");
+        return cachedConnection;
+    }
+
+    try {
+        console.log("Creating new database connection");
+        cachedConnection = await mongoose.connect(MONGO_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 30000,
+            retryWrites: true,
+            w: "majority",
+            maxPoolSize: 10,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        console.log("✅ Connected to MongoDB");
+        return cachedConnection;
+    } catch (error) {
+        console.error("❌ MongoDB connection error:", error);
+        throw error;
+    }
+};
+
+// Middleware to ensure database connection
+app.use(async (req, res, next) => {
+    try {
+        await connectToDatabase();
+        next();
+    } catch (error) {
+        console.error("Database connection failed:", error);
+        res.status(500).json({
+            success: false,
+            message: "Database connection failed",
+        });
+    }
+});
+
 // Add health check endpoint
 app.get("/health", (req, res) => {
-    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+    res.status(200).json({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || "development",
+    });
+});
+
+// Root endpoint
+app.get("/", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Smart Todo API is running",
+        timestamp: new Date().toISOString(),
+    });
 });
 
 // API Routes
@@ -146,37 +202,6 @@ app.use((req, res) => {
     });
 });
 
-// Connect to MongoDB with retry logic
-const connectWithRetry = async () => {
-    let retries = 5;
-    while (retries > 0) {
-        try {
-            await mongoose.connect(MONGO_URI, {
-                useNewUrlParser: true,
-                useUnifiedTopology: true,
-                serverSelectionTimeoutMS: 30000,
-                retryWrites: true,
-                w: "majority",
-            });
-            console.log("✅ Connected to MongoDB");
-            return true;
-        } catch (error) {
-            console.error(`❌ MongoDB connection error (${retries} retries left):`, error);
-            retries--;
-            if (retries === 0) {
-                console.error("❌ Failed to connect to MongoDB after multiple retries");
-                return false;
-            }
-            console.log(`🔄 Retrying connection in 5 seconds...`);
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-        }
-    }
-    return false;
-};
-
-// Initialize database connection
-let isConnected = false;
-
 // Enhanced error handling
 process.on("unhandledRejection", (err) => {
     console.error("❌ Unhandled Promise Rejection:", err);
@@ -190,14 +215,17 @@ process.on("uncaughtException", (err) => {
 export default app;
 
 // Only start the server if not in a serverless environment
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const PORT = process.env.PORT || 5000;
-    connectWithRetry().then((connected) => {
-        if (connected) {
+    connectToDatabase()
+        .then(() => {
             server.listen(PORT, () => {
                 console.log(`🚀 Server is running on port ${PORT}`);
                 console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
             });
-        }
-    });
+        })
+        .catch((error) => {
+            console.error("Failed to start server:", error);
+            process.exit(1);
+        });
 }

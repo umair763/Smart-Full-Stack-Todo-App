@@ -1,44 +1,68 @@
 {
     "version": 2,
+    "name": "smart-todo-backend",
     "builds": [
         {
             "src": "index.js",
-            "use": "@vercel/node@3.0.0"
+            "use": "@vercel/node"
         }
     ],
     "routes": [
         {
-            "src": "/socket.io/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
+            "src": "/health",
+            "dest": "/index.js"
         },
         {
-            "src": "/api/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
+            "src": "/api/users/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/tasks/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/subtasks/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/notifications/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/reminders/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/dependencies/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/streaks/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/notes/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/attachments/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/socket.io/(.*)",
+            "dest": "/index.js"
         },
         {
             "src": "/(.*)",
-            "dest": "/index.js",
-            "headers": {
-                "Access-Control-Allow-Origin": "https://smart-todo-task-management-frontend.vercel.app",
-                "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
-                "Access-Control-Allow-Credentials": "true"
-            }
+            "dest": "/index.js"
         }
     ],
     "env": {
         "NODE_ENV": "production"
+    },
+    "functions": {
+        "index.js": {
+            "maxDuration": 30
+        }
     }
 }
