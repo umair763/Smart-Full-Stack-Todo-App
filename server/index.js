@@ -15,8 +15,6 @@ import dependencyRoutes from "./routes/dependencyRoutes.js";
 import streakRoutes from "./routes/streakRoutes.js";
 import noteRoutes from "./routes/noteRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
-import path from "path";
-import { fileURLToPath } from "url";
 
 // Load environment variables
 dotenv.config();
@@ -26,7 +24,6 @@ const server = http.createServer(app);
 
 // Create an EventEmitter for database changes
 const dbEvents = new EventEmitter();
-// Export dbEvents for use in controllers
 export { dbEvents };
 
 // Environment variables with fallbacks
@@ -90,49 +87,11 @@ const connectedUsers = new Map();
 io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 
-    // User authentication
     socket.on("authenticate", (userId) => {
         console.log(`User ${userId} authenticated with socket ${socket.id}`);
         connectedUsers.set(userId, socket.id);
     });
 
-    // Handle notification events
-    socket.on("notificationCreated", (notification) => {
-        io.emit("notification", notification);
-    });
-
-    socket.on("notificationDeleted", (notificationId) => {
-        io.emit("notificationUpdate", {
-            type: "delete",
-            notificationId,
-        });
-    });
-
-    socket.on("notificationsCleared", () => {
-        io.emit("notificationUpdate", {
-            type: "clearAll",
-        });
-    });
-
-    socket.on("notificationsMarkedAsRead", () => {
-        io.emit("notificationUpdate", {
-            type: "markAllRead",
-        });
-    });
-
-    // Handle dependency events
-    socket.on("dependencyCreated", (dependency) => {
-        io.emit("dependency", dependency);
-    });
-
-    socket.on("dependencyDeleted", (dependencyId) => {
-        io.emit("dependencyUpdate", {
-            type: "delete",
-            dependencyId,
-        });
-    });
-
-    // Handle disconnect
     socket.on("disconnect", () => {
         console.log("Client disconnected:", socket.id);
         for (const [userId, socketId] of connectedUsers.entries()) {
@@ -144,18 +103,6 @@ io.on("connection", (socket) => {
         }
     });
 });
-
-// Helper function to send notifications through socket
-io.sendNotification = (userId, notification) => {
-    if (connectedUsers.has(userId.toString())) {
-        const socketId = connectedUsers.get(userId.toString());
-        io.to(socketId).emit("notificationCreated", notification);
-        return true;
-    } else {
-        io.emit("notificationCreated", notification);
-    }
-    return false;
-};
 
 // Make io accessible to route handlers
 app.set("io", io);
@@ -169,6 +116,17 @@ process.env.GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID;
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// API Routes
+app.use("/api/users", userRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/subtasks", subtaskRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reminders", reminderRoutes);
+app.use("/api/dependencies", dependencyRoutes);
+app.use("/api/streaks", streakRoutes);
+app.use("/api/notes", noteRoutes);
+app.use("/api/attachments", attachmentRoutes);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
@@ -201,63 +159,45 @@ const connectWithRetry = async () => {
                 w: "majority",
             });
             console.log("✅ Connected to MongoDB");
-            return;
+            return true;
         } catch (error) {
             console.error(`❌ MongoDB connection error (${retries} retries left):`, error);
             retries--;
             if (retries === 0) {
                 console.error("❌ Failed to connect to MongoDB after multiple retries");
-                process.exit(1);
+                return false;
             }
             console.log(`🔄 Retrying connection in 5 seconds...`);
             await new Promise((resolve) => setTimeout(resolve, 5000));
         }
     }
+    return false;
 };
 
-// API Routes
-app.use("/api/users", userRoutes);
-app.use("/api/tasks", taskRoutes);
-app.use("/api/subtasks", subtaskRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/reminders", reminderRoutes);
-app.use("/api/dependencies", dependencyRoutes);
-app.use("/api/streaks", streakRoutes);
-app.use("/api/notes", noteRoutes);
-app.use("/api/attachments", attachmentRoutes);
-
-// Start server
-const PORT = process.env.PORT || 5000;
-connectWithRetry().then(() => {
-    server.listen(PORT, () => {
-        console.log(`🚀 Server is running on port ${PORT}`);
-        console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-    });
-});
+// Initialize database connection
+let isConnected = false;
 
 // Enhanced error handling
 process.on("unhandledRejection", (err) => {
     console.error("❌ Unhandled Promise Rejection:", err);
-    // Log to error tracking service if available
 });
 
 process.on("uncaughtException", (err) => {
     console.error("❌ Uncaught Exception:", err);
-    // Log to error tracking service if available
-    // Give time for logging before exiting
-    setTimeout(() => {
-        process.exit(1);
-    }, 1000);
 });
 
-// Graceful shutdown
-process.on("SIGTERM", () => {
-    console.log("SIGTERM received. Shutting down gracefully...");
-    server.close(() => {
-        console.log("Server closed");
-        mongoose.connection.close(false, () => {
-            console.log("MongoDB connection closed");
-            process.exit(0);
-        });
+// Export the Express app for Vercel
+export default app;
+
+// Only start the server if not in a serverless environment
+if (process.env.NODE_ENV !== "production") {
+    const PORT = process.env.PORT || 5000;
+    connectWithRetry().then((connected) => {
+        if (connected) {
+            server.listen(PORT, () => {
+                console.log(`🚀 Server is running on port ${PORT}`);
+                console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+            });
+        }
     });
-});
+}
