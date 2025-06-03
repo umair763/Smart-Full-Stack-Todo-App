@@ -11,9 +11,12 @@ import Streak from "../models/Streak.js";
 import { OAuth2Client } from "google-auth-library";
 import multer from "multer";
 
-// Hardcoded Google Client ID - Replace this with your actual Google Client ID
-const GOOGLE_CLIENT_ID = "726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com";
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+// Get Google Client ID from environment variable
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+if (!GOOGLE_CLIENT_ID) {
+    console.error("❌ GOOGLE_CLIENT_ID is not set in environment variables");
+    process.exit(1);
+}
 
 // Configure multer for profile image upload
 const storage = multer.memoryStorage();
@@ -23,7 +26,6 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024, // 5MB limit
     },
     fileFilter: (req, file, cb) => {
-        // Only allow image files
         if (file.mimetype.startsWith("image/")) {
             cb(null, true);
         } else {
@@ -117,70 +119,75 @@ export const login = async (req, res) => {
 // Google Sign In
 export const googleSignIn = async (req, res) => {
     try {
-        const { token, clientId } = req.body;
+        const { token } = req.body;
 
         if (!token) {
             return res.status(400).json({
+                success: false,
                 message: "Google token is required",
                 code: "MISSING_TOKEN",
             });
         }
 
-        console.log("Received Google token:", token.substring(0, 20) + "...");
-        console.log("Using Google Client ID:", clientId);
+        if (!GOOGLE_CLIENT_ID) {
+            console.error("Google Client ID is not configured");
+            return res.status(500).json({
+                success: false,
+                message: "Server configuration error",
+                code: "SERVER_CONFIG_ERROR",
+            });
+        }
 
         try {
-            // Create a new client with the provided client ID
-            const client = new OAuth2Client(clientId);
-
-            // Decode the token first to check its structure
-            const decodedToken = jwt.decode(token);
-            console.log("Decoded token payload:", decodedToken);
-
-            if (!decodedToken) {
-                throw new Error("Invalid token format");
-            }
+            // Create OAuth client
+            const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
             // Verify the token
-            const ticket = await client
-                .verifyIdToken({
-                    idToken: token,
-                    audience: clientId,
-                })
-                .catch((error) => {
-                    console.error("Token verification error details:", {
-                        name: error.name,
-                        message: error.message,
-                        stack: error.stack,
-                    });
-                    throw error;
-                });
+            const ticket = await client.verifyIdToken({
+                idToken: token,
+                audience: GOOGLE_CLIENT_ID,
+            });
 
-            console.log("Token verification successful");
             const payload = ticket.getPayload();
-            console.log("Token payload:", payload);
-
             const { email, name, picture, sub: googleId } = payload;
+
+            if (!email) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Email not provided by Google",
+                    code: "EMAIL_MISSING",
+                });
+            }
 
             // Find or create user
             let user = await User.findOne({ email });
+
             if (!user) {
-                console.log("Creating new user for Google sign-in");
+                // Create new user
                 user = new User({
-                    username: name,
+                    username: name || email.split("@")[0],
                     email,
                     googleId,
                     profileImage: picture,
+                    isGoogleUser: true,
                 });
+                await user.save();
+            } else if (!user.googleId) {
+                // Update existing user with Google info
+                user.googleId = googleId;
+                user.isGoogleUser = true;
+                if (!user.profileImage) {
+                    user.profileImage = picture;
+                }
                 await user.save();
             }
 
-            // Generate token
-            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET || "your-secret-key", {
-                expiresIn: "7d",
-            });
+            // Generate JWT token
+            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
+            // Send success response
             res.json({
+                success: true,
                 message: "Google sign in successful",
                 token: jwtToken,
                 user: {
@@ -188,44 +195,42 @@ export const googleSignIn = async (req, res) => {
                     username: user.username,
                     email: user.email,
                     profileImage: user.profileImage,
+                    isGoogleUser: user.isGoogleUser,
                 },
             });
         } catch (error) {
             console.error("Google token verification error:", error);
-            console.error("Error details:", {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-            });
 
-            // Check if it's a token expiration error
-            if (error.message && error.message.includes("Token used too late")) {
+            if (error.message.includes("Token used too late")) {
                 return res.status(401).json({
-                    message: "Token has expired",
+                    success: false,
+                    message: "Google token has expired",
                     code: "TOKEN_EXPIRED",
                 });
             }
 
-            // Check if it's an audience mismatch
-            if (error.message && error.message.includes("Invalid audience")) {
+            if (error.message.includes("Invalid audience")) {
                 return res.status(401).json({
-                    message: "Invalid client ID",
+                    success: false,
+                    message: "Invalid Google Client ID",
                     code: "INVALID_CLIENT_ID",
                 });
             }
 
             return res.status(401).json({
+                success: false,
                 message: "Invalid Google token",
-                code: "INVALID_GOOGLE_TOKEN",
-                details: error.message,
+                code: "INVALID_TOKEN",
+                details: process.env.NODE_ENV === "development" ? error.message : undefined,
             });
         }
     } catch (error) {
         console.error("Google sign in error:", error);
         res.status(500).json({
+            success: false,
             message: "Error signing in with Google",
-            code: "GOOGLE_SIGNIN_ERROR",
-            details: error.message,
+            code: "SERVER_ERROR",
+            details: process.env.NODE_ENV === "development" ? error.message : undefined,
         });
     }
 };
