@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,16 @@ function GoogleSignIn() {
    const { login } = useAuth();
    const navigate = useNavigate();
    const [error, setError] = useState(null);
+   const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+      if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+         setError('Google Sign-In is not configured');
+         setLoading(false);
+         return;
+      }
+      setLoading(false);
+   }, []);
 
    const handleLoginSuccess = async (response) => {
       const { credential } = response;
@@ -16,8 +26,7 @@ function GoogleSignIn() {
 
       try {
          console.log('Sending token to backend...');
-         // Send the credential token to backend
-         const backendResponse = await fetch('/api/users/google-signin', {
+         const backendResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/google-signin`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -35,10 +44,8 @@ function GoogleSignIn() {
             throw new Error(`Server returned ${backendResponse.status}: ${JSON.stringify(data)}`);
          }
 
-         // On success, set the login state to true using AuthContext
          if (data && data.token) {
             login(data.token);
-            // Navigate to dashboard
             navigate('/dashboard');
          } else {
             setError('No token received from server');
@@ -55,7 +62,6 @@ function GoogleSignIn() {
                errorMessage = errorData.message;
             }
          } catch (e) {
-            // If parsing fails, use the original error message
             console.error('Error parsing error message:', e);
          }
 
@@ -68,6 +74,10 @@ function GoogleSignIn() {
       setError('Google Sign-In failed. Please try again.');
    };
 
+   if (loading) {
+      return <div className="text-center">Loading...</div>;
+   }
+
    return (
       <div className="pt-1">
          {error && <div className="text-red-500 text-sm mb-2 text-center">{error}</div>}
@@ -77,7 +87,7 @@ function GoogleSignIn() {
             useOneTap={false}
             flow="implicit"
             context="signin"
-            clientId={GOOGLE_CLIENT_ID}
+            clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
          />
       </div>
    );
