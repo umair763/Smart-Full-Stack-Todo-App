@@ -1,0 +1,13 @@
+The project is successfully deployed on Vercel and authenticates users using Google Sign-In. However, there are critical issues after authentication:
+
+The header and footer flash frequently after login.
+
+The dashboard ("Tasks" panel) does not load — it only shows "Loading..." and never displays content.
+
+The Three.js dynamic background renders correctly.
+
+The database is connected, collections are created, and users are saved properly via Google Sign-In.
+
+When the settings tab is clicked, the settings page loads correctly, but the header still continues to flash.
+
+Start by analyzing the vercel.json file in the client/ directory. Identify and resolve the issue(s) causing these problems.

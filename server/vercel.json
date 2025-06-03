@@ -1,5 +1,6 @@
 {
     "version": 2,
+    "name": "smart-todo-backend",
     "builds": [
         {
             "src": "index.js",
@@ -43,6 +44,11 @@
             ]
         }
     ],
+    "functions": {
+        "index.js": {
+            "maxDuration": 30
+        }
+    },
     "env": {
         "NODE_ENV": "production",
         "FRONTEND_URL": "https://smart-todo-task-management-frontend.vercel.app"
