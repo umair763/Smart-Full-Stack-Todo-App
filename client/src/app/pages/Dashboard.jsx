@@ -13,7 +13,7 @@ import NotificationCenter from '../../components/NotificationCenter';
 import UserProfile from '../../components/UserProfile';
 
 // Hardcoded backend URL
-const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
+const BACKEND_URL = import.meta.env.VITE_API_URL;
 
 function Dashboard() {
    const [tasks, setTasks] = useState([]);
@@ -33,15 +33,20 @@ function Dashboard() {
       }
 
       fetchTasks();
-      setupSocketListeners();
 
-      return () => {
-         if (socket) {
+      // Only setup socket listeners if socket is available
+      if (socket) {
+         setupSocketListeners();
+
+         return () => {
             socket.off('taskCreated');
             socket.off('taskUpdated');
             socket.off('taskDeleted');
-         }
-      };
+         };
+      }
+
+      // Cleanup function if socket is not available
+      return () => {};
    }, [token, socket]);
 
    const setupSocketListeners = () => {
