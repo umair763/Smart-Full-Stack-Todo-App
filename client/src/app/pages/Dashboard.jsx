@@ -26,19 +26,30 @@ function Dashboard() {
    const { socket } = useSocket();
    const navigate = useNavigate();
 
+   console.log('Dashboard component rendered');
+   console.log('Auth token:', token ? 'Exists' : 'Does not exist');
+   console.log('Socket object:', socket ? 'Exists' : 'Does not exist');
+
    useEffect(() => {
+      console.log('Dashboard useEffect running');
+      console.log('useEffect token:', token ? 'Exists' : 'Does not exist');
+
       if (!token) {
+         console.log('No token found, navigating to login');
          navigate('/login');
          return;
       }
 
+      console.log('Token exists, calling fetchTasks()');
       fetchTasks();
 
       // Only setup socket listeners if socket is available
       if (socket) {
+         console.log('Socket exists, setting up listeners');
          setupSocketListeners();
 
          return () => {
+            console.log('Cleaning up socket listeners');
             socket.off('taskCreated');
             socket.off('taskUpdated');
             socket.off('taskDeleted');

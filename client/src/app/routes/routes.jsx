@@ -48,16 +48,17 @@ const AppRoutes = () => {
 
             {/* Protected routes - only show when logged in */}
             {isLoggedIn && (
-               <Route element={<Layout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/insights" element={<Insights />} />
-                  <Route path="/app" element={<Navigate to="/dashboard" replace />} />
-               </Route>
+               <>
+                  <Route element={<Layout />}>
+                     <Route path="/dashboard" element={<Dashboard />} />
+                     <Route path="/settings" element={<Settings />} />
+                     <Route path="/insights" element={<Insights />} />
+                  </Route>
+                  {/* Simplified redirect for authenticated users */}
+                  {/* Redirect any unhandled authenticated route to dashboard */}
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+               </>
             )}
-
-            {/* Catch-all redirects */}
-            <Route path="*" element={<Navigate to={isLoggedIn ? '/dashboard' : '/'} replace />} />
          </Routes>
       </Suspense>
    );
