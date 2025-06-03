@@ -34,26 +34,23 @@ function Dashboard() {
       console.log('Dashboard useEffect running');
       console.log('useEffect token:', token ? 'Exists' : 'Does not exist');
 
-      if (!token) {
-         console.log('No token found, navigating to login');
-         navigate('/login');
-         return;
-      }
+      // Only proceed if token is a non-empty string
+      if (typeof token === 'string' && token.length > 0) {
+         console.log('Token exists and is valid string, calling fetchTasks()');
+         fetchTasks();
 
-      console.log('Token exists, calling fetchTasks()');
-      fetchTasks();
+         // Only setup socket listeners if socket is available
+         if (socket) {
+            console.log('Socket exists, setting up listeners');
+            setupSocketListeners();
 
-      // Only setup socket listeners if socket is available
-      if (socket) {
-         console.log('Socket exists, setting up listeners');
-         setupSocketListeners();
-
-         return () => {
-            console.log('Cleaning up socket listeners');
-            socket.off('taskCreated');
-            socket.off('taskUpdated');
-            socket.off('taskDeleted');
-         };
+            return () => {
+               console.log('Cleaning up socket listeners');
+               socket.off('taskCreated');
+               socket.off('taskUpdated');
+               socket.off('taskDeleted');
+            };
+         }
       }
 
       // Cleanup function if socket is not available
