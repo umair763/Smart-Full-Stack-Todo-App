@@ -36,9 +36,16 @@ function Dashboard() {
       console.log('useEffect token:', token ? 'Exists' : 'Does not exist', '(', token, ')');
       console.log('useEffect authLoading:', authLoading);
 
+      // If auth loading is complete and no token is found, redirect to login
+      if (!authLoading && !token) {
+         console.log('No token found after auth loading, redirecting to login');
+         navigate('/login');
+         return;
+      }
+
       // Only proceed if auth loading is complete AND token is a non-empty string
-      if (!authLoading && typeof token === 'string' && token.length > 0) {
-         console.log('Auth not loading and token is valid string, calling fetchTasks()');
+      if (!authLoading && token) {
+         console.log('Auth not loading and token exists, calling fetchTasks()');
          fetchTasks();
 
          // Only setup socket listeners if socket is available
@@ -57,7 +64,7 @@ function Dashboard() {
 
       // Cleanup function if socket is not available
       return () => {};
-   }, [authLoading, token, socket]);
+   }, [authLoading, token, socket, navigate]);
 
    const setupSocketListeners = () => {
       if (socket) {
