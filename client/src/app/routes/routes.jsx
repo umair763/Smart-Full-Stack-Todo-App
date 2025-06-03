@@ -30,43 +30,45 @@ const AppRoutes = () => {
    }
 
    return (
-      <Suspense fallback={<LoadingSpinner />}>
-         <Routes>
-            {/* Landing Page - accessible to both authenticated and unauthenticated users */}
+      <Routes>
+         {/* Landing Page - accessible to both authenticated and unauthenticated users */}
+         {/* Redirect authenticated users from landing/auth pages */}
+         {isLoggedIn ? (
+            <Route path="/((home|auth/login|auth/register))" element={<Navigate to="/dashboard" replace />} />
+         ) : (
             <Route element={<LandingPageLayout />}>
                <Route path="/home" element={<LandingPage />} />
                <Route path="/" element={<LandingPage />} />
             </Route>
+         )}
 
-            {/* Redirect authenticated users from landing/auth pages */}
-            {isLoggedIn && (
-               <Route path="/((home|auth/login|auth/register))" element={<Navigate to="/dashboard" replace />} />
-            )}
+         {/* Authenticated routes - only render when NOT loading and IS logged in */}
+         {!loading && isLoggedIn && (
+            <Route element={<Layout />}>
+               <Route path="/dashboard" element={<Dashboard />} />
+               <Route path="/settings" element={<Settings />} />
+               <Route path="/insights" element={<Insights />} />
+               {/* Redirect any unhandled authenticated route to dashboard */}
+               <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+         )}
 
-            {/* Unauthenticated routes */}
-            {!isLoggedIn && (
-               <>
-                  <Route path="/auth/login" element={<AuthPage />} />
-                  <Route path="/auth/register" element={<AuthPage />} />
-                  {/* Redirect all other routes to home when not logged in */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-               </>
-            )}
+         {/* Unauthenticated routes - only render when NOT loading and NOT logged in */}
+         {!loading && !isLoggedIn && (
+            <Route>
+               <Route path="/auth/login" element={<AuthPage />} />
+               <Route path="/auth/register" element={<AuthPage />} />
+               {/* Redirect all other routes to home when not logged in (handled by above Redirect) */}
+               {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
+            </Route>
+         )}
 
-            {/* Authenticated routes */}
-            {isLoggedIn && (
-               <>
-                  <Route element={<Layout />}>
-                     <Route path="/dashboard" element={<Dashboard />} />
-                     <Route path="/settings" element={<Settings />} />
-                     <Route path="/insights" element={<Insights />} />
-                  </Route>
-                  {/* Redirect any unhandled authenticated route to dashboard */}
-                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
-               </>
-            )}
-         </Routes>
-      </Suspense>
+         {/* Fallback for routes that don't match any explicit rule while not logged in*/}
+         {!loading && !isLoggedIn && <Route path="*" element={<Navigate to="/" replace />} />}
+
+         {/* Fallback for routes that don't match any explicit rule while logged in */}
+         {!loading && isLoggedIn && <Route path="*" element={<Navigate to="/dashboard" replace />} />}
+      </Routes>
    );
 };
 
