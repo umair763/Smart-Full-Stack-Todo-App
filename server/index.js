@@ -1,12 +1,11 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import bodyParser from "body-parser";
 import http from "http";
 import { Server } from "socket.io";
 import { EventEmitter } from "events";
 import dotenv from "dotenv";
-
-// Import and use routes
 import userRoutes from "./routes/userRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import subtaskRoutes from "./routes/subtaskRoutes.js";
@@ -14,10 +13,10 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 import dependencyRoutes from "./routes/dependencyRoutes.js";
 import streakRoutes from "./routes/streakRoutes.js";
+
 import noteRoutes from "./routes/noteRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -25,54 +24,38 @@ const server = http.createServer(app);
 
 // Create an EventEmitter for database changes
 const dbEvents = new EventEmitter();
+// Export dbEvents for use in controllers
 export { dbEvents };
 
-// Environment variables
-const MONGO_URI = process.env.MONGODB_URI;
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://smart-todo-task-management-frontend.vercel.app";
-
-// Basic middleware
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
-
-// CORS
+// Improved CORS configuration
 app.use(
     cors({
-        origin: [FRONTEND_URL, "http://localhost:5173"],
+        origin: "https://smart-todo-task-management-frontend.vercel.app",
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Cascade-Delete"],
+        allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true,
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
     })
 );
 
-// Socket.io configuration
+// Handle preflight requests explicitly
+app.options("*", cors());
+
+// Middleware for JSON
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// Setup Socket.io AFTER CORS middleware
 const io = new Server(server, {
     cors: {
-        origin: [FRONTEND_URL, "http://localhost:5173"],
+        origin: "https://smart-todo-task-management-frontend.vercel.app",
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         credentials: true,
-        allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+        allowedHeaders: ["Content-Type", "Authorization"],
     },
     transports: ["websocket", "polling"],
     path: "/socket.io/",
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    connectTimeout: 45000,
-    allowEIO3: true,
-    cookie: {
-        name: "io",
-        httpOnly: true,
-        sameSite: "none",
-        secure: true,
-    },
-});
-
-// Add CORS headers for WebSocket upgrade
-app.use((req, res, next) => {
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    next();
 });
 
 // Store connected users
@@ -82,13 +65,58 @@ const connectedUsers = new Map();
 io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 
+    // User authentication
     socket.on("authenticate", (userId) => {
         console.log(`User ${userId} authenticated with socket ${socket.id}`);
         connectedUsers.set(userId, socket.id);
     });
 
+    // Handle notification events
+    socket.on("notificationCreated", (notification) => {
+        // Broadcast to all connected clients
+        io.emit("notification", notification);
+    });
+
+    socket.on("notificationDeleted", (notificationId) => {
+        // Broadcast to all connected clients
+        io.emit("notificationUpdate", {
+            type: "delete",
+            notificationId,
+        });
+    });
+
+    socket.on("notificationsCleared", () => {
+        // Broadcast to all connected clients
+        io.emit("notificationUpdate", {
+            type: "clearAll",
+        });
+    });
+
+    socket.on("notificationsMarkedAsRead", () => {
+        // Broadcast to all connected clients
+        io.emit("notificationUpdate", {
+            type: "markAllRead",
+        });
+    });
+
+    // Handle dependency events
+    socket.on("dependencyCreated", (dependency) => {
+        // Broadcast to all connected clients
+        io.emit("dependency", dependency);
+    });
+
+    socket.on("dependencyDeleted", (dependencyId) => {
+        // Broadcast to all connected clients
+        io.emit("dependencyUpdate", {
+            type: "delete",
+            dependencyId,
+        });
+    });
+
+    // Handle disconnect
     socket.on("disconnect", () => {
         console.log("Client disconnected:", socket.id);
+        // Remove user from connectedUsers map
         for (const [userId, socketId] of connectedUsers.entries()) {
             if (socketId === socket.id) {
                 connectedUsers.delete(userId);
@@ -99,138 +127,144 @@ io.on("connection", (socket) => {
     });
 });
 
+// Helper function to send notifications through socket
+io.sendNotification = (userId, notification) => {
+    // Send to specific user if connected
+    if (connectedUsers.has(userId.toString())) {
+        const socketId = connectedUsers.get(userId.toString());
+
+        // Emit notification created event to trigger UI updates
+        io.to(socketId).emit("notificationCreated", notification);
+        return true;
+    } else {
+        // Even if user is not connected, emit a general notification
+        // This helps with cases where multiple tabs are open
+        io.emit("notificationCreated", notification);
+    }
+
+    return false;
+};
+
 // Make io accessible to route handlers
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 
-// MongoDB connection cache
-let cached = global.mongoose;
+// MongoDB Configuration
+const MONGO_URI =
+    process.env.MONGO_URI||
+    "mongodb+srv://MuhammadUmair:umair@11167@cluster0.jjtx3.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0/SmartTodoApp";
 
-if (!cached) {
-    cached = global.mongoose = { conn: null, promise: null };
-}
+// Connect to MongoDB
+mongoose
+    .connect(MONGO_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+    })
+    .then(() => console.log("MongoDB connected successfully"))
+    .catch((err) => console.error("MongoDB connection error:", err));
 
-async function connectDB() {
-    if (cached.conn) {
-        return cached.conn;
-    }
-
-    if (!cached.promise) {
-        cached.promise = mongoose.connect(MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            bufferCommands: false,
-            maxPoolSize: 5,
-            serverSelectionTimeoutMS: 5000,
-        });
-    }
-
-    try {
-        cached.conn = await cached.promise;
-        return cached.conn;
-    } catch (e) {
-        cached.promise = null;
-        throw e;
-    }
-}
-
-// Health check
-app.get("/health", async (req, res) => {
-    try {
-        await connectDB();
-        res.json({
-            status: "ok",
-            message: "Smart Todo API is running in production",
-            timestamp: new Date().toISOString(),
-            database: "connected",
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: "error",
-            message: "Database connection failed",
-            timestamp: new Date().toISOString(),
-        });
-    }
+// Add error handler for MongoDB connection
+mongoose.connection.on("error", (err) => {
+    console.error("MongoDB connection error:", err);
 });
 
-// Root endpoint
+mongoose.connection.on("disconnected", () => {
+    console.warn("MongoDB disconnected. Attempting to reconnect...");
+});
+
+// Debug route to check if server is running
 app.get("/", (req, res) => {
+    res.json({ message: "Todo API is running" });
+});
+
+// Debug route for Socket.io
+app.get("/socket-check", (req, res) => {
     res.json({
-        success: true,
-        message: "Smart Todo API is running in production",
-        timestamp: new Date().toISOString(),
-        version: "1.0.0",
+        message: "Socket.io is running",
+        connectedClients: io.engine.clientsCount,
+        connectedUsers: [...connectedUsers.entries()].map(([userId, socketId]) => ({ userId, socketId })),
     });
 });
 
-// Test endpoint
-app.get("/api/test", async (req, res) => {
-    try {
-        await connectDB();
-        res.json({
-            success: true,
-            message: "API and Database working",
-            timestamp: new Date().toISOString(),
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Database connection failed",
-        });
-    }
+// Debug route to check routes
+app.get("/api/debug", (req, res) => {
+    res.json({
+        message: "API Debug Route",
+        routes: {
+            users: [
+                { method: "POST", path: "/api/users/google-signin" },
+                { method: "POST", path: "/api/users/register" },
+                { method: "POST", path: "/api/users/login" },
+                { method: "GET", path: "/api/users/profile" },
+                { method: "POST", path: "/api/users/update-username" },
+                { method: "POST", path: "/api/users/update-profile-image" },
+                { method: "DELETE", path: "/api/users/delete-account" },
+            ],
+            tasks: [
+                { method: "GET", path: "/api/tasks" },
+                { method: "POST", path: "/api/tasks" },
+                { method: "PUT", path: "/api/tasks/:id" },
+                { method: "DELETE", path: "/api/tasks/:id" },
+                { method: "GET", path: "/api/tasks/stats" },
+                { method: "PATCH", path: "/api/tasks/:id/status" },
+            ],
+            subtasks: [
+                { method: "GET", path: "/api/tasks/:taskId/subtasks" },
+                { method: "POST", path: "/api/tasks/:taskId/subtasks" },
+                { method: "PUT", path: "/api/subtasks/:subtaskId" },
+                { method: "DELETE", path: "/api/subtasks/:subtaskId" },
+                { method: "PATCH", path: "/api/subtasks/:subtaskId/status" },
+            ],
+            dependencies: [
+                { method: "GET", path: "/api/dependencies" },
+                { method: "GET", path: "/api/dependencies/task/:taskId" },
+                { method: "POST", path: "/api/dependencies" },
+                { method: "PUT", path: "/api/dependencies/:id" },
+                { method: "DELETE", path: "/api/dependencies/:id" },
+                { method: "POST", path: "/api/dependencies/validate" },
+            ],
+            streaks: [
+                { method: "GET", path: "/api/streaks" },
+                { method: "GET", path: "/api/streaks/analytics" },
+                { method: "POST", path: "/api/streaks/update" },
+                { method: "GET", path: "/api/streaks/history" },
+            ],
+            sockets: [
+                { event: "connection", description: "New client connected" },
+                { event: "authenticate", description: "Authenticate user with socket" },
+                { event: "disconnect", description: "Client disconnected" },
+                { event: "taskCreated", description: "Task created notification" },
+                { event: "taskUpdated", description: "Task updated notification" },
+                { event: "taskDeleted", description: "Task deleted notification" },
+                { event: "taskStatusChanged", description: "Task status changed notification" },
+                { event: "subtaskCreated", description: "Subtask created notification" },
+                { event: "subtaskUpdated", description: "Subtask updated notification" },
+                { event: "subtaskDeleted", description: "Subtask deleted notification" },
+                { event: "subtaskStatusChanged", description: "Subtask status changed notification" },
+                { event: "dependencyCreated", description: "Dependency created notification" },
+                { event: "dependencyDeleted", description: "Dependency deleted notification" },
+            ],
+        },
+    });
 });
 
-// API Routes
+// Routes
 app.use("/api/users", userRoutes);
 app.use("/api/tasks", taskRoutes);
-app.use("/api/subtasks", subtaskRoutes);
+app.use("/api/tasks", subtaskRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/dependencies", dependencyRoutes);
 app.use("/api/streaks", streakRoutes);
-app.use("/api/notes", noteRoutes);
-app.use("/api/attachments", attachmentRoutes);
 
-// Error handler
-app.use((err, req, res, next) => {
-    console.error("Error:", err);
-    res.status(500).json({
-        success: false,
-        message: "Internal Server Error",
-    });
+app.use("/api", noteRoutes);
+app.use("/api", attachmentRoutes);
+
+// Use server.listen instead of app.listen for Socket.io
+server.listen(process.env.PORT || 5000, () => {
+    console.log(`Server running on port ${process.env.PORT || 5000}`);
+    console.log(`API available at https://smart-todo-task-management-frontend.vercel.app:${process.env.PORT || 5000}/api`);
+    console.log(`Socket.io running on ws://smart-todo-task-management-frontend.vercel.app:${process.env.PORT || 5000}/socket.io/`);
 });
-
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: "Route not found",
-    });
-});
-
-// Error handling for unhandled rejections
-process.on("unhandledRejection", (err) => {
-    console.error("❌ Unhandled Promise Rejection:", err);
-});
-
-process.on("uncaughtException", (err) => {
-    console.error("❌ Uncaught Exception:", err);
-});
-
-export default app;
-
-// Only start the server if not in a serverless environment
-if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
-    const PORT = process.env.PORT || 5000;
-    connectDB()
-        .then(() => {
-            server.listen(PORT, () => {
-                console.log(`🚀 Server is running on port ${PORT}`);
-                console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-            });
-        })
-        .catch((error) => {
-            console.error("Failed to start server:", error);
-            process.exit(1);
-        });
-}

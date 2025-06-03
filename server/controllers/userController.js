@@ -11,9 +11,7 @@ import Streak from "../models/Streak.js";
 import { OAuth2Client } from "google-auth-library";
 import multer from "multer";
 
-// Get Google Client ID from environment variable
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com";
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Configure multer for profile image upload
 const storage = multer.memoryStorage();
@@ -39,6 +37,7 @@ export const profileImageUploadMiddleware = upload.single("picture");
 export const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
+
         // Check if user already exists
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
@@ -51,6 +50,7 @@ export const register = async (req, res) => {
             email,
             password,
         });
+
         await user.save();
 
         // Generate token
@@ -78,6 +78,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
+
         // Find user
         const user = await User.findOne({ email });
         if (!user) {
@@ -111,114 +112,44 @@ export const login = async (req, res) => {
     }
 };
 
-// Google Sign In - Updated version
+// Google Sign In
 export const googleSignIn = async (req, res) => {
     try {
         const { token } = req.body;
 
         if (!token) {
-            console.error("No token provided in request");
             return res.status(400).json({
                 message: "Google token is required",
                 code: "MISSING_TOKEN",
             });
         }
 
-        console.log("Starting Google token verification...");
-
         try {
-            // Create OAuth client with the environment client ID
-            const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
-
-            // Log token details (safely)
-            const tokenParts = token.split(".");
-            if (tokenParts.length === 3) {
-                try {
-                    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
-                    console.log("Token details:", {
-                        email: payload.email,
-                        iss: payload.iss,
-                        aud: payload.aud,
-                        exp: new Date(payload.exp * 1000).toISOString(),
-                    });
-                } catch (e) {
-                    console.log("Could not decode token payload");
-                }
-            }
-
-            // Verify the token
-            console.log("Verifying token with client ID:", GOOGLE_CLIENT_ID);
-            const ticket = await googleClient.verifyIdToken({
+            const ticket = await client.verifyIdToken({
                 idToken: token,
-                audience: GOOGLE_CLIENT_ID,
+                audience: process.env.GOOGLE_CLIENT_ID,
             });
 
-            const payload = ticket.getPayload();
-            console.log("Token verification successful for:", payload.email);
-
-            const { email, name, picture, sub: googleId } = payload;
-
-            if (!email) {
-                console.error("No email in Google token payload");
-                throw new Error("Email not provided by Google");
-            }
+            const { email, name, picture, sub: googleId } = ticket.getPayload();
 
             // Find or create user
-            let user = await User.findOne({
-                $or: [{ email: email }, { googleId: googleId }],
-            });
-
+            let user = await User.findOne({ email });
             if (!user) {
-                console.log("Creating new user for:", email);
-
-                // Generate unique username
-                let username = name || email.split("@")[0];
-                let counter = 1;
-                let uniqueUsername = username;
-
-                while (await User.findOne({ username: uniqueUsername })) {
-                    uniqueUsername = `${username}${counter}`;
-                    counter++;
-                }
-
                 user = new User({
-                    username: uniqueUsername,
+                    username: name,
                     email,
                     googleId,
-                    profileImage: picture || "",
-                    isGoogleUser: true,
+                    profileImage: picture,
                 });
-
                 await user.save();
-                console.log("New user created:", uniqueUsername);
-            } else {
-                console.log("Existing user found:", email);
-                // Update user if needed
-                let updated = false;
-                if (!user.googleId) {
-                    user.googleId = googleId;
-                    updated = true;
-                }
-                if (!user.profileImage && picture) {
-                    user.profileImage = picture;
-                    updated = true;
-                }
-                if (!user.isGoogleUser) {
-                    user.isGoogleUser = true;
-                    updated = true;
-                }
-                if (updated) {
-                    await user.save();
-                    console.log("User updated with Google info");
-                }
             }
 
-            // Generate JWT token
-            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+            // Generate token
+            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+                expiresIn: "7d",
+            });
 
-            console.log("Sign in successful for:", email);
             res.json({
-                success: true,
                 message: "Google sign in successful",
                 token: jwtToken,
                 user: {
@@ -226,59 +157,20 @@ export const googleSignIn = async (req, res) => {
                     username: user.username,
                     email: user.email,
                     profileImage: user.profileImage,
-                    isGoogleUser: true,
                 },
             });
-        } catch (verificationError) {
-            console.error("Google token verification failed:", {
-                name: verificationError.name,
-                message: verificationError.message,
-                stack: verificationError.stack,
-            });
-
-            if (verificationError.message.includes("Token used too late")) {
-                return res.status(401).json({
-                    success: false,
-                    message: "Google token has expired. Please try signing in again.",
-                    code: "TOKEN_EXPIRED",
-                });
-            }
-
-            if (verificationError.message.includes("Invalid audience")) {
-                return res.status(401).json({
-                    success: false,
-                    message: "Invalid Google Client ID configuration",
-                    code: "INVALID_CLIENT_ID",
-                });
-            }
-
-            if (verificationError.message.includes("Invalid token signature")) {
-                return res.status(401).json({
-                    success: false,
-                    message: "Invalid Google token signature",
-                    code: "INVALID_TOKEN_SIGNATURE",
-                });
-            }
-
+        } catch (error) {
+            console.error("Google token verification error:", error);
             return res.status(401).json({
-                success: false,
-                message: "Failed to verify Google token",
-                code: "GOOGLE_VERIFICATION_FAILED",
-                details: process.env.NODE_ENV === "development" ? verificationError.message : undefined,
+                message: "Invalid Google token",
+                code: "INVALID_GOOGLE_TOKEN",
             });
         }
     } catch (error) {
-        console.error("Google sign in error:", {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-        });
-
+        console.error("Google sign in error:", error);
         res.status(500).json({
-            success: false,
-            message: "Internal server error during Google sign in",
+            message: "Error signing in with Google",
             code: "GOOGLE_SIGNIN_ERROR",
-            details: process.env.NODE_ENV === "development" ? error.message : undefined,
         });
     }
 };
@@ -287,11 +179,13 @@ export const googleSignIn = async (req, res) => {
 export const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select("-password");
+
         // Return user with picture field for compatibility
         const userResponse = {
             ...user.toObject(),
             picture: user.profileImage, // Add picture field for backward compatibility
         };
+
         res.json(userResponse);
     } catch (error) {
         console.error("Get profile error:", error);
@@ -303,6 +197,7 @@ export const getProfile = async (req, res) => {
 export const updateUsername = async (req, res) => {
     try {
         const { username } = req.body;
+
         // Check if username is already taken
         const existingUser = await User.findOne({ username });
         if (existingUser && existingUser._id.toString() !== req.user._id.toString()) {
@@ -310,6 +205,7 @@ export const updateUsername = async (req, res) => {
         }
 
         const user = await User.findByIdAndUpdate(req.user._id, { username }, { new: true }).select("-password");
+
         // Return user with picture field for compatibility
         const userResponse = {
             ...user.toObject(),
@@ -334,10 +230,12 @@ export const updateProfileImage = async (req, res) => {
         }
 
         const { buffer, mimetype } = req.file;
+
         // Convert buffer to base64 data URL
         const base64Image = `data:${mimetype};base64,${buffer.toString("base64")}`;
 
         const user = await User.findByIdAndUpdate(req.user._id, { profileImage: base64Image }, { new: true }).select("-password");
+
         // Return user with picture field for compatibility
         const userResponse = {
             ...user.toObject(),
@@ -358,38 +256,49 @@ export const updateProfileImage = async (req, res) => {
 export const deleteAccount = async (req, res) => {
     try {
         const userId = req.user._id;
+        
         console.log(`Starting account deletion for user: ${userId}`);
 
         // Get all user's tasks first (needed for dependencies)
-        const userTasks = await Task.find({ userId }).select("_id");
-        const taskIds = userTasks.map((task) => task._id);
+        const userTasks = await Task.find({ userId }).select('_id');
+        const taskIds = userTasks.map(task => task._id);
 
         // Delete all associated data in the correct order to handle dependencies
         const deletionPromises = [
             // Delete streaks
             Streak.deleteMany({ userId }),
+            
             // Delete notifications
             Notification.deleteMany({ userId }),
+            
             // Delete reminders
             Reminder.deleteMany({ userId }),
+            
             // Delete attachments
             Attachment.deleteMany({ userId }),
+            
             // Delete notes
             Note.deleteMany({ userId }),
+            
             // Delete subtasks
             Subtask.deleteMany({ userId }),
+            
             // Delete dependencies (both where user's tasks are dependent or prerequisite)
             Dependency.deleteMany({
-                $or: [{ dependentTaskId: { $in: taskIds } }, { prerequisiteTaskId: { $in: taskIds } }],
+                $or: [
+                    { dependentTaskId: { $in: taskIds } },
+                    { prerequisiteTaskId: { $in: taskIds } }
+                ]
             }),
+            
             // Delete tasks
             Task.deleteMany({ userId }),
         ];
 
         // Execute all deletions
         const results = await Promise.all(deletionPromises);
-
-        console.log("Deletion results:", {
+        
+        console.log('Deletion results:', {
             streaks: results[0].deletedCount,
             notifications: results[1].deletedCount,
             reminders: results[2].deletedCount,
@@ -402,10 +311,10 @@ export const deleteAccount = async (req, res) => {
 
         // Finally, delete the user account
         await User.findByIdAndDelete(userId);
-
+        
         console.log(`Account deletion completed for user: ${userId}`);
 
-        res.json({
+        res.json({ 
             message: "Account and all associated data deleted successfully",
             deletedData: {
                 streaks: results[0].deletedCount,
@@ -416,13 +325,13 @@ export const deleteAccount = async (req, res) => {
                 subtasks: results[5].deletedCount,
                 dependencies: results[6].deletedCount,
                 tasks: results[7].deletedCount,
-            },
+            }
         });
     } catch (error) {
         console.error("Delete account error:", error);
-        res.status(500).json({
+        res.status(500).json({ 
             message: "Error deleting account",
-            error: process.env.NODE_ENV === "development" ? error.message : undefined,
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };

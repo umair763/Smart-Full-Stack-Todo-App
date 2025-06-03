@@ -5,8 +5,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
 
-// Hardcoded backend URL
-const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
+// Use the consistent API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://smart-todo-task-management-backend.vercel.app';
 
 function RegisterUser() {
    const [formData, setFormData] = useState({
@@ -91,7 +91,7 @@ function RegisterUser() {
 
       try {
          // Send registration request
-         const response = await fetch(`${BACKEND_URL}/api/users/register`, {
+         const response = await fetch(`${API_BASE_URL}/api/users/register`, {
             method: 'POST',
             body: submitData,
             // Don't set Content-Type header as FormData sets it automatically with boundary
@@ -115,7 +115,7 @@ function RegisterUser() {
             }, 1000);
          } else {
             setTimeout(() => {
-               navigate('/auth/login');
+               navigate('/');
             }, 1000);
          }
       } catch (error) {
