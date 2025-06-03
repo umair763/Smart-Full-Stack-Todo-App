@@ -7,14 +7,14 @@
             "use": "@vercel/node"
         }
     ],
-    "rewrites": [
+    "routes": [
         {
-            "source": "/socket.io/(.*)",
-            "destination": "/index.js"
+            "src": "/socket.io/(.*)",
+            "dest": "/index.js"
         },
         {
-            "source": "/(.*)",
-            "destination": "/index.js"
+            "src": "/(.*)",
+            "dest": "/index.js"
         }
     ],
     "headers": [
@@ -27,7 +27,7 @@
                 },
                 {
                     "key": "Access-Control-Allow-Headers",
-                    "value": "Content-Type, Authorization"
+                    "value": "Content-Type, Authorization, X-Requested-With"
                 },
                 {
                     "key": "Access-Control-Allow-Methods",
@@ -36,10 +36,19 @@
                 {
                     "key": "Access-Control-Allow-Credentials",
                     "value": "true"
+                },
+                {
+                    "key": "Access-Control-Max-Age",
+                    "value": "86400"
                 }
             ]
         }
     ],
+    "functions": {
+        "index.js": {
+            "maxDuration": 30
+        }
+    },
     "env": {
         "NODE_ENV": "production",
         "FRONTEND_URL": "https://smart-todo-task-management-frontend.vercel.app"
