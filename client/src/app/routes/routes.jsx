@@ -32,21 +32,28 @@ const AppRoutes = () => {
    return (
       <Suspense fallback={<LoadingSpinner />}>
          <Routes>
-            {/* Public routes - Landing Page */}
+            {/* Landing Page - accessible to both authenticated and unauthenticated users */}
             <Route element={<LandingPageLayout />}>
                <Route path="/home" element={<LandingPage />} />
                <Route path="/" element={<LandingPage />} />
             </Route>
 
-            {/* Authentication routes - only show when not logged in */}
+            {/* Redirect authenticated users from landing/auth pages */}
+            {isLoggedIn && (
+               <Route path="/((home|auth/login|auth/register))" element={<Navigate to="/dashboard" replace />} />
+            )}
+
+            {/* Unauthenticated routes */}
             {!isLoggedIn && (
                <>
                   <Route path="/auth/login" element={<AuthPage />} />
                   <Route path="/auth/register" element={<AuthPage />} />
+                  {/* Redirect all other routes to home when not logged in */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
                </>
             )}
 
-            {/* Protected routes - only show when logged in */}
+            {/* Authenticated routes */}
             {isLoggedIn && (
                <>
                   <Route element={<Layout />}>
@@ -54,7 +61,6 @@ const AppRoutes = () => {
                      <Route path="/settings" element={<Settings />} />
                      <Route path="/insights" element={<Insights />} />
                   </Route>
-                  {/* Simplified redirect for authenticated users */}
                   {/* Redirect any unhandled authenticated route to dashboard */}
                   <Route path="*" element={<Navigate to="/dashboard" replace />} />
                </>
