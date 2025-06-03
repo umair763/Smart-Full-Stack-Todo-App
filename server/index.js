@@ -42,65 +42,108 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // MongoDB Configuration with better error handling
 const MONGO_URI = process.env.MONGO_URI;
+
+// Debug logging
+console.log("Environment variables check:");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("MONGO_URI exists:", !!MONGO_URI);
+console.log("MONGO_URI (masked):", MONGO_URI ? MONGO_URI.replace(/\/\/[^:]+:[^@]+@/, "//***:***@") : "undefined");
+
 if (!MONGO_URI) {
     console.error("MONGO_URI environment variable is required");
-    // Don't throw in serverless, log the error instead
 }
 
 // Global connection state
 let isConnected = false;
+let connectionPromise = null;
 
 // MongoDB connection with retry logic and better error handling
 const connectDB = async () => {
+    // If already connected, return
     if (isConnected && mongoose.connection.readyState === 1) {
-        return;
+        console.log("Already connected to MongoDB");
+        return true;
     }
 
-    try {
-        if (!MONGO_URI) {
-            console.error("MongoDB URI not provided");
-            return;
+    // If connection is in progress, wait for it
+    if (connectionPromise) {
+        console.log("Connection in progress, waiting...");
+        return await connectionPromise;
+    }
+
+    if (!MONGO_URI) {
+        console.error("MongoDB URI not provided");
+        return false;
+    }
+
+    console.log("Attempting to connect to MongoDB...");
+
+    connectionPromise = (async () => {
+        try {
+            // Close any existing connections
+            if (mongoose.connection.readyState !== 0) {
+                await mongoose.disconnect();
+            }
+
+            await mongoose.connect(MONGO_URI, {
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+                serverSelectionTimeoutMS: 10000, // Increased timeout for serverless
+                socketTimeoutMS: 45000,
+                maxPoolSize: 5, // Reduced for serverless
+                bufferCommands: false,
+                bufferMaxEntries: 0,
+                // Additional options for better reliability
+                connectTimeoutMS: 10000,
+                family: 4, // Use IPv4, skip trying IPv6
+            });
+
+            isConnected = true;
+            console.log("✅ MongoDB connected successfully");
+            return true;
+        } catch (err) {
+            console.error("❌ MongoDB connection error:", err.message);
+            console.error("Full error:", err);
+            isConnected = false;
+            return false;
+        } finally {
+            connectionPromise = null;
         }
+    })();
 
-        await mongoose.connect(MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 45000,
-            maxPoolSize: 10,
-            bufferCommands: false,
-            bufferMaxEntries: 0,
-        });
-
-        isConnected = true;
-        console.log("MongoDB connected successfully");
-    } catch (err) {
-        console.error("MongoDB connection error:", err.message);
-        isConnected = false;
-        // Don't throw error in serverless environment
-    }
+    return await connectionPromise;
 };
 
 // Handle MongoDB connection events
 mongoose.connection.on("connected", () => {
     isConnected = true;
-    console.log("MongoDB connected");
+    console.log("MongoDB connected event fired");
 });
 
 mongoose.connection.on("error", (err) => {
-    console.error("MongoDB connection error:", err);
+    console.error("MongoDB connection error event:", err);
     isConnected = false;
 });
 
 mongoose.connection.on("disconnected", () => {
-    console.warn("MongoDB disconnected");
+    console.warn("MongoDB disconnected event fired");
     isConnected = false;
 });
 
 // Middleware to ensure database connection
 const ensureDBConnection = async (req, res, next) => {
+    console.log("Ensuring DB connection for:", req.path);
+
     if (!isConnected) {
-        await connectDB();
+        console.log("Database not connected, attempting connection...");
+        const connected = await connectDB();
+        if (!connected) {
+            return res.status(500).json({
+                success: false,
+                message: "Database connection failed",
+                error: "Unable to connect to MongoDB",
+            });
+        }
     }
     next();
 };
@@ -195,12 +238,37 @@ if (!isServerless && (process.env.NODE_ENV !== "production" || process.env.ENABL
 const dbEvents = new EventEmitter();
 export { dbEvents };
 
-// Health check route
+// Health check route with detailed diagnostics
 app.get("/", async (req, res) => {
     try {
-        // Ensure DB connection for health check
+        console.log("Health check requested");
+
+        // Attempt to connect if not connected
+        let dbStatus = "disconnected";
+        let dbError = null;
+
         if (!isConnected) {
-            await connectDB();
+            console.log("Attempting DB connection for health check...");
+            const connected = await connectDB();
+            if (connected) {
+                dbStatus = "connected";
+            } else {
+                dbError = "Connection failed";
+            }
+        } else {
+            dbStatus = "connected";
+        }
+
+        // Test a simple database operation if connected
+        let dbTest = null;
+        if (isConnected) {
+            try {
+                await mongoose.connection.db.admin().ping();
+                dbTest = "ping successful";
+            } catch (pingError) {
+                dbTest = `ping failed: ${pingError.message}`;
+                dbStatus = "connection unstable";
+            }
         }
 
         res.json({
@@ -208,8 +276,13 @@ app.get("/", async (req, res) => {
             message: "Smart Todo API is running in production",
             timestamp: new Date().toISOString(),
             version: "1.0.0",
-            database: isConnected ? "connected" : "disconnected",
+            database: dbStatus,
+            dbTest,
+            dbError,
             environment: process.env.NODE_ENV || "development",
+            isServerless,
+            mongoReadyState: mongoose.connection.readyState,
+            // Ready state meanings: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
         });
     } catch (error) {
         console.error("Health check error:", error);
@@ -217,6 +290,44 @@ app.get("/", async (req, res) => {
             success: false,
             message: "Health check failed",
             error: error.message,
+            database: "error",
+        });
+    }
+});
+
+// MongoDB connection test route
+app.get("/test-db", async (req, res) => {
+    try {
+        console.log("Database test requested");
+
+        const connected = await connectDB();
+
+        if (!connected) {
+            return res.status(500).json({
+                success: false,
+                message: "Failed to connect to database",
+                connectionState: mongoose.connection.readyState,
+            });
+        }
+
+        // Test database operations
+        const dbName = mongoose.connection.db.databaseName;
+        const collections = await mongoose.connection.db.listCollections().toArray();
+
+        res.json({
+            success: true,
+            message: "Database connection successful",
+            database: dbName,
+            collections: collections.map((c) => c.name),
+            connectionState: mongoose.connection.readyState,
+        });
+    } catch (error) {
+        console.error("Database test error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Database test failed",
+            error: error.message,
+            connectionState: mongoose.connection.readyState,
         });
     }
 });
@@ -246,6 +357,7 @@ app.get("/api/debug", (req, res) => {
             isServerless,
             hasSocket: !!io,
             dbConnected: isConnected,
+            mongoReadyState: mongoose.connection.readyState,
         },
         routes: {
             users: [
@@ -329,8 +441,9 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Initialize database connection
+// Initialize database connection (don't wait for it in serverless)
 if (MONGO_URI) {
+    console.log("Initializing database connection...");
     connectDB().catch((err) => {
         console.error("Initial DB connection failed:", err);
     });
