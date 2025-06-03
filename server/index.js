@@ -43,69 +43,95 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 // MongoDB Configuration with better error handling
 const MONGO_URI = process.env.MONGO_URI;
 
-// Debug logging
+// Debug logging (remove sensitive info)
 console.log("Environment variables check:");
 console.log("NODE_ENV:", process.env.NODE_ENV);
 console.log("MONGO_URI exists:", !!MONGO_URI);
-console.log("MONGO_URI (masked):", MONGO_URI ? MONGO_URI.replace(/\/\/[^:]+:[^@]+@/, "//***:***@") : "undefined");
+console.log("VERCEL:", process.env.VERCEL);
 
 if (!MONGO_URI) {
-    console.error("MONGO_URI environment variable is required");
+    console.error("❌ MONGO_URI environment variable is required");
+    process.exit(1);
 }
 
 // Global connection state
 let isConnected = false;
 let connectionPromise = null;
 
-// MongoDB connection with retry logic and better error handling
+// MongoDB connection with improved serverless handling
 const connectDB = async () => {
-    // If already connected, return
+    // If already connected and connection is stable, return
     if (isConnected && mongoose.connection.readyState === 1) {
-        console.log("Already connected to MongoDB");
-        return true;
+        try {
+            // Quick ping to verify connection is still alive
+            await mongoose.connection.db.admin().ping();
+            console.log("✅ Using existing MongoDB connection");
+            return true;
+        } catch (pingError) {
+            console.log("⚠️ Existing connection failed ping, reconnecting...");
+            isConnected = false;
+        }
     }
 
     // If connection is in progress, wait for it
     if (connectionPromise) {
-        console.log("Connection in progress, waiting...");
+        console.log("⏳ Connection in progress, waiting...");
         return await connectionPromise;
     }
 
-    if (!MONGO_URI) {
-        console.error("MongoDB URI not provided");
-        return false;
-    }
-
-    console.log("Attempting to connect to MongoDB...");
+    console.log("🔄 Attempting to connect to MongoDB...");
 
     connectionPromise = (async () => {
         try {
-            // Close any existing connections
+            // Disconnect any existing connections
             if (mongoose.connection.readyState !== 0) {
+                console.log("🔌 Closing existing connection...");
                 await mongoose.disconnect();
             }
 
-            await mongoose.connect(MONGO_URI, {
+            // Serverless-optimized connection options
+            const connectionOptions = {
                 useNewUrlParser: true,
                 useUnifiedTopology: true,
-                serverSelectionTimeoutMS: 10000, // Increased timeout for serverless
+                serverSelectionTimeoutMS: 15000, // Increased for serverless cold starts
                 socketTimeoutMS: 45000,
-                maxPoolSize: 5, // Reduced for serverless
+                connectTimeoutMS: 15000,
+                maxPoolSize: 1, // Minimal pool for serverless
+                minPoolSize: 0,
+                maxIdleTimeMS: 30000,
                 bufferCommands: false,
-                bufferMaxEntries: 0,
-                // Additional options for better reliability
-                connectTimeoutMS: 10000,
-                family: 4, // Use IPv4, skip trying IPv6
-            });
+                // REMOVED: bufferMaxEntries: 0, - This is deprecated
+                family: 4, // Force IPv4
+                // Additional serverless optimizations
+                retryWrites: true,
+                retryReads: true,
+                authSource: "admin",
+            };
+
+            await mongoose.connect(MONGO_URI, connectionOptions);
+
+            // Verify connection with a ping
+            await mongoose.connection.db.admin().ping();
 
             isConnected = true;
             console.log("✅ MongoDB connected successfully");
+            console.log("📊 Database:", mongoose.connection.db.databaseName);
+
             return true;
         } catch (err) {
             console.error("❌ MongoDB connection error:", err.message);
-            console.error("Full error:", err);
+
+            // Log specific error types for debugging
+            if (err.name === "MongoServerSelectionError") {
+                console.error("🔍 Server selection failed - check network connectivity and URI");
+            } else if (err.name === "MongoAuthenticationError") {
+                console.error("🔐 Authentication failed - check credentials");
+            } else if (err.name === "MongoNetworkError") {
+                console.error("🌐 Network error - check internet connection");
+            }
+
             isConnected = false;
-            return false;
+            throw err;
         } finally {
             connectionPromise = null;
         }
@@ -117,35 +143,63 @@ const connectDB = async () => {
 // Handle MongoDB connection events
 mongoose.connection.on("connected", () => {
     isConnected = true;
-    console.log("MongoDB connected event fired");
+    console.log("🟢 MongoDB connected event fired");
 });
 
 mongoose.connection.on("error", (err) => {
-    console.error("MongoDB connection error event:", err);
+    console.error("🔴 MongoDB connection error event:", err.message);
     isConnected = false;
 });
 
 mongoose.connection.on("disconnected", () => {
-    console.warn("MongoDB disconnected event fired");
+    console.warn("🟡 MongoDB disconnected event fired");
     isConnected = false;
 });
 
-// Middleware to ensure database connection
-const ensureDBConnection = async (req, res, next) => {
-    console.log("Ensuring DB connection for:", req.path);
+// Handle process termination
+process.on("SIGINT", async () => {
+    console.log("🛑 Received SIGINT, closing MongoDB connection...");
+    await mongoose.connection.close();
+    process.exit(0);
+});
 
-    if (!isConnected) {
-        console.log("Database not connected, attempting connection...");
-        const connected = await connectDB();
-        if (!connected) {
-            return res.status(500).json({
-                success: false,
-                message: "Database connection failed",
-                error: "Unable to connect to MongoDB",
-            });
+// Middleware to ensure database connection with retry logic
+const ensureDBConnection = async (req, res, next) => {
+    const maxRetries = 3;
+    let retries = 0;
+
+    while (retries < maxRetries) {
+        try {
+            if (!isConnected || mongoose.connection.readyState !== 1) {
+                console.log(`🔄 Database not connected, attempt ${retries + 1}/${maxRetries} for: ${req.path}`);
+                const connected = await connectDB();
+
+                if (!connected) {
+                    throw new Error("Connection failed");
+                }
+            }
+
+            // Verify connection is working
+            await mongoose.connection.db.admin().ping();
+            return next();
+        } catch (error) {
+            retries++;
+            console.error(`❌ DB connection attempt ${retries} failed:`, error.message);
+
+            if (retries >= maxRetries) {
+                console.error("🚫 Max connection retries exceeded");
+                return res.status(503).json({
+                    success: false,
+                    message: "Database temporarily unavailable",
+                    error: "Connection failed after multiple attempts",
+                    retries: retries,
+                });
+            }
+
+            // Wait before retry (exponential backoff)
+            await new Promise((resolve) => setTimeout(resolve, Math.pow(2, retries) * 1000));
         }
     }
-    next();
 };
 
 // Socket.io setup (only in non-serverless environment)
@@ -153,9 +207,9 @@ let server;
 let io;
 let connectedUsers = new Map();
 
-const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
 
-if (!isServerless && (process.env.NODE_ENV !== "production" || process.env.ENABLE_SOCKET === "true")) {
+if (!isServerless) {
     try {
         server = http.createServer(app);
         io = new Server(server, {
@@ -171,10 +225,10 @@ if (!isServerless && (process.env.NODE_ENV !== "production" || process.env.ENABL
 
         // Socket.io connection handler
         io.on("connection", (socket) => {
-            console.log("New client connected:", socket.id);
+            console.log("🔌 New client connected:", socket.id);
 
             socket.on("authenticate", (userId) => {
-                console.log(`User ${userId} authenticated with socket ${socket.id}`);
+                console.log(`👤 User ${userId} authenticated with socket ${socket.id}`);
                 connectedUsers.set(userId, socket.id);
             });
 
@@ -215,11 +269,11 @@ if (!isServerless && (process.env.NODE_ENV !== "production" || process.env.ENABL
             });
 
             socket.on("disconnect", () => {
-                console.log("Client disconnected:", socket.id);
+                console.log("🔌 Client disconnected:", socket.id);
                 for (const [userId, socketId] of connectedUsers.entries()) {
                     if (socketId === socket.id) {
                         connectedUsers.delete(userId);
-                        console.log(`User ${userId} disconnected`);
+                        console.log(`👤 User ${userId} disconnected`);
                         break;
                     }
                 }
@@ -229,135 +283,215 @@ if (!isServerless && (process.env.NODE_ENV !== "production" || process.env.ENABL
         // Make io accessible to route handlers
         app.set("io", io);
         app.set("connectedUsers", connectedUsers);
+        console.log("🌐 Socket.io initialized successfully");
     } catch (error) {
-        console.error("Socket.io setup error:", error);
+        console.error("❌ Socket.io setup error:", error);
     }
+} else {
+    console.log("☁️ Running in serverless mode - Socket.io disabled");
 }
 
 // Create an EventEmitter for database changes
 const dbEvents = new EventEmitter();
 export { dbEvents };
 
-// Health check route with detailed diagnostics
+// Health check route with comprehensive diagnostics
 app.get("/", async (req, res) => {
     try {
-        console.log("Health check requested");
+        console.log("🏥 Health check requested");
 
-        // Attempt to connect if not connected
         let dbStatus = "disconnected";
         let dbError = null;
+        let dbTest = null;
+        let connectionTime = null;
 
-        if (!isConnected) {
-            console.log("Attempting DB connection for health check...");
+        const startTime = Date.now();
+
+        try {
             const connected = await connectDB();
+            connectionTime = Date.now() - startTime;
+
             if (connected) {
                 dbStatus = "connected";
+                // Perform a simple database test
+                const pingResult = await mongoose.connection.db.admin().ping();
+                dbTest = "ping successful";
+                console.log("✅ Database ping successful:", pingResult);
             } else {
                 dbError = "Connection failed";
             }
-        } else {
-            dbStatus = "connected";
+        } catch (error) {
+            dbError = error.message;
+            dbStatus = "error";
+            connectionTime = Date.now() - startTime;
+            console.error("❌ Health check DB error:", error.message);
         }
 
-        // Test a simple database operation if connected
-        let dbTest = null;
-        if (isConnected) {
-            try {
-                await mongoose.connection.db.admin().ping();
-                dbTest = "ping successful";
-            } catch (pingError) {
-                dbTest = `ping failed: ${pingError.message}`;
-                dbStatus = "connection unstable";
-            }
-        }
-
-        res.json({
+        const response = {
             success: true,
-            message: "Smart Todo API is running in production",
+            message: "Smart Todo API is running",
             timestamp: new Date().toISOString(),
             version: "1.0.0",
-            database: dbStatus,
-            dbTest,
-            dbError,
-            environment: process.env.NODE_ENV || "development",
-            isServerless,
-            mongoReadyState: mongoose.connection.readyState,
-            // Ready state meanings: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-        });
+            database: {
+                status: dbStatus,
+                test: dbTest,
+                error: dbError,
+                connectionTime: connectionTime ? `${connectionTime}ms` : null,
+                readyState: mongoose.connection.readyState,
+                readyStateText: getReadyStateText(mongoose.connection.readyState),
+            },
+            environment: {
+                nodeEnv: process.env.NODE_ENV || "development",
+                isServerless: !!isServerless,
+                platform: process.env.VERCEL ? "Vercel" : process.env.AWS_LAMBDA_FUNCTION_NAME ? "AWS Lambda" : "Local",
+                hasSocket: !!io,
+            },
+            memory: process.memoryUsage(),
+            uptime: process.uptime(),
+        };
+
+        // Set appropriate status code
+        const statusCode = dbStatus === "connected" ? 200 : 503;
+        res.status(statusCode).json(response);
     } catch (error) {
-        console.error("Health check error:", error);
+        console.error("❌ Health check error:", error);
         res.status(500).json({
             success: false,
             message: "Health check failed",
             error: error.message,
-            database: "error",
+            timestamp: new Date().toISOString(),
         });
     }
 });
 
-// MongoDB connection test route
+// Helper function to get readable connection state
+function getReadyStateText(state) {
+    const states = {
+        0: "disconnected",
+        1: "connected",
+        2: "connecting",
+        3: "disconnecting",
+    };
+    return states[state] || "unknown";
+}
+
+// MongoDB connection test route with detailed diagnostics
 app.get("/test-db", async (req, res) => {
     try {
-        console.log("Database test requested");
+        console.log("🧪 Database test requested");
 
+        const startTime = Date.now();
         const connected = await connectDB();
+        const connectionTime = Date.now() - startTime;
 
         if (!connected) {
-            return res.status(500).json({
+            return res.status(503).json({
                 success: false,
                 message: "Failed to connect to database",
                 connectionState: mongoose.connection.readyState,
+                connectionTime: `${connectionTime}ms`,
+                timestamp: new Date().toISOString(),
             });
         }
 
-        // Test database operations
-        const dbName = mongoose.connection.db.databaseName;
-        const collections = await mongoose.connection.db.listCollections().toArray();
+        // Perform comprehensive database tests
+        const tests = {};
 
-        res.json({
-            success: true,
-            message: "Database connection successful",
-            database: dbName,
-            collections: collections.map((c) => c.name),
+        try {
+            // Test 1: Ping
+            const pingStart = Date.now();
+            await mongoose.connection.db.admin().ping();
+            tests.ping = { success: true, time: `${Date.now() - pingStart}ms` };
+        } catch (error) {
+            tests.ping = { success: false, error: error.message };
+        }
+
+        try {
+            // Test 2: List collections
+            const collections = await mongoose.connection.db.listCollections().toArray();
+            tests.collections = {
+                success: true,
+                count: collections.length,
+                names: collections.map((c) => c.name),
+            };
+        } catch (error) {
+            tests.collections = { success: false, error: error.message };
+        }
+
+        try {
+            // Test 3: Database stats
+            const stats = await mongoose.connection.db.stats();
+            tests.stats = {
+                success: true,
+                dataSize: stats.dataSize,
+                indexSize: stats.indexSize,
+                collections: stats.collections,
+            };
+        } catch (error) {
+            tests.stats = { success: false, error: error.message };
+        }
+
+        const allTestsPass = Object.values(tests).every((test) => test.success);
+
+        res.status(allTestsPass ? 200 : 206).json({
+            success: allTestsPass,
+            message: allTestsPass ? "All database tests passed" : "Some database tests failed",
+            database: mongoose.connection.db.databaseName,
+            connectionTime: `${connectionTime}ms`,
             connectionState: mongoose.connection.readyState,
+            tests,
+            timestamp: new Date().toISOString(),
         });
     } catch (error) {
-        console.error("Database test error:", error);
+        console.error("❌ Database test error:", error);
         res.status(500).json({
             success: false,
             message: "Database test failed",
             error: error.message,
             connectionState: mongoose.connection.readyState,
+            timestamp: new Date().toISOString(),
         });
     }
 });
 
-// Debug route for Socket.io (only if socket is available)
+// Socket.io status route
 app.get("/socket-check", (req, res) => {
     if (io) {
         res.json({
+            success: true,
             message: "Socket.io is running",
             connectedClients: io.engine.clientsCount,
             connectedUsers: [...connectedUsers.entries()].map(([userId, socketId]) => ({ userId, socketId })),
+            serverless: false,
         });
     } else {
         res.json({
+            success: true,
             message: "Socket.io is not available in serverless environment",
             serverless: isServerless,
+            reason: "Socket.io requires persistent connections",
         });
     }
 });
 
-// Debug route to check routes
+// Comprehensive debug route
 app.get("/api/debug", (req, res) => {
     res.json({
-        message: "API Debug Route",
+        success: true,
+        message: "API Debug Information",
+        timestamp: new Date().toISOString(),
         environment: {
             nodeEnv: process.env.NODE_ENV,
+            nodeVersion: process.version,
+            platform: process.platform,
             isServerless,
+            serverlessProvider: process.env.VERCEL ? "Vercel" : process.env.AWS_LAMBDA_FUNCTION_NAME ? "AWS Lambda" : null,
             hasSocket: !!io,
             dbConnected: isConnected,
             mongoReadyState: mongoose.connection.readyState,
+            mongoHost: mongoose.connection.host,
+            mongoPort: mongoose.connection.port,
+            mongoDbName: mongoose.connection.db?.databaseName || null,
         },
         routes: {
             users: [
@@ -399,6 +533,10 @@ app.get("/api/debug", (req, res) => {
                 { method: "GET", path: "/api/streaks/history" },
             ],
         },
+        performance: {
+            memory: process.memoryUsage(),
+            uptime: process.uptime(),
+        },
     });
 });
 
@@ -422,46 +560,82 @@ app.use("*", (req, res) => {
         success: false,
         message: "Route not found",
         path: req.originalUrl,
+        method: req.method,
+        timestamp: new Date().toISOString(),
     });
 });
 
-// Error handling middleware
+// Enhanced error handling middleware
 app.use((err, req, res, next) => {
-    console.error("Error:", err.stack);
+    console.error("🚨 Error occurred:", err.stack);
 
     const isDevelopment = process.env.NODE_ENV !== "production";
 
-    res.status(err.status || 500).json({
+    // Handle specific error types
+    let statusCode = err.status || err.statusCode || 500;
+    let message = "Internal server error";
+
+    if (err.name === "ValidationError") {
+        statusCode = 400;
+        message = "Validation error";
+    } else if (err.name === "CastError") {
+        statusCode = 400;
+        message = "Invalid ID format";
+    } else if (err.name === "MongoError" || err.name === "MongoServerError") {
+        statusCode = 503;
+        message = "Database error";
+    } else if (isDevelopment) {
+        message = err.message;
+    }
+
+    res.status(statusCode).json({
         success: false,
-        message: isDevelopment ? err.message : "Internal server error",
+        message,
+        timestamp: new Date().toISOString(),
         ...(isDevelopment && {
             error: err.message,
             stack: err.stack,
+            name: err.name,
         }),
     });
 });
 
-// Initialize database connection (don't wait for it in serverless)
+// Initialize database connection for serverless
+console.log("🚀 Initializing application...");
 if (MONGO_URI) {
-    console.log("Initializing database connection...");
-    connectDB().catch((err) => {
-        console.error("Initial DB connection failed:", err);
-    });
+    connectDB()
+        .then(() => {
+            console.log("✅ Initial database connection successful");
+        })
+        .catch((err) => {
+            console.error("❌ Initial database connection failed:", err.message);
+            // Don't exit in serverless environment
+            if (!isServerless) {
+                process.exit(1);
+            }
+        });
+} else {
+    console.error("❌ MongoDB URI not provided");
+    if (!isServerless) {
+        process.exit(1);
+    }
 }
 
 // Export the Express app for Vercel serverless
 export default app;
 
 // Only start the server in development or when explicitly enabled
-if (!isServerless && (process.env.NODE_ENV !== "production" || process.env.ENABLE_SOCKET === "true")) {
+if (!isServerless) {
     const PORT = process.env.PORT || 3000;
     if (server) {
         server.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
+            console.log(`🚀 Server with Socket.io running on port ${PORT}`);
         });
     } else {
         app.listen(PORT, () => {
-            console.log(`Express server running on port ${PORT}`);
+            console.log(`🚀 Express server running on port ${PORT}`);
         });
     }
+} else {
+    console.log("☁️ Serverless mode - server will be managed by platform");
 }
