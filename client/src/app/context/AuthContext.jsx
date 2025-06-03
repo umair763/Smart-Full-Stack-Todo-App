@@ -4,6 +4,15 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
+useEffect(() => {
+   const storedToken = localStorage.getItem('token');
+   if (storedToken) {
+      setToken(storedToken);
+   }
+   setLoading(false);
+}, []);
+
+
 const parseJwt = (token) => {
    try {
       return JSON.parse(atob(token.split('.')[1]));

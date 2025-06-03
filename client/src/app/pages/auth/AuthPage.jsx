@@ -8,7 +8,7 @@ import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
 
 // Hardcoded backend URL
-const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
+const BACKEND_URL = import.meta.env.VITE_API_URL;
 
 function AuthPage() {
    const location = useLocation();
