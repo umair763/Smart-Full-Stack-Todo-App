@@ -12,11 +12,8 @@ import { OAuth2Client } from "google-auth-library";
 import multer from "multer";
 
 // Get Google Client ID from environment variable
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-if (!GOOGLE_CLIENT_ID) {
-    console.error("❌ GOOGLE_CLIENT_ID is not set in environment variables");
-    process.exit(1);
-}
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com";
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Configure multer for profile image upload
 const storage = multer.memoryStorage();
@@ -26,6 +23,7 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024, // 5MB limit
     },
     fileFilter: (req, file, cb) => {
+        // Only allow image files
         if (file.mimetype.startsWith("image/")) {
             cb(null, true);
         } else {
@@ -41,7 +39,6 @@ export const profileImageUploadMiddleware = upload.single("picture");
 export const register = async (req, res) => {
     try {
         const { username, email, password } = req.body;
-
         // Check if user already exists
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
@@ -54,7 +51,6 @@ export const register = async (req, res) => {
             email,
             password,
         });
-
         await user.save();
 
         // Generate token
@@ -82,7 +78,6 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
         // Find user
         const user = await User.findOne({ email });
         if (!user) {
@@ -116,78 +111,93 @@ export const login = async (req, res) => {
     }
 };
 
-// Google Sign In
+// Google Sign In - Updated version
 export const googleSignIn = async (req, res) => {
     try {
-        const { token } = req.body;
-
+        const { token, clientId } = req.body;
+        
         if (!token) {
             return res.status(400).json({
-                success: false,
                 message: "Google token is required",
                 code: "MISSING_TOKEN",
             });
         }
 
-        if (!GOOGLE_CLIENT_ID) {
-            console.error("Google Client ID is not configured");
-            return res.status(500).json({
-                success: false,
-                message: "Server configuration error",
-                code: "SERVER_CONFIG_ERROR",
-            });
-        }
+        console.log("Received Google token for verification");
+        console.log("Using Client ID:", clientId || GOOGLE_CLIENT_ID);
 
         try {
-            // Create OAuth client
-            const client = new OAuth2Client(GOOGLE_CLIENT_ID);
-
+            // Use the client ID from request or fallback to environment
+            const verificationClientId = clientId || GOOGLE_CLIENT_ID;
+            const googleClient = new OAuth2Client(verificationClientId);
+            
             // Verify the token
-            const ticket = await client.verifyIdToken({
+            const ticket = await googleClient.verifyIdToken({
                 idToken: token,
-                audience: GOOGLE_CLIENT_ID,
+                audience: verificationClientId,
             });
 
             const payload = ticket.getPayload();
+            console.log("Token verification successful for user:", payload.email);
+
             const { email, name, picture, sub: googleId } = payload;
 
             if (!email) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Email not provided by Google",
-                    code: "EMAIL_MISSING",
-                });
+                throw new Error("Email not provided by Google");
             }
 
             // Find or create user
-            let user = await User.findOne({ email });
+            let user = await User.findOne({ 
+                $or: [
+                    { email: email },
+                    { googleId: googleId }
+                ]
+            });
 
             if (!user) {
-                // Create new user
+                console.log("Creating new user for Google sign-in:", email);
+                
+                // Check if username already exists and make it unique
+                let username = name;
+                let counter = 1;
+                while (await User.findOne({ username })) {
+                    username = `${name}${counter}`;
+                    counter++;
+                }
+
                 user = new User({
-                    username: name || email.split("@")[0],
+                    username,
                     email,
                     googleId,
-                    profileImage: picture,
-                    isGoogleUser: true,
+                    profileImage: picture || "",
                 });
                 await user.save();
-            } else if (!user.googleId) {
-                // Update existing user with Google info
-                user.googleId = googleId;
-                user.isGoogleUser = true;
-                if (!user.profileImage) {
-                    user.profileImage = picture;
+                console.log("New user created successfully");
+            } else {
+                // Update existing user with Google info if not already set
+                let updated = false;
+                if (!user.googleId) {
+                    user.googleId = googleId;
+                    updated = true;
                 }
-                await user.save();
+                if (!user.profileImage && picture) {
+                    user.profileImage = picture;
+                    updated = true;
+                }
+                if (updated) {
+                    await user.save();
+                }
+                console.log("Existing user signed in:", email);
             }
 
             // Generate JWT token
-            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+            const jwtToken = jwt.sign(
+                { userId: user._id }, 
+                process.env.JWT_SECRET || "your-secret-key", 
+                { expiresIn: "7d" }
+            );
 
-            // Send success response
             res.json({
-                success: true,
                 message: "Google sign in successful",
                 token: jwtToken,
                 user: {
@@ -195,41 +205,46 @@ export const googleSignIn = async (req, res) => {
                     username: user.username,
                     email: user.email,
                     profileImage: user.profileImage,
-                    isGoogleUser: user.isGoogleUser,
                 },
             });
-        } catch (error) {
-            console.error("Google token verification error:", error);
 
-            if (error.message.includes("Token used too late")) {
+        } catch (verificationError) {
+            console.error("Google token verification failed:", verificationError);
+            
+            // Handle specific Google verification errors
+            if (verificationError.message.includes("Token used too late")) {
                 return res.status(401).json({
-                    success: false,
-                    message: "Google token has expired",
+                    message: "Google token has expired. Please try signing in again.",
                     code: "TOKEN_EXPIRED",
                 });
             }
-
-            if (error.message.includes("Invalid audience")) {
+            
+            if (verificationError.message.includes("Invalid audience")) {
                 return res.status(401).json({
-                    success: false,
-                    message: "Invalid Google Client ID",
+                    message: "Invalid client configuration. Please contact support.",
                     code: "INVALID_CLIENT_ID",
                 });
             }
 
+            if (verificationError.message.includes("Invalid token signature")) {
+                return res.status(401).json({
+                    message: "Invalid Google token. Please try signing in again.",
+                    code: "INVALID_TOKEN_SIGNATURE",
+                });
+            }
+
             return res.status(401).json({
-                success: false,
-                message: "Invalid Google token",
-                code: "INVALID_TOKEN",
-                details: process.env.NODE_ENV === "development" ? error.message : undefined,
+                message: "Failed to verify Google token. Please try again.",
+                code: "GOOGLE_VERIFICATION_FAILED",
+                details: process.env.NODE_ENV === "development" ? verificationError.message : undefined,
             });
         }
+
     } catch (error) {
         console.error("Google sign in error:", error);
         res.status(500).json({
-            success: false,
-            message: "Error signing in with Google",
-            code: "SERVER_ERROR",
+            message: "Internal server error during Google sign in",
+            code: "GOOGLE_SIGNIN_ERROR",
             details: process.env.NODE_ENV === "development" ? error.message : undefined,
         });
     }
@@ -239,13 +254,11 @@ export const googleSignIn = async (req, res) => {
 export const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select("-password");
-
         // Return user with picture field for compatibility
         const userResponse = {
             ...user.toObject(),
             picture: user.profileImage, // Add picture field for backward compatibility
         };
-
         res.json(userResponse);
     } catch (error) {
         console.error("Get profile error:", error);
@@ -257,7 +270,6 @@ export const getProfile = async (req, res) => {
 export const updateUsername = async (req, res) => {
     try {
         const { username } = req.body;
-
         // Check if username is already taken
         const existingUser = await User.findOne({ username });
         if (existingUser && existingUser._id.toString() !== req.user._id.toString()) {
@@ -265,7 +277,6 @@ export const updateUsername = async (req, res) => {
         }
 
         const user = await User.findByIdAndUpdate(req.user._id, { username }, { new: true }).select("-password");
-
         // Return user with picture field for compatibility
         const userResponse = {
             ...user.toObject(),
@@ -290,12 +301,10 @@ export const updateProfileImage = async (req, res) => {
         }
 
         const { buffer, mimetype } = req.file;
-
         // Convert buffer to base64 data URL
         const base64Image = `data:${mimetype};base64,${buffer.toString("base64")}`;
 
         const user = await User.findByIdAndUpdate(req.user._id, { profileImage: base64Image }, { new: true }).select("-password");
-
         // Return user with picture field for compatibility
         const userResponse = {
             ...user.toObject(),
@@ -316,7 +325,6 @@ export const updateProfileImage = async (req, res) => {
 export const deleteAccount = async (req, res) => {
     try {
         const userId = req.user._id;
-
         console.log(`Starting account deletion for user: ${userId}`);
 
         // Get all user's tasks first (needed for dependencies)
@@ -327,27 +335,20 @@ export const deleteAccount = async (req, res) => {
         const deletionPromises = [
             // Delete streaks
             Streak.deleteMany({ userId }),
-
             // Delete notifications
             Notification.deleteMany({ userId }),
-
             // Delete reminders
             Reminder.deleteMany({ userId }),
-
             // Delete attachments
             Attachment.deleteMany({ userId }),
-
             // Delete notes
             Note.deleteMany({ userId }),
-
             // Delete subtasks
             Subtask.deleteMany({ userId }),
-
             // Delete dependencies (both where user's tasks are dependent or prerequisite)
             Dependency.deleteMany({
                 $or: [{ dependentTaskId: { $in: taskIds } }, { prerequisiteTaskId: { $in: taskIds } }],
             }),
-
             // Delete tasks
             Task.deleteMany({ userId }),
         ];
