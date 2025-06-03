@@ -114,67 +114,86 @@ export const login = async (req, res) => {
 // Google Sign In - Updated version
 export const googleSignIn = async (req, res) => {
     try {
-        const { token, clientId } = req.body;
-        
+        const { token } = req.body;
+
         if (!token) {
+            console.error("No token provided in request");
             return res.status(400).json({
                 message: "Google token is required",
                 code: "MISSING_TOKEN",
             });
         }
 
-        console.log("Received Google token for verification");
-        console.log("Using Client ID:", clientId || GOOGLE_CLIENT_ID);
+        console.log("Starting Google token verification...");
 
         try {
-            // Use the client ID from request or fallback to environment
-            const verificationClientId = clientId || GOOGLE_CLIENT_ID;
-            const googleClient = new OAuth2Client(verificationClientId);
-            
+            // Create OAuth client with the environment client ID
+            const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+            // Log token details (safely)
+            const tokenParts = token.split(".");
+            if (tokenParts.length === 3) {
+                try {
+                    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
+                    console.log("Token details:", {
+                        email: payload.email,
+                        iss: payload.iss,
+                        aud: payload.aud,
+                        exp: new Date(payload.exp * 1000).toISOString(),
+                    });
+                } catch (e) {
+                    console.log("Could not decode token payload");
+                }
+            }
+
             // Verify the token
+            console.log("Verifying token with client ID:", GOOGLE_CLIENT_ID);
             const ticket = await googleClient.verifyIdToken({
                 idToken: token,
-                audience: verificationClientId,
+                audience: GOOGLE_CLIENT_ID,
             });
 
             const payload = ticket.getPayload();
-            console.log("Token verification successful for user:", payload.email);
+            console.log("Token verification successful for:", payload.email);
 
             const { email, name, picture, sub: googleId } = payload;
 
             if (!email) {
+                console.error("No email in Google token payload");
                 throw new Error("Email not provided by Google");
             }
 
             // Find or create user
-            let user = await User.findOne({ 
-                $or: [
-                    { email: email },
-                    { googleId: googleId }
-                ]
+            let user = await User.findOne({
+                $or: [{ email: email }, { googleId: googleId }],
             });
 
             if (!user) {
-                console.log("Creating new user for Google sign-in:", email);
-                
-                // Check if username already exists and make it unique
-                let username = name;
+                console.log("Creating new user for:", email);
+
+                // Generate unique username
+                let username = name || email.split("@")[0];
                 let counter = 1;
-                while (await User.findOne({ username })) {
-                    username = `${name}${counter}`;
+                let uniqueUsername = username;
+
+                while (await User.findOne({ username: uniqueUsername })) {
+                    uniqueUsername = `${username}${counter}`;
                     counter++;
                 }
 
                 user = new User({
-                    username,
+                    username: uniqueUsername,
                     email,
                     googleId,
                     profileImage: picture || "",
+                    isGoogleUser: true,
                 });
+
                 await user.save();
-                console.log("New user created successfully");
+                console.log("New user created:", uniqueUsername);
             } else {
-                // Update existing user with Google info if not already set
+                console.log("Existing user found:", email);
+                // Update user if needed
                 let updated = false;
                 if (!user.googleId) {
                     user.googleId = googleId;
@@ -184,20 +203,22 @@ export const googleSignIn = async (req, res) => {
                     user.profileImage = picture;
                     updated = true;
                 }
+                if (!user.isGoogleUser) {
+                    user.isGoogleUser = true;
+                    updated = true;
+                }
                 if (updated) {
                     await user.save();
+                    console.log("User updated with Google info");
                 }
-                console.log("Existing user signed in:", email);
             }
 
             // Generate JWT token
-            const jwtToken = jwt.sign(
-                { userId: user._id }, 
-                process.env.JWT_SECRET || "your-secret-key", 
-                { expiresIn: "7d" }
-            );
+            const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
+            console.log("Sign in successful for:", email);
             res.json({
+                success: true,
                 message: "Google sign in successful",
                 token: jwtToken,
                 user: {
@@ -205,44 +226,56 @@ export const googleSignIn = async (req, res) => {
                     username: user.username,
                     email: user.email,
                     profileImage: user.profileImage,
+                    isGoogleUser: true,
                 },
             });
-
         } catch (verificationError) {
-            console.error("Google token verification failed:", verificationError);
-            
-            // Handle specific Google verification errors
+            console.error("Google token verification failed:", {
+                name: verificationError.name,
+                message: verificationError.message,
+                stack: verificationError.stack,
+            });
+
             if (verificationError.message.includes("Token used too late")) {
                 return res.status(401).json({
+                    success: false,
                     message: "Google token has expired. Please try signing in again.",
                     code: "TOKEN_EXPIRED",
                 });
             }
-            
+
             if (verificationError.message.includes("Invalid audience")) {
                 return res.status(401).json({
-                    message: "Invalid client configuration. Please contact support.",
+                    success: false,
+                    message: "Invalid Google Client ID configuration",
                     code: "INVALID_CLIENT_ID",
                 });
             }
 
             if (verificationError.message.includes("Invalid token signature")) {
                 return res.status(401).json({
-                    message: "Invalid Google token. Please try signing in again.",
+                    success: false,
+                    message: "Invalid Google token signature",
                     code: "INVALID_TOKEN_SIGNATURE",
                 });
             }
 
             return res.status(401).json({
-                message: "Failed to verify Google token. Please try again.",
+                success: false,
+                message: "Failed to verify Google token",
                 code: "GOOGLE_VERIFICATION_FAILED",
                 details: process.env.NODE_ENV === "development" ? verificationError.message : undefined,
             });
         }
-
     } catch (error) {
-        console.error("Google sign in error:", error);
+        console.error("Google sign in error:", {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+        });
+
         res.status(500).json({
+            success: false,
             message: "Internal server error during Google sign in",
             code: "GOOGLE_SIGNIN_ERROR",
             details: process.env.NODE_ENV === "development" ? error.message : undefined,

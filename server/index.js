@@ -58,6 +58,21 @@ const io = new Server(server, {
     pingTimeout: 60000,
     pingInterval: 25000,
     connectTimeout: 45000,
+    allowEIO3: true,
+    cookie: {
+        name: "io",
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+    },
+});
+
+// Add CORS headers for WebSocket upgrade
+app.use((req, res, next) => {
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
 });
 
 // Store connected users
