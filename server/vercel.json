@@ -1,25 +1,25 @@
 {
     "version": 2,
     "name": "smart-todo-backend",
-    "functions": {
-        "index.js": {
-            "runtime": "nodejs18.x",
-            "maxDuration": 30
-        }
-    },
-    "rewrites": [
+    "builds": [
         {
-            "source": "/socket.io/:path*",
-            "destination": "/index.js"
+            "src": "index.js",
+            "use": "@vercel/node@3.0.7"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/socket.io/(.*)",
+            "dest": "/index.js"
         },
         {
-            "source": "/:path*",
-            "destination": "/index.js"
+            "src": "/(.*)",
+            "dest": "/index.js"
         }
     ],
     "headers": [
         {
-            "source": "/:path*",
+            "source": "/(.*)",
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
