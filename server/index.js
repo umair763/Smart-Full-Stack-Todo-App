@@ -13,10 +13,10 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
 import dependencyRoutes from "./routes/dependencyRoutes.js";
 import streakRoutes from "./routes/streakRoutes.js";
-
 import noteRoutes from "./routes/noteRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -24,7 +24,7 @@ const app = express();
 // Improved CORS configuration for production
 app.use(
     cors({
-        origin: "https://smart-todo-task-management-frontend.vercel.app",
+        origin: process.env.FRONTEND_URL || "https://smart-todo-task-management-frontend.vercel.app",
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true,
@@ -40,154 +40,213 @@ app.options("*", cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
-// MongoDB Configuration
+// MongoDB Configuration with better error handling
 const MONGO_URI = process.env.MONGO_URI;
 if (!MONGO_URI) {
-    throw new Error("MONGO_URI environment variable is required");
+    console.error("MONGO_URI environment variable is required");
+    // Don't throw in serverless, log the error instead
 }
 
-// MongoDB connection with retry logic
+// Global connection state
+let isConnected = false;
+
+// MongoDB connection with retry logic and better error handling
 const connectDB = async () => {
+    if (isConnected && mongoose.connection.readyState === 1) {
+        return;
+    }
+
     try {
+        if (!MONGO_URI) {
+            console.error("MongoDB URI not provided");
+            return;
+        }
+
         await mongoose.connect(MONGO_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 5000, // Reduced timeout for serverless
+            serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
+            maxPoolSize: 10,
+            bufferCommands: false,
+            bufferMaxEntries: 0,
         });
+
+        isConnected = true;
         console.log("MongoDB connected successfully");
     } catch (err) {
-        console.error("MongoDB connection error:", err);
-        // Don't throw error, let the function continue
-        // The connection will be retried on next request
+        console.error("MongoDB connection error:", err.message);
+        isConnected = false;
+        // Don't throw error in serverless environment
     }
 };
 
-// Initial connection
-connectDB();
-
 // Handle MongoDB connection events
+mongoose.connection.on("connected", () => {
+    isConnected = true;
+    console.log("MongoDB connected");
+});
+
 mongoose.connection.on("error", (err) => {
     console.error("MongoDB connection error:", err);
+    isConnected = false;
 });
 
 mongoose.connection.on("disconnected", () => {
     console.warn("MongoDB disconnected");
+    isConnected = false;
 });
 
-// Only create HTTP server and Socket.io in non-serverless environment
+// Middleware to ensure database connection
+const ensureDBConnection = async (req, res, next) => {
+    if (!isConnected) {
+        await connectDB();
+    }
+    next();
+};
+
+// Socket.io setup (only in non-serverless environment)
 let server;
 let io;
 let connectedUsers = new Map();
 
-if (process.env.NODE_ENV !== "production" || process.env.ENABLE_SOCKET === "true") {
-    server = http.createServer(app);
-    io = new Server(server, {
-        cors: {
-            origin: "https://smart-todo-task-management-frontend.vercel.app",
-            methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-            credentials: true,
-            allowedHeaders: ["Content-Type", "Authorization"],
-        },
-        transports: ["websocket", "polling"],
-        path: "/socket.io/",
-    });
+const isServerless = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-    // Socket.io connection handler
-    io.on("connection", (socket) => {
-        console.log("New client connected:", socket.id);
-
-        socket.on("authenticate", (userId) => {
-            console.log(`User ${userId} authenticated with socket ${socket.id}`);
-            connectedUsers.set(userId, socket.id);
+if (!isServerless && (process.env.NODE_ENV !== "production" || process.env.ENABLE_SOCKET === "true")) {
+    try {
+        server = http.createServer(app);
+        io = new Server(server, {
+            cors: {
+                origin: process.env.FRONTEND_URL || "https://smart-todo-task-management-frontend.vercel.app",
+                methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+                credentials: true,
+                allowedHeaders: ["Content-Type", "Authorization"],
+            },
+            transports: ["websocket", "polling"],
+            path: "/socket.io/",
         });
 
-        // Handle notification events
-        socket.on("notificationCreated", (notification) => {
-            // Broadcast to all connected clients
-            io.emit("notification", notification);
-        });
+        // Socket.io connection handler
+        io.on("connection", (socket) => {
+            console.log("New client connected:", socket.id);
 
-        socket.on("notificationDeleted", (notificationId) => {
-            // Broadcast to all connected clients
-            io.emit("notificationUpdate", {
-                type: "delete",
-                notificationId,
+            socket.on("authenticate", (userId) => {
+                console.log(`User ${userId} authenticated with socket ${socket.id}`);
+                connectedUsers.set(userId, socket.id);
             });
-        });
 
-        socket.on("notificationsCleared", () => {
-            // Broadcast to all connected clients
-            io.emit("notificationUpdate", {
-                type: "clearAll",
+            // Handle notification events
+            socket.on("notificationCreated", (notification) => {
+                io.emit("notification", notification);
             });
-        });
 
-        socket.on("notificationsMarkedAsRead", () => {
-            // Broadcast to all connected clients
-            io.emit("notificationUpdate", {
-                type: "markAllRead",
+            socket.on("notificationDeleted", (notificationId) => {
+                io.emit("notificationUpdate", {
+                    type: "delete",
+                    notificationId,
+                });
             });
-        });
 
-        // Handle dependency events
-        socket.on("dependencyCreated", (dependency) => {
-            // Broadcast to all connected clients
-            io.emit("dependency", dependency);
-        });
-
-        socket.on("dependencyDeleted", (dependencyId) => {
-            // Broadcast to all connected clients
-            io.emit("dependencyUpdate", {
-                type: "delete",
-                dependencyId,
+            socket.on("notificationsCleared", () => {
+                io.emit("notificationUpdate", {
+                    type: "clearAll",
+                });
             });
-        });
 
-        socket.on("disconnect", () => {
-            console.log("Client disconnected:", socket.id);
-            for (const [userId, socketId] of connectedUsers.entries()) {
-                if (socketId === socket.id) {
-                    connectedUsers.delete(userId);
-                    console.log(`User ${userId} disconnected`);
-                    break;
+            socket.on("notificationsMarkedAsRead", () => {
+                io.emit("notificationUpdate", {
+                    type: "markAllRead",
+                });
+            });
+
+            // Handle dependency events
+            socket.on("dependencyCreated", (dependency) => {
+                io.emit("dependency", dependency);
+            });
+
+            socket.on("dependencyDeleted", (dependencyId) => {
+                io.emit("dependencyUpdate", {
+                    type: "delete",
+                    dependencyId,
+                });
+            });
+
+            socket.on("disconnect", () => {
+                console.log("Client disconnected:", socket.id);
+                for (const [userId, socketId] of connectedUsers.entries()) {
+                    if (socketId === socket.id) {
+                        connectedUsers.delete(userId);
+                        console.log(`User ${userId} disconnected`);
+                        break;
+                    }
                 }
-            }
+            });
         });
-    });
 
-    // Make io accessible to route handlers
-    app.set("io", io);
-    app.set("connectedUsers", connectedUsers);
+        // Make io accessible to route handlers
+        app.set("io", io);
+        app.set("connectedUsers", connectedUsers);
+    } catch (error) {
+        console.error("Socket.io setup error:", error);
+    }
 }
 
 // Create an EventEmitter for database changes
 const dbEvents = new EventEmitter();
 export { dbEvents };
 
-// Debug route to check if server is running
-app.get("/", (req, res) => {
-    res.json({
-        success: true,
-        message: "Smart Todo API is running in production",
-        timestamp: new Date().toISOString(),
-        version: "1.0.0",
-    });
+// Health check route
+app.get("/", async (req, res) => {
+    try {
+        // Ensure DB connection for health check
+        if (!isConnected) {
+            await connectDB();
+        }
+
+        res.json({
+            success: true,
+            message: "Smart Todo API is running in production",
+            timestamp: new Date().toISOString(),
+            version: "1.0.0",
+            database: isConnected ? "connected" : "disconnected",
+            environment: process.env.NODE_ENV || "development",
+        });
+    } catch (error) {
+        console.error("Health check error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Health check failed",
+            error: error.message,
+        });
+    }
 });
 
-// Debug route for Socket.io
+// Debug route for Socket.io (only if socket is available)
 app.get("/socket-check", (req, res) => {
-    res.json({
-        message: "Socket.io is running",
-        connectedClients: io.engine.clientsCount,
-        connectedUsers: [...connectedUsers.entries()].map(([userId, socketId]) => ({ userId, socketId })),
-    });
+    if (io) {
+        res.json({
+            message: "Socket.io is running",
+            connectedClients: io.engine.clientsCount,
+            connectedUsers: [...connectedUsers.entries()].map(([userId, socketId]) => ({ userId, socketId })),
+        });
+    } else {
+        res.json({
+            message: "Socket.io is not available in serverless environment",
+            serverless: isServerless,
+        });
+    }
 });
 
 // Debug route to check routes
 app.get("/api/debug", (req, res) => {
     res.json({
         message: "API Debug Route",
+        environment: {
+            nodeEnv: process.env.NODE_ENV,
+            isServerless,
+            hasSocket: !!io,
+            dbConnected: isConnected,
+        },
         routes: {
             users: [
                 { method: "POST", path: "/api/users/google-signin" },
@@ -227,24 +286,12 @@ app.get("/api/debug", (req, res) => {
                 { method: "POST", path: "/api/streaks/update" },
                 { method: "GET", path: "/api/streaks/history" },
             ],
-            sockets: [
-                { event: "connection", description: "New client connected" },
-                { event: "authenticate", description: "Authenticate user with socket" },
-                { event: "disconnect", description: "Client disconnected" },
-                { event: "taskCreated", description: "Task created notification" },
-                { event: "taskUpdated", description: "Task updated notification" },
-                { event: "taskDeleted", description: "Task deleted notification" },
-                { event: "taskStatusChanged", description: "Task status changed notification" },
-                { event: "subtaskCreated", description: "Subtask created notification" },
-                { event: "subtaskUpdated", description: "Subtask updated notification" },
-                { event: "subtaskDeleted", description: "Subtask deleted notification" },
-                { event: "subtaskStatusChanged", description: "Subtask status changed notification" },
-                { event: "dependencyCreated", description: "Dependency created notification" },
-                { event: "dependencyDeleted", description: "Dependency deleted notification" },
-            ],
         },
     });
 });
+
+// Apply DB connection middleware to API routes
+app.use("/api", ensureDBConnection);
 
 // Routes
 app.use("/api/users", userRoutes);
@@ -254,27 +301,54 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/dependencies", dependencyRoutes);
 app.use("/api/streaks", streakRoutes);
-
 app.use("/api", noteRoutes);
 app.use("/api", attachmentRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(err.status || 500).json({
+// 404 handler
+app.use("*", (req, res) => {
+    res.status(404).json({
         success: false,
-        message: process.env.NODE_ENV === "production" ? "Internal server error" : err.message,
-        error: process.env.NODE_ENV === "production" ? undefined : err,
+        message: "Route not found",
+        path: req.originalUrl,
     });
 });
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error("Error:", err.stack);
+
+    const isDevelopment = process.env.NODE_ENV !== "production";
+
+    res.status(err.status || 500).json({
+        success: false,
+        message: isDevelopment ? err.message : "Internal server error",
+        ...(isDevelopment && {
+            error: err.message,
+            stack: err.stack,
+        }),
+    });
+});
+
+// Initialize database connection
+if (MONGO_URI) {
+    connectDB().catch((err) => {
+        console.error("Initial DB connection failed:", err);
+    });
+}
 
 // Export the Express app for Vercel serverless
 export default app;
 
 // Only start the server in development or when explicitly enabled
-if (process.env.NODE_ENV !== "production" || process.env.ENABLE_SOCKET === "true") {
+if (!isServerless && (process.env.NODE_ENV !== "production" || process.env.ENABLE_SOCKET === "true")) {
     const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
+    if (server) {
+        server.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    } else {
+        app.listen(PORT, () => {
+            console.log(`Express server running on port ${PORT}`);
+        });
+    }
 }
