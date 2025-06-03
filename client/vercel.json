@@ -4,13 +4,22 @@
    "outputDirectory": "dist",
    "framework": "vite",
    "rewrites": [
-      { "source": "/assets/(.*)", "destination": "/assets/$1" },
-      { "source": "/(.*\\.(js|css|ico|png|jpg|jpeg|svg|gif|woff|woff2|ttf|eot))", "destination": "/$1" },
-      { "source": "/(.*)", "destination": "/index.html" }
+      {
+         "source": "/assets/:path*",
+         "destination": "/assets/:path*"
+      },
+      {
+         "source": "/((?!api|socket\\.io).*)\\.(js|css|ico|png|jpg|jpeg|svg|gif|woff|woff2|ttf|eot)",
+         "destination": "/$1.$2"
+      },
+      {
+         "source": "/((?!api|socket\\.io).*)",
+         "destination": "/index.html"
+      }
    ],
    "headers": [
       {
-         "source": "/(.*)",
+         "source": "/((?!api|socket\\.io).*)",
          "headers": [
             {
                "key": "X-Content-Type-Options",
@@ -27,7 +36,7 @@
          ]
       },
       {
-         "source": "/assets/(.*)",
+         "source": "/assets/:path*",
          "headers": [
             {
                "key": "Cache-Control",
@@ -36,7 +45,7 @@
          ]
       },
       {
-         "source": "/(.*\\.(js|css|ico|png|jpg|jpeg|svg|gif|woff|woff2|ttf|eot))",
+         "source": "/((?!api|socket\\.io).*)\\.(js|css|ico|png|jpg|jpeg|svg|gif|woff|woff2|ttf|eot)",
          "headers": [
             {
                "key": "Cache-Control",
