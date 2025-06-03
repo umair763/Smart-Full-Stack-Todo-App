@@ -34,6 +34,12 @@ import ReminderModal from './ReminderModal'; // Declare the ReminderModal variab
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange, dependencies, onDependencyChange }) {
+   // Add defensive check for list prop
+   if (!list || typeof list !== 'object' || !list._id) {
+      console.error('DisplayTodoList: Received invalid list prop:', list);
+      return null;
+   }
+
    const [completed, setCompleted] = useState(list.completed || false);
    const [showEditModal, setShowEditModal] = useState(false);
    const [isUpdating, setIsUpdating] = useState(false);

@@ -249,21 +249,37 @@ function TodoListParser({ searchTerm = '' }) {
       if (!socket) return;
 
       const handleTaskCreated = (data) => {
-         setTodoList((prevList) => [...prevList, data]);
+         if (data && data._id && typeof data === 'object') {
+            setTodoList((prevList) => [...prevList, data]);
+         } else {
+            console.error('TodoListParser: Received invalid task in socket event:', data);
+         }
       };
 
       const handleTaskUpdated = (data) => {
-         setTodoList((prevList) => prevList.map((task) => (task._id === data._id ? data : task)));
+         if (data && data._id && typeof data === 'object') {
+            setTodoList((prevList) => prevList.map((task) => (task._id === data._id ? data : task)));
+         } else {
+            console.error('TodoListParser: Received invalid task update in socket event:', data);
+         }
       };
 
       const handleTaskDeleted = (data) => {
-         setTodoList((prevList) => prevList.filter((task) => task._id !== data.taskId));
+         if (data && data.taskId) {
+            setTodoList((prevList) => prevList.filter((task) => task._id !== data.taskId));
+         } else {
+            console.error('TodoListParser: Received invalid task deletion in socket event:', data);
+         }
       };
 
       const handleTaskStatusChanged = (data) => {
-         setTodoList((prevList) =>
-            prevList.map((task) => (task._id === data.taskId ? { ...task, completed: data.completed } : task))
-         );
+         if (data && data.taskId && typeof data.completed === 'boolean') {
+            setTodoList((prevList) =>
+               prevList.map((task) => (task._id === data.taskId ? { ...task, completed: data.completed } : task))
+            );
+         } else {
+            console.error('TodoListParser: Received invalid task status change in socket event:', data);
+         }
       };
 
       socket.on('taskCreated', handleTaskCreated);
@@ -311,7 +327,16 @@ function TodoListParser({ searchTerm = '' }) {
          }
 
          const data = await response.json();
-         setTodoList(data);
+         // Validate tasks before setting them
+         const validTasks = data.filter((task) => task && task._id && typeof task === 'object');
+         if (validTasks.length !== data.length) {
+            console.warn('TodoListParser: Filtered out invalid tasks:', {
+               total: data.length,
+               valid: validTasks.length,
+               invalid: data.length - validTasks.length,
+            });
+         }
+         setTodoList(validTasks);
          setError(null);
       } catch (error) {
          console.error('Error fetching tasks:', error);
@@ -811,25 +836,32 @@ function TodoListParser({ searchTerm = '' }) {
 
                      {/* Visible items */}
                      <div>
-                        {visibleItems.map((task, index) => (
-                           <div
-                              key={task._id}
-                              style={{
-                                 minHeight: itemHeight,
-                                 position: 'relative',
-                              }}
-                           >
-                              <DisplayTodoList
-                                 list={task}
-                                 isexceeded={isDeadlineExceeded(task)}
-                                 onDelete={handleDeleteTask}
-                                 onUpdate={handleUpdateTask}
-                                 onStatusChange={handleTaskStatusChange}
-                                 dependencies={dependencies}
-                                 onDependencyChange={fetchDependencies}
-                              />
-                           </div>
-                        ))}
+                        {visibleItems.map((task, index) => {
+                           // Skip rendering if task is undefined or missing required properties
+                           if (!task || !task._id) {
+                              console.error('TodoListParser: Skipping undefined or invalid task:', task);
+                              return null;
+                           }
+                           return (
+                              <div
+                                 key={task._id}
+                                 style={{
+                                    minHeight: itemHeight,
+                                    position: 'relative',
+                                 }}
+                              >
+                                 <DisplayTodoList
+                                    list={task}
+                                    isexceeded={isDeadlineExceeded(task)}
+                                    onDelete={handleDeleteTask}
+                                    onUpdate={handleUpdateTask}
+                                    onStatusChange={handleTaskStatusChange}
+                                    dependencies={dependencies}
+                                    onDependencyChange={fetchDependencies}
+                                 />
+                              </div>
+                           );
+                        })}
                      </div>
 
                      {/* Virtual scrolling spacer for items after visible area */}
