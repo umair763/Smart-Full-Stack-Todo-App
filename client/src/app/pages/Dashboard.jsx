@@ -21,22 +21,24 @@ function Dashboard() {
    const [error, setError] = useState(null);
    const [deleteModal, setDeleteModal] = useState({ show: false, taskId: null });
    const [showNotifications, setShowNotifications] = useState(false);
-   const { token, logout } = useAuth();
+   const { token, logout, loading: authLoading } = useAuth();
    const { notifications, unreadCount } = useNotification();
    const { socket } = useSocket();
    const navigate = useNavigate();
 
    console.log('Dashboard component rendered');
-   console.log('Auth token:', token ? 'Exists' : 'Does not exist');
+   console.log('Auth token from context:', token ? 'Exists' : 'Does not exist', '(', token, ')');
+   console.log('Auth loading from context:', authLoading);
    console.log('Socket object:', socket ? 'Exists' : 'Does not exist');
 
    useEffect(() => {
       console.log('Dashboard useEffect running');
-      console.log('useEffect token:', token ? 'Exists' : 'Does not exist');
+      console.log('useEffect token:', token ? 'Exists' : 'Does not exist', '(', token, ')');
+      console.log('useEffect authLoading:', authLoading);
 
-      // Only proceed if token is a non-empty string
-      if (typeof token === 'string' && token.length > 0) {
-         console.log('Token exists and is valid string, calling fetchTasks()');
+      // Only proceed if auth loading is complete AND token is a non-empty string
+      if (!authLoading && typeof token === 'string' && token.length > 0) {
+         console.log('Auth not loading and token is valid string, calling fetchTasks()');
          fetchTasks();
 
          // Only setup socket listeners if socket is available
@@ -55,7 +57,7 @@ function Dashboard() {
 
       // Cleanup function if socket is not available
       return () => {};
-   }, [token, socket]);
+   }, [authLoading, token, socket]);
 
    const setupSocketListeners = () => {
       if (socket) {
