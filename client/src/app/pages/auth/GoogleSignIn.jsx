@@ -5,10 +5,6 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-// Hardcoded API URL for production
-const API_URL = 'https://smart-todo-task-management-backend.vercel.app/api';
-const GOOGLE_CLIENT_ID = '726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com';
-
 function GoogleSignIn() {
    const { login } = useAuth();
    const navigate = useNavigate();
@@ -21,7 +17,7 @@ function GoogleSignIn() {
       try {
          console.log('Sending token to backend...');
          // Send the credential token to backend
-         const backendResponse = await fetch(`${API_URL}/users/google-signin`, {
+         const backendResponse = await fetch('/api/users/google-signin', {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -29,7 +25,6 @@ function GoogleSignIn() {
             },
             body: JSON.stringify({
                token: credential,
-               clientId: GOOGLE_CLIENT_ID,
             }),
          });
 
