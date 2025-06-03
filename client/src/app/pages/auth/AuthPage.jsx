@@ -63,19 +63,22 @@ function AuthPage() {
 
                if (response.ok) {
                   login(token);
-                  navigate('/dashboard');
+                  if (location.pathname !== '/dashboard') {
+                     navigate('/dashboard', { replace: true });
+                  }
                } else {
                   localStorage.removeItem('token');
                }
             } catch (err) {
                setError('Error validating token. Please log in again.');
+               localStorage.removeItem('token');
             }
          }
          setLoading(false);
       };
 
       checkToken();
-   }, [login, navigate]);
+   }, [login, navigate, location.pathname]);
 
    const togglePasswordVisibility = () => {
       setPasswordVisible(!isPasswordVisible);
@@ -128,7 +131,6 @@ function AuthPage() {
                'Content-Type': 'application/json',
             },
             body: JSON.stringify(loginData),
-            credentials: 'include',
          });
 
          const data = await response.json();
@@ -136,7 +138,7 @@ function AuthPage() {
          if (response.ok) {
             if (data.token) {
                login(data.token);
-               navigate('/dashboard');
+               navigate('/dashboard', { replace: true });
             } else {
                setError('No token received from server');
             }
@@ -228,12 +230,13 @@ function AuthPage() {
          const data = await result.json();
 
          if (result.ok) {
-            localStorage.setItem('token', data.token);
-            navigate('/dashboard');
+            login(data.token); // Use context login
+            navigate('/dashboard', { replace: true });
          } else {
-            console.error('Google sign-in failed:', data.message);
+            setError(data.message || 'Google sign-in failed');
          }
       } catch (error) {
+         setError('Error during Google sign-in');
          console.error('Error during Google sign-in:', error);
       }
    };

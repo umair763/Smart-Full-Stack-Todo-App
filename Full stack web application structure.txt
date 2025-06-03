@@ -79,7 +79,7 @@ server/
 │   └── Subtask.js
 │   └── Task.js
 │   └── User.js
-│   └── vercel.json
+└── vercel.json
 ├── .env
 ├── index.js              
 ├── package.json
