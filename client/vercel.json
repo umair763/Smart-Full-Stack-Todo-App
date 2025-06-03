@@ -22,11 +22,10 @@
          "src": "/(.*)",
          "dest": "/index.html",
          "headers": {
-            "X-Content-Type-Opener": "nosniff",
+            "X-Content-Type-Options": "nosniff",
             "X-Frame-Options": "DENY",
             "X-XSS-Protection": "1; mode=block",
-            "Cache-Control": "public, max-age=0, must-revalidate",
-            "Cross-Origin-Opener-Policy": "same-origin-allow-popups"
+            "Cache-Control": "public, max-age=0, must-revalidate"
          }
       }
    ],
