@@ -14,68 +14,86 @@ const parseJwt = (token) => {
 };
 
 export const AuthProvider = ({ children }) => {
-   const [authState, setAuthState] = useState({
-      isLoggedIn: false,
-      user: null,
-      loading: true,
-   });
+   const [isLoggedIn, setIsLoggedIn] = useState(false);
+   const [loading, setLoading] = useState(true);
+   const [user, setUser] = useState(null);
+   const [token, setToken] = useState(null);
 
    useEffect(() => {
-      const token = localStorage.getItem('token');
-      if (token) {
+      console.log('AuthContext initial useEffect running');
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+         console.log('Token found in localStorage');
          try {
-            const tokenData = parseJwt(token);
+            const tokenData = parseJwt(storedToken);
+
             if (!tokenData) {
-               console.warn('Invalid token format, logging out');
+               console.warn('Invalid token format in localStorage, logging out');
                localStorage.removeItem('token');
-               setAuthState({ isLoggedIn: false, user: null, loading: false });
+               setIsLoggedIn(false);
+               setToken(null);
             } else if (tokenData.exp && tokenData.exp < Math.floor(Date.now() / 1000)) {
-               console.warn('Token expired, logging out');
+               console.warn('Token expired in localStorage, logging out');
                localStorage.removeItem('token');
-               setAuthState({ isLoggedIn: false, user: null, loading: false });
+               setIsLoggedIn(false);
+               setToken(null);
             } else {
-               setAuthState({
-                  isLoggedIn: true,
-                  user: { id: tokenData.userId, exp: tokenData.exp },
-                  loading: false,
+               console.log('Valid token found, setting state');
+               setIsLoggedIn(true);
+               setToken(storedToken);
+               setUser({
+                  id: tokenData.userId,
+                  exp: tokenData.exp,
                });
             }
          } catch (e) {
-            console.error('Error processing token:', e);
+            console.error('Error processing token from localStorage:', e);
             localStorage.removeItem('token');
-            setAuthState({ isLoggedIn: false, user: null, loading: false });
+            setIsLoggedIn(false);
+            setToken(null);
          }
-      } else {
-         setAuthState({ isLoggedIn: false, user: null, loading: false });
       }
+      console.log('AuthContext initial check complete, setting loading false');
+      setLoading(false);
    }, []);
 
-   const login = (token) => {
-      localStorage.setItem('token', token);
-      const tokenData = parseJwt(token);
-      if (tokenData) {
-         setAuthState({
-            isLoggedIn: true,
-            user: { id: tokenData.userId, exp: tokenData.exp },
-            loading: false,
-         });
+   const login = (newToken) => {
+      console.log('AuthContext login function called');
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      setIsLoggedIn(true);
+      try {
+         const tokenData = parseJwt(newToken);
+         if (tokenData) {
+            setUser({
+               id: tokenData.userId,
+               exp: tokenData.exp,
+            });
+         }
+      } catch (e) {
+         console.error('Error processing token:', e);
+         localStorage.removeItem('token');
+         setIsLoggedIn(false);
+         setToken(null);
       }
    };
 
    const logout = () => {
       localStorage.removeItem('token');
-      setAuthState({ isLoggedIn: false, user: null, loading: false });
+      setIsLoggedIn(false);
+      setToken(null);
+      setUser(null);
    };
 
    const value = useMemo(
       () => ({
-         isLoggedIn: authState.isLoggedIn,
-         user: authState.user,
+         isLoggedIn,
+         user,
          login,
          logout,
-         loading: authState.loading,
+         loading,
       }),
-      [authState]
+      [isLoggedIn, user, login, logout, loading]
    );
 
    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
