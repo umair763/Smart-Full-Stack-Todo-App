@@ -8,7 +8,7 @@ import ThemeToggle from '../../../components/ThemeToggle';
 import GoogleSignIn from './GoogleSignIn';
 
 // Hardcoded backend URL
-const BACKEND_URL = import.meta.env.VITE_API_URL;
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function AuthPage() {
    const location = useLocation();
@@ -63,22 +63,19 @@ function AuthPage() {
 
                if (response.ok) {
                   login(token);
-                  if (location.pathname !== '/dashboard') {
-                     navigate('/dashboard', { replace: true });
-                  }
+                  navigate('/dashboard');
                } else {
                   localStorage.removeItem('token');
                }
             } catch (err) {
                setError('Error validating token. Please log in again.');
-               localStorage.removeItem('token');
             }
          }
          setLoading(false);
       };
 
       checkToken();
-   }, [login, navigate, location.pathname]);
+   }, [login, navigate]);
 
    const togglePasswordVisibility = () => {
       setPasswordVisible(!isPasswordVisible);
@@ -131,6 +128,7 @@ function AuthPage() {
                'Content-Type': 'application/json',
             },
             body: JSON.stringify(loginData),
+            credentials: 'include',
          });
 
          const data = await response.json();
@@ -138,7 +136,7 @@ function AuthPage() {
          if (response.ok) {
             if (data.token) {
                login(data.token);
-               navigate('/dashboard', { replace: true });
+               navigate('/dashboard');
             } else {
                setError('No token received from server');
             }
@@ -230,13 +228,12 @@ function AuthPage() {
          const data = await result.json();
 
          if (result.ok) {
-            login(data.token); // Use context login
-            navigate('/dashboard', { replace: true });
+            localStorage.setItem('token', data.token);
+            navigate('/dashboard');
          } else {
-            setError(data.message || 'Google sign-in failed');
+            console.error('Google sign-in failed:', data.message);
          }
       } catch (error) {
-         setError('Error during Google sign-in');
          console.error('Error during Google sign-in:', error);
       }
    };
