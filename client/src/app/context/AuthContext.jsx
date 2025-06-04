@@ -1,9 +1,12 @@
-import { createContext, useState, useEffect, useMemo, useContext } from 'react';
+'use client';
+
+import { createContext, useState, useEffect, useContext } from 'react';
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
+// Helper function to safely parse JWT tokens
 const parseJwt = (token) => {
    try {
       return JSON.parse(atob(token.split('.')[1]));
@@ -17,53 +20,43 @@ export const AuthProvider = ({ children }) => {
    const [isLoggedIn, setIsLoggedIn] = useState(false);
    const [loading, setLoading] = useState(true);
    const [user, setUser] = useState(null);
-   const [token, setToken] = useState(null);
 
    useEffect(() => {
-      console.log('AuthContext initial useEffect running');
-      const storedToken = localStorage.getItem('token');
-      if (storedToken) {
-         console.log('Token found in localStorage');
+      const token = localStorage.getItem('token');
+      if (token) {
+         // Validate token format and expiration
          try {
-            const tokenData = parseJwt(storedToken);
+            const tokenData = parseJwt(token);
 
             if (!tokenData) {
-               console.warn('Invalid token format in localStorage, logging out');
+               console.warn('Invalid token format, logging out');
                localStorage.removeItem('token');
                setIsLoggedIn(false);
-               setToken(null);
             } else if (tokenData.exp && tokenData.exp < Math.floor(Date.now() / 1000)) {
-               console.warn('Token expired in localStorage, logging out');
+               console.warn('Token expired, logging out');
                localStorage.removeItem('token');
                setIsLoggedIn(false);
-               setToken(null);
             } else {
-               console.log('Valid token found, setting state');
                setIsLoggedIn(true);
-               setToken(storedToken);
                setUser({
                   id: tokenData.userId,
                   exp: tokenData.exp,
                });
             }
          } catch (e) {
-            console.error('Error processing token from localStorage:', e);
+            console.error('Error processing token:', e);
             localStorage.removeItem('token');
             setIsLoggedIn(false);
-            setToken(null);
          }
       }
-      console.log('AuthContext initial check complete, setting loading false');
       setLoading(false);
    }, []);
 
-   const login = (newToken) => {
-      console.log('AuthContext login function called');
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
+   const login = (token) => {
+      localStorage.setItem('token', token);
       setIsLoggedIn(true);
       try {
-         const tokenData = parseJwt(newToken);
+         const tokenData = parseJwt(token);
          if (tokenData) {
             setUser({
                id: tokenData.userId,
@@ -71,31 +64,23 @@ export const AuthProvider = ({ children }) => {
             });
          }
       } catch (e) {
-         console.error('Error processing token:', e);
-         localStorage.removeItem('token');
-         setIsLoggedIn(false);
-         setToken(null);
+         console.error('Error parsing token data:', e);
       }
    };
 
    const logout = () => {
       localStorage.removeItem('token');
       setIsLoggedIn(false);
-      setToken(null);
       setUser(null);
    };
 
-   const value = useMemo(
-      () => ({
-         isLoggedIn,
-         user,
-         token,
-         login,
-         logout,
-         loading,
-      }),
-      [isLoggedIn, user, token, login, logout, loading]
-   );
+   const value = {
+      isLoggedIn,
+      user,
+      login,
+      logout,
+      loading,
+   };
 
    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

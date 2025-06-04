@@ -13,7 +13,7 @@ import NotificationCenter from '../../components/NotificationCenter';
 import UserProfile from '../../components/UserProfile';
 
 // Hardcoded backend URL
-const BACKEND_URL = import.meta.env.VITE_API_URL;
+const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://smart-todo-task-management-backend.vercel.app';
 
 function Dashboard() {
    const [tasks, setTasks] = useState([]);
@@ -21,43 +21,28 @@ function Dashboard() {
    const [error, setError] = useState(null);
    const [deleteModal, setDeleteModal] = useState({ show: false, taskId: null });
    const [showNotifications, setShowNotifications] = useState(false);
-   const { token, logout, loading: authLoading } = useAuth();
+   const { token, logout } = useAuth();
    const { notifications, unreadCount } = useNotification();
    const { socket } = useSocket();
    const navigate = useNavigate();
 
-   console.log('Dashboard component rendered');
-   console.log('Auth token from context:', token ? 'Exists' : 'Does not exist', '(', token, ')');
-   console.log('Auth loading from context:', authLoading);
-   console.log('Socket object:', socket ? 'Exists' : 'Does not exist');
-
    useEffect(() => {
-      console.log('Dashboard useEffect running');
-      console.log('useEffect token:', token ? 'Exists' : 'Does not exist', '(', token, ')');
-      console.log('useEffect authLoading:', authLoading);
-
-      // Only proceed if auth loading is complete AND token is a non-empty string
-      if (!authLoading && typeof token === 'string' && token.length > 0) {
-         console.log('Auth not loading and token is valid string, calling fetchTasks()');
-         fetchTasks();
-
-         // Only setup socket listeners if socket is available
-         if (socket) {
-            console.log('Socket exists, setting up listeners');
-            setupSocketListeners();
-
-            return () => {
-               console.log('Cleaning up socket listeners');
-               socket.off('taskCreated');
-               socket.off('taskUpdated');
-               socket.off('taskDeleted');
-            };
-         }
+      if (!token) {
+         navigate('/login');
+         return;
       }
 
-      // Cleanup function if socket is not available
-      return () => {};
-   }, [authLoading, token, socket]);
+      fetchTasks();
+      setupSocketListeners();
+
+      return () => {
+         if (socket) {
+            socket.off('taskCreated');
+            socket.off('taskUpdated');
+            socket.off('taskDeleted');
+         }
+      };
+   }, [token, socket]);
 
    const setupSocketListeners = () => {
       if (socket) {
