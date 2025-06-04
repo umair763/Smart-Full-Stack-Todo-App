@@ -13,9 +13,19 @@
       },
       {
          "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|svg|gif|woff|woff2|ttf|eot))",
-         "dest": "/$1.$2",
+         "dest": "/$1",
          "headers": {
             "cache-control": "public, max-age=31536000, immutable"
+         }
+      },
+      {
+         "handle": "filesystem"
+      },
+      {
+         "src": "/api/(.*)",
+         "dest": "/api/$1",
+         "headers": {
+            "cache-control": "no-cache, no-store, must-revalidate"
          }
       },
       {
@@ -25,7 +35,8 @@
             "X-Content-Type-Options": "nosniff",
             "X-Frame-Options": "DENY",
             "X-XSS-Protection": "1; mode=block",
-            "Cache-Control": "public, max-age=0, must-revalidate"
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
          }
       }
    ],
