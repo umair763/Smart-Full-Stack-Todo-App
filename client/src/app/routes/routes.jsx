@@ -24,50 +24,47 @@ const LoadingSpinner = () => (
 const AppRoutes = () => {
    const { isLoggedIn, loading } = useAuth();
 
-   // Show loading spinner while checking authentication
    if (loading) {
       return <LoadingSpinner />;
    }
 
    return (
       <Routes>
-         {/* Landing Page - accessible to both authenticated and unauthenticated users */}
-         {/* Redirect authenticated users from landing/auth pages */}
-         {isLoggedIn ? (
-            <Route path="/((home|auth/login|auth/register))" element={<Navigate to="/dashboard" replace />} />
-         ) : (
-            <Route element={<LandingPageLayout />}>
-               <Route path="/home" element={<LandingPage />} />
-               <Route path="/" element={<LandingPage />} />
-            </Route>
+         {/* Public Routes */}
+         {!isLoggedIn && (
+            <>
+               <Route element={<LandingPageLayout />}>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/home" element={<LandingPage />} />
+               </Route>
+               <Route path="/auth/login" element={<AuthPage />} />
+               <Route path="/auth/register" element={<AuthPage />} />
+            </>
          )}
 
-         {/* Authenticated routes - only render when NOT loading and IS logged in */}
-         {!loading && isLoggedIn && (
+         {/* Protected Routes */}
+         {isLoggedIn && (
             <Route element={<Layout />}>
                <Route path="/dashboard" element={<Dashboard />} />
                <Route path="/settings" element={<Settings />} />
                <Route path="/insights" element={<Insights />} />
-               {/* Redirect any unhandled authenticated route to dashboard */}
-               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
          )}
 
-         {/* Unauthenticated routes - only render when NOT loading and NOT logged in */}
-         {!loading && !isLoggedIn && (
-            <Route>
-               <Route path="/auth/login" element={<AuthPage />} />
-               <Route path="/auth/register" element={<AuthPage />} />
-               {/* Redirect all other routes to home when not logged in (handled by above Redirect) */}
-               {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
-            </Route>
+         {/* Redirects */}
+         {isLoggedIn ? (
+            // Redirect authenticated users trying to access public routes
+            <Route
+               path={['/', '/home', '/auth/login', '/auth/register']}
+               element={<Navigate to="/dashboard" replace />}
+            />
+         ) : (
+            // Redirect unauthenticated users trying to access protected routes
+            <Route path={['/dashboard', '/settings', '/insights']} element={<Navigate to="/" replace />} />
          )}
 
-         {/* Fallback for routes that don't match any explicit rule while not logged in*/}
-         {!loading && !isLoggedIn && <Route path="*" element={<Navigate to="/" replace />} />}
-
-         {/* Fallback for routes that don't match any explicit rule while logged in */}
-         {!loading && isLoggedIn && <Route path="*" element={<Navigate to="/dashboard" replace />} />}
+         {/* Catch-all redirect */}
+         <Route path="*" element={<Navigate to={isLoggedIn ? '/dashboard' : '/'} replace />} />
       </Routes>
    );
 };
