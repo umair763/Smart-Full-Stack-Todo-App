@@ -13,7 +13,7 @@ import NotificationCenter from '../../components/NotificationCenter';
 import UserProfile from '../../components/UserProfile';
 
 // Hardcoded backend URL
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'https://smart-todo-task-management-backend.vercel.app';
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function Dashboard() {
    const [tasks, setTasks] = useState([]);

@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
                   id: tokenData.userId,
                   exp: tokenData.exp,
                });
-            }  
+            }
          } catch (e) {
             console.error('Error processing token:', e);
             localStorage.removeItem('token');
