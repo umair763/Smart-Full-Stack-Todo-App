@@ -1,6 +1,5 @@
 'use client';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Suspense } from 'react';
 import AuthPage from '../pages/auth/AuthPage';
 import Layout from '../layout/Layout';
 import LandingPageLayout from '../layout/LandingPageLayout';
@@ -10,61 +9,49 @@ import Settings from '../pages/Settings';
 import Insights from '../pages/Insights';
 import { useAuth } from '../context/AuthContext';
 
-// Loading component
-const LoadingSpinner = () => (
-   <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 flex justify-center items-center">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl">
-         <div className="flex justify-center items-center h-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6] dark:border-purple-400"></div>
-         </div>
-      </div>
-   </div>
-);
-
 const AppRoutes = () => {
    const { isLoggedIn, loading } = useAuth();
 
+   // Show loading spinner while checking authentication
    if (loading) {
-      return <LoadingSpinner />;
+      return (
+         <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 flex justify-center items-center">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl">
+               <div className="flex justify-center items-center h-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6] dark:border-purple-400"></div>
+               </div>
+            </div>
+         </div>
+      );
    }
 
    return (
       <Routes>
-         {/* Public Routes */}
-         {!isLoggedIn && (
+         {/* Landing Page - accessible to both authenticated and unauthenticated users */}
+         <Route element={<LandingPageLayout />}>
+            <Route path="/home" element={<LandingPage />} />
+            <Route path="/" element={<LandingPage />} />
+         </Route>
+
+         {!isLoggedIn ? (
             <>
-               <Route element={<LandingPageLayout />}>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/home" element={<LandingPage />} />
-               </Route>
                <Route path="/auth/login" element={<AuthPage />} />
                <Route path="/auth/register" element={<AuthPage />} />
+               {/* Redirect all other routes to home when not logged in */}
+               <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+         ) : (
+            <>
+               <Route element={<Layout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/insights" element={<Insights />} />
+               </Route>
+               <Route path="/app" element={<Navigate to="/dashboard" replace />} />
+               {/* Redirect all other routes to dashboard when logged in */}
+               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </>
          )}
-
-         {/* Protected Routes */}
-         {isLoggedIn && (
-            <Route element={<Layout />}>
-               <Route path="/dashboard" element={<Dashboard />} />
-               <Route path="/settings" element={<Settings />} />
-               <Route path="/insights" element={<Insights />} />
-            </Route>
-         )}
-
-         {/* Redirects */}
-         {isLoggedIn ? (
-            // Redirect authenticated users trying to access public routes
-            <Route
-               path={['/', '/home', '/auth/login', '/auth/register']}
-               element={<Navigate to="/dashboard" replace />}
-            />
-         ) : (
-            // Redirect unauthenticated users trying to access protected routes
-            <Route path={['/dashboard', '/settings', '/insights']} element={<Navigate to="/" replace />} />
-         )}
-
-         {/* Catch-all redirect */}
-         <Route path="*" element={<Navigate to={isLoggedIn ? '/dashboard' : '/'} replace />} />
       </Routes>
    );
 };
