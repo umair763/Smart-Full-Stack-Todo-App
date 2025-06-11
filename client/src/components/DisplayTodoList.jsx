@@ -925,12 +925,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      )}
 
                      {/* Connection Status Indicator */}
-                     {!isConnected && (
+                     {/* {!isConnected && (
                         <div className="flex items-center space-x-1 px-2 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                            <span className="hidden xs:inline">Offline</span>
                         </div>
-                     )}
+                     )} */}
                   </div>
 
                   {/* Right Actions */}
@@ -1131,12 +1131,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      )}
 
                      {/* Connection Status Indicator */}
-                     {!isConnected && (
+                     {/* {!isConnected && (
                         <div className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">
                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                            <span>Offline</span>
                         </div>
-                     )}
+                     )} */}
                   </div>
 
                   {/* Subtask progress indicator */}
