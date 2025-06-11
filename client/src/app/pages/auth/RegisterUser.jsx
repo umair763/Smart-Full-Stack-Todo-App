@@ -59,8 +59,10 @@ function RegisterUser() {
       // Convert image to base64
       const reader = new FileReader();
       reader.onloadend = () => {
-         setProfileImage(reader.result);
-         setPreviewUrl(reader.result);
+         const base64String = reader.result;
+         console.log('Image converted to base64:', base64String.substring(0, 100) + '...'); // Log first 100 chars
+         setProfileImage(base64String);
+         setPreviewUrl(base64String);
       };
       reader.readAsDataURL(file);
       setError('');
@@ -86,18 +88,31 @@ function RegisterUser() {
       }
 
       try {
+         // Prepare the request data
+         const requestData = {
+            username: formData.username.trim(),
+            email: formData.email.trim(),
+            password: formData.password,
+         };
+
+         // Only add profileImage if it exists
+         if (profileImage) {
+            requestData.profileImage = profileImage;
+            console.log('Including profile image in request');
+         }
+
+         console.log('Sending registration request with data:', {
+            ...requestData,
+            profileImage: requestData.profileImage ? 'Base64 image data present' : 'No image',
+         });
+
          // Send registration request
          const response = await fetch(`${API_BASE_URL}/api/users/register`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-               username: formData.username.trim(),
-               email: formData.email.trim(),
-               password: formData.password,
-               profileImage: profileImage // Send base64 image data
-            })
+            body: JSON.stringify(requestData),
          });
 
          // Handle response
@@ -107,6 +122,7 @@ function RegisterUser() {
          }
 
          const data = await response.json();
+         console.log('Registration response:', data);
          setSuccess('Registration successful!');
          setError('');
 
@@ -122,6 +138,7 @@ function RegisterUser() {
             }, 1000);
          }
       } catch (error) {
+         console.error('Registration error:', error);
          setError(error.message || 'Registration failed. Please try again.');
       } finally {
          setIsLoading(false);

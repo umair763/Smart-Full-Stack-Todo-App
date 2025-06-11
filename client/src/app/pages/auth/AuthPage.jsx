@@ -96,18 +96,27 @@ function AuthPage() {
       const file = e.target.files[0];
       if (!file) return;
 
+      // Validate file type
       if (!file.type.match('image.*')) {
          setError('Please select an image file');
          return;
       }
 
+      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
          setError('File size should not exceed 5MB');
          return;
       }
 
-      setProfileImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+         const base64String = reader.result;
+         console.log('Image converted to base64:', base64String.substring(0, 100) + '...'); // Log first 100 chars
+         setProfileImage(base64String);
+         setPreviewUrl(base64String);
+      };
+      reader.readAsDataURL(file);
       setError('');
    };
 
@@ -186,18 +195,30 @@ function AuthPage() {
       }
 
       try {
-         console.log('Sending registration request');
+         // Prepare the request data
+         const requestData = {
+            username: registerData.username.trim(),
+            email: registerData.email.trim(),
+            password: registerData.password,
+         };
+
+         // Only add profileImage if it exists
+         if (profileImage) {
+            requestData.profileImage = profileImage;
+            console.log('Including profile image in request');
+         }
+
+         console.log('Sending registration request with data:', {
+            ...requestData,
+            profileImage: requestData.profileImage ? 'Base64 image data present' : 'No image',
+         });
 
          const response = await fetch(`${BACKEND_URL}/api/users/register`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-               username: registerData.username.trim(),
-               email: registerData.email.trim(),
-               password: registerData.password,
-            }),
+            body: JSON.stringify(requestData),
          });
 
          const data = await response.json();
