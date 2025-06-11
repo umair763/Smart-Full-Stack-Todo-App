@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from '../../components/NotificationBell';
 import ThemeToggle from '../../components/ThemeToggle';
 import { HiArrowLeft, HiChartBar, HiCog, HiMenu, HiX, HiHome, HiCheckCircle } from 'react-icons/hi';
+import { RiListCheck3 } from 'react-icons/ri';
 
 const Header = () => {
    const { isLoggedIn } = useAuth();
@@ -88,7 +89,7 @@ const Header = () => {
                                     : 'bg-white/10 hover:bg-white/20'
                               }`}
                            >
-                              <HiHome className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
+                              <RiListCheck3 className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
                               <span className="text-sm font-medium">Dashboard</span>
                               {isDashboardPage && (
                                  <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
