@@ -105,35 +105,74 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
    return (
       <div
-         className={`flex items-center justify-between p-1.5 border-l-4 ${getPriorityColorClass()} rounded-r-lg shadow-sm mb-0.5 hover:bg-gray-50/50 transition-colors duration-200`}
+         className={`
+          group relative flex items-center justify-between 
+          p-3 border-l-4 ${getPriorityColorClass()} 
+          rounded-r-lg bg-white shadow-sm border border-gray-100
+          mb-2 transition-all duration-200 ease-in-out
+          hover:shadow-md hover:bg-gray-50/30
+          ${completed ? 'opacity-75' : ''}
+        `}
       >
-         {/* Task Title - Leftmost */}
-         <div className="flex-1 min-w-0 mr-2">
+         {/* Task Title Section */}
+         <div className="flex-1 min-w-0 pr-4">
             <h3
-               className={`text-sm font-medium truncate ${completed ? 'line-through text-gray-500' : 'text-gray-900'}`}
+               className={`
+              text-sm font-medium leading-5 transition-all duration-200
+              ${completed ? 'line-through text-gray-500 decoration-2' : 'text-gray-900 group-hover:text-gray-800'}
+            `}
+               title={subtask.title} // Tooltip for truncated text
             >
                {subtask.title}
             </h3>
          </div>
 
          {/* Right Section - Priority, Date, and Actions */}
-         <div className="flex items-center gap-2 flex-shrink-0 text-sm text-gray-600">
+         <div className="flex items-center gap-3 flex-shrink-0">
             {/* Priority Badge */}
-            <div className="flex-shrink-0">{renderPriorityBadge()}</div>
+            <div className="hidden sm:block flex-shrink-0">{renderPriorityBadge()}</div>
 
-            {/* Due Date */}
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            {/* Due Date - Hidden on very small screens */}
+            <div className="hidden md:flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
                <HiCalendar className="w-3 h-3" />
-               <span>{subtask.date}</span>
+               <span className="font-medium">{subtask.date}</span>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-1 ml-auto">
+            <div className="flex items-center gap-1">
+               {/* Completion Checkbox - Most Important Action First */}
+               <button
+                  onClick={handleStatusChange}
+                  disabled={isUpdating}
+                  aria-label={completed ? 'Mark as incomplete' : 'Mark as complete'}
+                  className={`
+                w-6 h-6 flex items-center justify-center rounded-full 
+                border-2 transition-all duration-200 flex-shrink-0
+                ${
+                   completed
+                      ? 'bg-green-500 border-green-500 text-white shadow-sm'
+                      : 'border-gray-300 hover:border-green-400 hover:bg-green-50'
+                }
+                ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              `}
+               >
+                  {isUpdating ? (
+                     <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                     completed && <HiCheck className="w-3.5 h-3.5" />
+                  )}
+               </button>
+
                {/* Edit Button */}
                <button
                   onClick={handleEdit}
-                  aria-label="Edit Subtask"
-                  className="p-1 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-100/50 transition-colors"
+                  aria-label="Edit subtask"
+                  className="
+                p-1.5 rounded-full text-gray-400 transition-all duration-200
+                hover:text-blue-600 hover:bg-blue-50 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+                opacity-0 group-hover:opacity-100 sm:opacity-100
+              "
                >
                   <HiPencilAlt className="w-4 h-4" />
                </button>
@@ -141,23 +180,27 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                {/* Delete Button */}
                <button
                   onClick={handleDelete}
-                  aria-label="Delete Subtask"
-                  className="p-1 rounded-full text-gray-500 hover:text-red-600 hover:bg-red-100/50 transition-colors"
+                  aria-label="Delete subtask"
+                  className="
+                p-1.5 rounded-full text-gray-400 transition-all duration-200
+                hover:text-red-600 hover:bg-red-50
+                focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1
+                opacity-0 group-hover:opacity-100 sm:opacity-100
+              "
                >
                   <FiTrash2 className="w-4 h-4" />
                </button>
+            </div>
+         </div>
 
-               {/* Completion Checkbox */}
-               <button
-                  onClick={handleStatusChange}
-                  disabled={isUpdating}
-                  aria-label="Mark Subtask as Complete"
-                  className={`w-5 h-5 flex items-center justify-center rounded-full border-2 transition-colors ${
-                     completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-500'
-                  }`}
-               >
-                  {completed && <HiCheck className="w-3 h-3" />}
-               </button>
+         {/* Mobile-only Priority and Date Info */}
+         <div className="absolute -bottom-1 left-4 sm:hidden">
+            <div className="flex items-center gap-2 text-xs">
+               <div className="scale-75">{renderPriorityBadge()}</div>
+               <div className="flex items-center gap-1 text-gray-500 bg-white px-1.5 py-0.5 rounded border">
+                  <HiCalendar className="w-2.5 h-2.5" />
+                  <span>{subtask.date}</span>
+               </div>
             </div>
          </div>
 
