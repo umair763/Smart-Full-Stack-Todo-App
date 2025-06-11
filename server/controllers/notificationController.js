@@ -1,13 +1,13 @@
-const Notification = require("../models/Notification");
-const { io } = require("../socket");
+import Notification from "../models/Notification.js";
 
 // Get all notifications for a user
-exports.getNotifications = async (req, res) => {
+export const getNotifications = async (req, res) => {
     try {
-        const notifications = await Notification.find({ user: req.user._id }).sort({ timestamp: -1 }).limit(50);
+        const userId = req.user._id;
+        const notifications = await Notification.find({ userId }).sort({ createdAt: -1 });
         res.json(notifications);
     } catch (error) {
-        console.error("Error fetching notifications:", error);
+        console.error("Get notifications error:", error);
         res.status(500).json({ message: "Error fetching notifications" });
     }
 };
@@ -37,65 +37,43 @@ export const getNotificationsSince = async (req, res) => {
 };
 
 // Create a new notification
-exports.createNotification = async (req, res) => {
+export const createNotification = async (req, res) => {
     try {
-        const { type, message, data } = req.body;
+        const { message, type } = req.body;
         const notification = new Notification({
-            user: req.user._id,
-            type,
+            userId: req.user._id,
             message,
-            data,
-            timestamp: new Date(),
+            type,
         });
-
         await notification.save();
-
-        // Emit socket event for real-time update
-        io.to(req.user._id.toString()).emit("notification", notification);
-
         res.status(201).json(notification);
     } catch (error) {
-        console.error("Error creating notification:", error);
+        console.error("Create notification error:", error);
         res.status(500).json({ message: "Error creating notification" });
     }
 };
 
 // Delete a notification
-exports.deleteNotification = async (req, res) => {
+export const deleteNotification = async (req, res) => {
     try {
-        const notification = await Notification.findOneAndDelete({
-            _id: req.params.id,
-            user: req.user._id,
-        });
-
-        if (!notification) {
-            return res.status(404).json({ message: "Notification not found" });
-        }
-
-        // Emit socket event for real-time update
-        io.to(req.user._id.toString()).emit("notificationUpdate", {
-            type: "delete",
-            notificationId: req.params.id,
-        });
-
+        const userId = req.user._id;
+        const { id } = req.params;
+        await Notification.deleteOne({ _id: id, userId });
         res.json({ message: "Notification deleted" });
     } catch (error) {
-        console.error("Error deleting notification:", error);
+        console.error("Delete notification error:", error);
         res.status(500).json({ message: "Error deleting notification" });
     }
 };
 
-// Mark all notifications as read
-exports.markAllAsRead = async (req, res) => {
+// Mark all notifications as read for a user
+export const markAllAsRead = async (req, res) => {
     try {
-        await Notification.updateMany({ user: req.user._id, read: false }, { $set: { read: true } });
-
-        // Emit socket event for real-time update
-        io.to(req.user._id.toString()).emit("notificationUpdate", { type: "markAllRead" });
-
+        const userId = req.user._id;
+        await Notification.updateMany({ userId, read: false }, { $set: { read: true } });
         res.json({ message: "All notifications marked as read" });
     } catch (error) {
-        console.error("Error marking notifications as read:", error);
+        console.error("Mark all as read error:", error);
         res.status(500).json({ message: "Error marking notifications as read" });
     }
 };
@@ -125,40 +103,14 @@ export const clearNotifications = async (req, res) => {
     }
 };
 
-// Delete all notifications
-exports.deleteAllNotifications = async (req, res) => {
+// Delete all notifications for a user
+export const deleteAllNotifications = async (req, res) => {
     try {
-        await Notification.deleteMany({ user: req.user._id });
-
-        // Emit socket event for real-time update
-        io.to(req.user._id.toString()).emit("notificationUpdate", { type: "clearAll" });
-
+        const userId = req.user._id;
+        await Notification.deleteMany({ userId });
         res.json({ message: "All notifications deleted" });
     } catch (error) {
-        console.error("Error deleting all notifications:", error);
-        res.status(500).json({ message: "Error deleting all notifications" });
-    }
-};
-
-// Create a notification for CRUD operations
-exports.createCRUDNotification = async (userId, type, message, data = {}) => {
-    try {
-        const notification = new Notification({
-            user: userId,
-            type,
-            message,
-            data,
-            timestamp: new Date(),
-        });
-
-        await notification.save();
-
-        // Emit socket event for real-time update
-        io.to(userId.toString()).emit("notification", notification);
-
-        return notification;
-    } catch (error) {
-        console.error("Error creating CRUD notification:", error);
-        throw error;
+        console.error("Delete all notifications error:", error);
+        res.status(500).json({ message: "Error deleting notifications" });
     }
 };

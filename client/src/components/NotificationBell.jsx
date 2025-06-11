@@ -5,7 +5,6 @@ import ReactDOM from 'react-dom';
 import { FiBell, FiX, FiAlertCircle, FiCheckCircle, FiInfo, FiTrash2, FiCheck } from 'react-icons/fi';
 import { useNotification } from '../app/context/NotificationContext';
 import { useSocket } from '../app/context/SocketContext';
-import { toast } from 'react-hot-toast';
 
 function NotificationBell() {
    const [isOpen, setIsOpen] = useState(false);
@@ -116,10 +115,12 @@ function NotificationBell() {
    const handleDeleteAll = async () => {
       try {
          await clearNotifications();
-         toast.success('All notifications cleared');
+         // Emit socket event for real-time update
+         if (socket) {
+            socket.emit('notificationUpdate', { type: 'clearAll' });
+         }
       } catch (error) {
-         console.error('Error clearing notifications:', error);
-         toast.error('Failed to clear notifications');
+         console.error('Error deleting all notifications:', error);
       }
    };
 
@@ -127,20 +128,12 @@ function NotificationBell() {
    const handleMarkAllAsRead = async () => {
       try {
          await markAllAsRead();
-         toast.success('All notifications marked as read');
+         // Emit socket event for real-time update
+         if (socket) {
+            socket.emit('notificationUpdate', { type: 'markAllRead' });
+         }
       } catch (error) {
-         console.error('Error marking notifications as read:', error);
-         toast.error('Failed to mark notifications as read');
-      }
-   };
-
-   const handleDeleteNotification = async (id) => {
-      try {
-         await removeNotification(id);
-         toast.success('Notification deleted');
-      } catch (error) {
-         console.error('Error deleting notification:', error);
-         toast.error('Failed to delete notification');
+         console.error('Error marking all notifications as read:', error);
       }
    };
 
@@ -201,7 +194,7 @@ function NotificationBell() {
                <button
                   onClick={(e) => {
                      e.stopPropagation();
-                     handleDeleteNotification(notification._id);
+                     handleRemoveNotification(notification);
                   }}
                   className="flex-shrink-0 p-1 sm:p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 group"
                   title="Remove notification"

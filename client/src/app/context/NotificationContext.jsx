@@ -193,18 +193,13 @@ export function NotificationProvider({ children }) {
          });
 
          if (response.ok) {
-            // Optimistically update UI
-            setPersistentNotifications((prev) => {
-               const filtered = prev.filter((n) => n._id !== id);
-               const unreadCount = filtered.filter((n) => !n.read).length;
-               setUnreadCount(unreadCount);
-               return filtered;
-            });
-
             // Emit socket event for real-time update
             if (socket) {
-               socket.emit('notificationUpdate', { type: 'delete', notificationId: id });
+               socket.emit('notificationDeleted', id);
             }
+         } else {
+            // If backend fails, revert optimistic update
+            fetchNotifications();
          }
       } catch (error) {
          console.error('Error removing notification:', error);
@@ -224,14 +219,9 @@ export function NotificationProvider({ children }) {
          });
 
          if (response.ok) {
-            // Optimistically update UI
+            // Optimistically update the UI
             setPersistentNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
             setUnreadCount(0);
-
-            // Emit socket event for real-time update
-            if (socket) {
-               socket.emit('notificationUpdate', { type: 'markAllRead' });
-            }
          }
       } catch (error) {
          console.error('Error marking all notifications as read:', error);
@@ -251,14 +241,9 @@ export function NotificationProvider({ children }) {
          });
 
          if (response.ok) {
-            // Optimistically update UI
+            // Optimistically update the UI
             setPersistentNotifications([]);
             setUnreadCount(0);
-
-            // Emit socket event for real-time update
-            if (socket) {
-               socket.emit('notificationUpdate', { type: 'clearAll' });
-            }
          }
       } catch (error) {
          console.error('Error clearing notifications:', error);
@@ -410,19 +395,6 @@ export function NotificationProvider({ children }) {
          // Revert UI changes if backend deletion fails
          fetchNotifications();
       }
-   };
-
-   // Create a notification for CRUD operations
-   const createCRUDNotification = (type, message, data = {}) => {
-      const notification = {
-         type,
-         message,
-         data,
-         timestamp: new Date(),
-         persistent: true,
-      };
-
-      addPersistentNotification(notification);
    };
 
    // Value provided to consumers
