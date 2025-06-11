@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
+import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
@@ -176,7 +176,7 @@ const GoogleSignIn = () => {
                {/* Loading State */}
                {isLoading ? (
                   <>
-                     <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin flex-shrink-0" />
+                     <AiOutlineLoading3Quarters className="w-4 h-4 sm:w-5 sm:h-5 animate-spin flex-shrink-0" />
                      <span className="text-gray-600">Signing in...</span>
                   </>
                ) : (
@@ -192,7 +192,7 @@ const GoogleSignIn = () => {
             {/* Loading State Text */}
             {!isScriptLoaded && !isLoading && (
                <div className="mt-3 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <AiOutlineLoading3Quarters className="w-3 h-3 animate-spin" />
                   <span>Loading Google Sign-In...</span>
                </div>
             )}
