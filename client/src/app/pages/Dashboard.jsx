@@ -11,7 +11,6 @@ import DeleteTaskModal from '../../components/DeleteTaskModal';
 import { toast } from 'react-hot-toast';
 import ModernSortTabs from '../../components/ModernSortTabs';
 import DependencyView from '../../components/DependencyView';
-import notificationService from '../../services/notificationService';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
@@ -22,7 +21,6 @@ function Dashboard() {
    const [dependencies, setDependencies] = useState([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState(null);
-   const [deleteModal, setDeleteModal] = useState({ show: false, taskId: null });
    const [showDeleteModal, setShowDeleteModal] = useState(false);
    const [taskToDelete, setTaskToDelete] = useState(null);
    const [sortOption, setSortOption] = useState('date');
@@ -34,37 +32,6 @@ function Dashboard() {
    const navigate = useNavigate();
    const [apiRetries, setApiRetries] = useState(0);
    const [loadingText, setLoadingText] = useState('Loading tasks...');
-
-   // Initialize notification service
-   useEffect(() => {
-      if (token) {
-         try {
-            // Initialize notification service with token and socket
-            notificationService.initialize(token, socket);
-
-            // Listen for notifications
-            const unsubscribe = notificationService.onNotification((notification) => {
-               if (notification.type === 'notificationCreated') {
-                  const notif = notification.data;
-                  if (notif.type === 'create') {
-                     createSuccessNotification(notif.message, true);
-                  } else if (notif.type === 'error') {
-                     createErrorNotification(notif.message, true);
-                  } else {
-                     createSuccessNotification(notif.message, true);
-                  }
-               }
-            });
-
-            return () => {
-               unsubscribe();
-               notificationService.stop();
-            };
-         } catch (error) {
-            console.error('Failed to initialize notification service:', error);
-         }
-      }
-   }, [token, socket, createSuccessNotification, createErrorNotification]);
 
    // Function to fetch tasks from the server with improved error handling
    const fetchTasks = useCallback(
@@ -174,20 +141,6 @@ function Dashboard() {
 
       fetchTasks();
       fetchDependencies();
-   }, [isLoggedIn, token, fetchTasks, fetchDependencies]);
-
-   // Periodic refresh of data (since we don't have real-time updates)
-   useEffect(() => {
-      if (!isLoggedIn || !token) return;
-
-      // Refresh data every 30 seconds
-      const interval = setInterval(() => {
-         console.log('Periodic data refresh...');
-         fetchTasks();
-         fetchDependencies();
-      }, 30000);
-
-      return () => clearInterval(interval);
    }, [isLoggedIn, token, fetchTasks, fetchDependencies]);
 
    // Fixed handleAddTask function

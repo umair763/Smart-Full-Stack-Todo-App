@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from '../../components/NotificationBell';
 import ThemeToggle from '../../components/ThemeToggle';
 import { HiArrowLeft, HiChartBar, HiCog, HiMenu, HiX, HiHome, HiCheckCircle } from 'react-icons/hi';
-import { FaBeer } from 'react-icons/fa';
 
 const Header = () => {
    const { isLoggedIn } = useAuth();
@@ -16,7 +15,7 @@ const Header = () => {
    const isSettingsPage = location.pathname === '/settings';
    const isInsightsPage = location.pathname === '/insights';
    const isDashboardPage = location.pathname === '/dashboard';
-   const isHomePage = location.pathname === '/home';
+   const isHomePage = location.pathname === '/home' || location.pathname === '/';
 
    const toggleMobileMenu = () => {
       setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -52,7 +51,7 @@ const Header = () => {
                         <HiCheckCircle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
                      </div>
                      <div className="min-w-0 hidden xs:block">
-                        <h1 className="font-extrabold  text-sm sm:text-lg lg:text-2xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent truncate font-proza">
+                        <h1 className="font-extrabold text-sm sm:text-lg lg:text-2xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent truncate font-proza">
                            Smart Todo
                         </h1>
                         <p className="text-xs sm:text-sm text-white/70 hidden sm:block truncate">
@@ -70,14 +69,14 @@ const Header = () => {
                            <Link
                               to="/home"
                               className={`group flex items-center space-x-1.5 px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg transition-all duration-200 transform hover:scale-105 ${
-                                 isDashboardPage
+                                 isHomePage
                                     ? 'bg-white/25 shadow-lg border border-white/30'
                                     : 'bg-white/10 hover:bg-white/20'
                               }`}
                            >
                               <HiHome className="h-4 w-4 group-hover:scale-110 transition-transform duration-200" />
                               <span className="text-sm font-medium">Home</span>
-
+                              {isHomePage && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>}
                            </Link>
                         </li>
                         <li>
@@ -231,6 +230,16 @@ const Header = () => {
             {isLoggedIn && isMobileMenuOpen && (
                <div className="md:hidden mt-2 pt-2 border-t border-white/20 dark:border-white/10">
                   <nav className="space-y-1">
+                     <button
+                        onClick={() => handleNavigation('/home')}
+                        className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
+                           isHomePage ? 'bg-white/20' : 'bg-white/10 hover:bg-white/15'
+                        }`}
+                     >
+                        <HiHome className="h-4 w-4" />
+                        <span className="font-medium">Home</span>
+                     </button>
+
                      <button
                         onClick={() => handleNavigation('/dashboard')}
                         className={`w-full flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
