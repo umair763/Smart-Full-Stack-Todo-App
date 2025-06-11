@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FiTrash2 } from 'react-icons/fi';
 import { HiCalendar, HiCheck, HiPencilAlt } from 'react-icons/hi';
 import DeleteSubtaskModal from './DeleteSubtaskModal';
@@ -94,7 +94,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
       return (
          <span
-            className={`inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium border flex-shrink-0 ${
+            className={`inline-flex items-center px-2 sm:px-2.5 py-1 rounded text-sm font-medium border flex-shrink-0 ${
                priorityColors[subtask.priority] || priorityColors.Medium
             }`}
          >
@@ -106,29 +106,29 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
    return (
       <>
          {/* Mobile Layout (< 640px) - Card Style */}
-         <div className={`sm:hidden p-2 sm:p-3 rounded-lg border-l-4 ${getPriorityColorClass()}`}>
+         <div className={`sm:hidden p-3 sm:p-4 rounded-lg border-l-4 ${getPriorityColorClass()}`}>
             {/* Header Section - Title & Priority */}
-            <div className="flex items-start justify-between mb-2">
-               <div className="flex items-start space-x-2 flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-3">
+               <div className="flex items-start space-x-3 flex-1 min-w-0">
                   {/* Priority Radio Button */}
                   <input
                      type="radio"
-                     className="w-3 h-3 rounded-full cursor-pointer appearance-none flex-shrink-0 mt-1 bg-purple-500 border-purple-500"
+                     className="w-4 h-4 rounded-full cursor-pointer appearance-none flex-shrink-0 mt-1 bg-purple-500 border-purple-500"
                   />
 
                   <div className="flex-1 min-w-0">
-                     {/* Subtask Title */}
+                     {/* Subtask Title - Enhanced size */}
                      <h4
                         className={`${
                            completed ? 'line-through text-gray-500' : 'text-gray-900'
-                        } font-medium text-sm leading-tight mb-1 transition-all`}
+                        } font-medium text-base leading-tight mb-2 transition-all`}
                      >
                         {subtask.title}
                      </h4>
 
-                     {/* Description */}
+                     {/* Description - Enhanced size */}
                      {subtask.description && (
-                        <p className="text-xs text-gray-600 line-clamp-1 mb-1">{subtask.description}</p>
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">{subtask.description}</p>
                      )}
 
                      {/* Priority Badge */}
@@ -139,21 +139,21 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                {/* Completion Status */}
                <button
                   onClick={handleStatusChange}
-                  className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                  className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
                      completed ? 'bg-[#9406E6] text-white shadow-md' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/10'
                   }`}
                   disabled={isUpdating}
                   title={completed ? 'Mark as incomplete' : 'Mark as complete'}
                >
-                  {completed && <HiCheck className="h-3 w-3" />}
+                  {completed && <HiCheck className="h-4 w-4" />}
                </button>
             </div>
 
             {/* Date & Time Section */}
             <div className="flex items-center justify-between">
-               <div className="flex items-center space-x-2 text-xs text-gray-600">
-                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-1 rounded">
-                     <HiCalendar className="h-3 w-3 text-white" />
+               <div className="flex items-center space-x-3 text-sm text-gray-600">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-1.5 rounded">
+                     <HiCalendar className="h-4 w-4 text-white" />
                   </div>
                   <span className={`${completed ? 'line-through text-gray-500' : 'text-gray-700'} font-medium`}>
                      {subtask.date}
@@ -164,23 +164,23 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                </div>
 
                {/* Action Buttons */}
-               <div className="flex items-center space-x-1">
+               <div className="flex items-center space-x-2">
                   {/* Edit */}
                   <button
                      onClick={handleEdit}
-                     className="p-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
+                     className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
                      title="Edit subtask"
                   >
-                     <HiPencilAlt className="h-3 w-3" />
+                     <HiPencilAlt className="h-4 w-4" />
                   </button>
 
                   {/* Delete */}
                   <button
                      onClick={handleDelete}
-                     className="p-1 bg-red-100 hover:bg-red-200 text-red-700 rounded transition-colors"
+                     className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded transition-colors"
                      title="Delete subtask"
                   >
-                     <FiTrash2 className="h-3 w-3" />
+                     <FiTrash2 className="h-4 w-4" />
                   </button>
                </div>
             </div>
@@ -188,22 +188,22 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
          {/* Desktop Layout (>= 640px) - Grid Layout */}
          <div
-            className={`hidden sm:grid grid-cols-[20px,1fr,auto] w-full px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg border-l-4 ${getPriorityColorClass()} items-center gap-2 sm:gap-3`}
+            className={`hidden sm:grid grid-cols-[24px,1fr,auto] w-full px-3 sm:px-4 py-3 sm:py-3.5 rounded-lg border-l-4 ${getPriorityColorClass()} items-center gap-3 sm:gap-4`}
          >
             {/* Priority Radio Button */}
             <input
                type="radio"
-               className="w-3 h-3 sm:w-4 sm:h-4 rounded-full cursor-pointer appearance-none flex-shrink-0 bg-purple-500 border-purple-500"
+               className="w-4 h-4 sm:w-5 sm:h-5 rounded-full cursor-pointer appearance-none flex-shrink-0 bg-purple-500 border-purple-500"
             />
 
             {/* Main Content Section */}
             <div className="flex flex-col min-w-0">
-               <div className="flex items-center flex-wrap gap-1 sm:gap-2">
-                  {/* Subtask Title */}
+               <div className="flex items-center flex-wrap gap-2 sm:gap-3">
+                  {/* Subtask Title - Enhanced size */}
                   <p
                      className={`${
                         completed ? 'line-through text-gray-600' : 'text-gray-900'
-                     } font-medium text-sm sm:text-base transition-all truncate flex-1 min-w-0`}
+                     } font-medium text-base sm:text-lg transition-all truncate flex-1 min-w-0`}
                   >
                      {subtask.title}
                   </p>
@@ -212,62 +212,62 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                   {renderPriorityBadge()}
                </div>
 
-               {/* Description */}
+               {/* Description - Enhanced size */}
                {subtask.description && (
-                  <p className="text-xs sm:text-sm text-gray-600 line-clamp-1 mt-1">{subtask.description}</p>
+                  <p className="text-sm sm:text-base text-gray-600 line-clamp-1 mt-1.5">{subtask.description}</p>
                )}
             </div>
 
             {/* Right Section - Date, Time & Actions */}
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 flex-shrink-0">
                {/* Date and Time Section */}
-               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 text-right">
+               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 text-right">
                   <p
                      className={`${
                         completed ? 'line-through text-gray-600' : 'text-gray-700'
-                     } font-medium text-xs sm:text-sm transition-all whitespace-nowrap`}
+                     } font-medium text-sm sm:text-base transition-all whitespace-nowrap`}
                   >
                      {subtask.date}
                   </p>
                   <p
                      className={`${
                         completed ? 'line-through text-gray-600' : 'text-gray-600'
-                     } text-xs sm:text-sm transition-all whitespace-nowrap`}
+                     } text-sm sm:text-base transition-all whitespace-nowrap`}
                   >
                      {subtask.time}
                   </p>
                </div>
 
                {/* Action buttons */}
-               <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                   {/* Edit button */}
                   <button
                      onClick={handleEdit}
-                     className="text-blue-600 hover:text-blue-800 p-0.5 sm:p-1 rounded transition-colors"
+                     className="text-blue-600 hover:text-blue-800 p-1 sm:p-1.5 rounded transition-colors"
                      title="Edit subtask"
                   >
-                     <HiPencilAlt className="h-3 w-3 sm:h-4 sm:w-4" />
+                     <HiPencilAlt className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
 
                   {/* Delete button */}
                   <button
                      onClick={handleDelete}
-                     className="text-red-600 hover:text-red-800 p-0.5 sm:p-1 rounded transition-colors"
+                     className="text-red-600 hover:text-red-800 p-1 sm:p-1.5 rounded transition-colors"
                      title="Delete subtask"
                   >
-                     <FiTrash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                     <FiTrash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
 
                   {/* Completion checkbox */}
                   <button
                      onClick={handleStatusChange}
-                     className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                     className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
                         completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
                      }`}
                      disabled={isUpdating}
                      title={completed ? 'Mark as incomplete' : 'Mark as complete'}
                   >
-                     {completed && <HiCheck className="h-3 w-3" />}
+                     {completed && <HiCheck className="h-3 w-3 sm:h-4 sm:w-4" />}
                   </button>
                </div>
             </div>
