@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { FiSearch, FiPlus, FiTrash2, FiFilter, FiX } from 'react-icons/fi';
 import { HiSparkles, HiViewGrid } from 'react-icons/hi';
 import AddTaskForm from './AddTaskForm';
+import DeleteTaskForm from './DeleteTaskForm';
 
-function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange, onAddTask }) {
+function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange, onAddTask, tasks, onDeleteTask }) {
    const [searchTask, setSearchTask] = useState('');
    const [isAddFormVisible, setIsAddFormVisible] = useState(false);
+   const [isDeleteFormVisible, setIsDeleteFormVisible] = useState(false);
 
    function handleAddTask(newTask) {
       // Call the parent's onAddTask function
@@ -20,7 +22,7 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange, 
    }
 
    function handleDeleteTask() {
-      setisDeleteFormVisible(true);
+      setIsDeleteFormVisible(true);
    }
 
    function handleSearchTask(e) {
@@ -138,11 +140,25 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange, 
                )}
             </div>
          </div>
+
          {/* Add Task Form Modal */}
          {isAddFormVisible && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                   <AddTaskForm SetisAddFormVisible={setIsAddFormVisible} addTask={handleAddTask} />
+               </div>
+            </div>
+         )}
+
+         {/* Delete Task Form Modal */}
+         {isDeleteFormVisible && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+               <div className="w-full max-w-md">
+                  <DeleteTaskForm
+                     setisDeleteFormVisible={setIsDeleteFormVisible}
+                     tasks={tasks}
+                     onDeleteTask={onDeleteTask}
+                  />
                </div>
             </div>
          )}

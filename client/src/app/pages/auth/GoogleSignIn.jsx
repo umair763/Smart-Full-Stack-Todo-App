@@ -58,9 +58,10 @@ const GoogleSignIn = () => {
          window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
             theme: 'outline',
             size: 'large',
-            width: '100%',
+            width: 320,
             text: 'continue_with',
             shape: 'rectangular',
+            logo_alignment: 'left',
          });
       } catch (error) {
          console.error('Error initializing Google Sign-In:', error);
@@ -81,7 +82,8 @@ const GoogleSignIn = () => {
       try {
          console.log('Sending credential to backend...');
 
-         const backendResponse = await fetch(`${BACKEND_URL}/api/auth/google`, {
+         // Use the correct endpoint that matches your backend
+         const backendResponse = await fetch(`${BACKEND_URL}/api/users/google-signin`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
@@ -117,14 +119,17 @@ const GoogleSignIn = () => {
    };
 
    return (
-      <div className="w-full">
-         <div className="relative">
+      <div className="w-full flex justify-center items-center py-4">
+         <div className="relative w-full max-w-sm">
             {isLoading && (
-               <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
+               <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 rounded-lg">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#9406E6]"></div>
                </div>
             )}
-            <div id="google-signin-button" className="w-full"></div>
+            <div
+               id="google-signin-button"
+               className="w-full flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div]:!justify-center"
+            ></div>
          </div>
       </div>
    );
