@@ -2,11 +2,15 @@
 
 import { useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 // Use the consistent API base URL
 const API_BASE_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 function GoogleSignIn({ onSuccess, onError }) {
+   const { login } = useAuth();
+   const navigate = useNavigate();
    const [error, setError] = useState(null);
    const [isLoading, setIsLoading] = useState(false);
 
@@ -42,8 +46,9 @@ function GoogleSignIn({ onSuccess, onError }) {
 
          // On success, call the parent's onSuccess function
          if (data && data.token) {
-            console.log('Google sign-in successful, calling onSuccess');
-            onSuccess(data);
+            console.log('Google sign-in successful, setting token directly');
+            login(data.token);
+            navigate('/dashboard');
          } else {
             throw new Error('No token received from server');
          }

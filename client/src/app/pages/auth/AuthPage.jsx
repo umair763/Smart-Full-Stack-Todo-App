@@ -186,21 +186,21 @@ function AuthPage() {
       }
 
       try {
-         // Prepare the request body
-         const requestBody = {
-            username: registerData.username.trim(),
-            email: registerData.email.trim(),
-            password: registerData.password,
-         };
+         // Create FormData for multipart/form-data submission (for profile image)
+         const formData = new FormData();
+         formData.append('username', registerData.username.trim());
+         formData.append('email', registerData.email.trim());
+         formData.append('password', registerData.password);
 
-         console.log('Sending registration request:', requestBody);
+         if (profileImage) {
+            formData.append('picture', profileImage);
+         }
+
+         console.log('Sending registration request with FormData');
 
          const response = await fetch(`${BACKEND_URL}/api/users/register`, {
             method: 'POST',
-            headers: {
-               'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
+            body: formData, // No Content-Type header needed, browser sets it with boundary
          });
 
          const data = await response.json();
@@ -235,42 +235,6 @@ function AuthPage() {
    const switchMode = () => {
       const newPath = isLogin ? '/auth/register' : '/auth/login';
       navigate(newPath);
-   };
-
-   const handleGoogleSuccess = async (response) => {
-      try {
-         console.log('Google sign-in response received:', response);
-
-         const result = await fetch(`${BACKEND_URL}/api/users/google-signin`, {
-            method: 'POST',
-            headers: {
-               'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-               token: response.credential,
-            }),
-         });
-
-         const data = await result.json();
-         console.log('Google sign-in backend response:', data);
-
-         if (result.ok) {
-            console.log('Google sign-in successful, setting token');
-            login(data.token);
-            navigate('/dashboard');
-         } else {
-            console.error('Google sign-in failed:', data.message);
-            setError(data.message || 'Google sign-in failed');
-         }
-      } catch (error) {
-         console.error('Error during Google sign-in:', error);
-         setError('Google sign-in failed. Please try again.');
-      }
-   };
-
-   const handleGoogleError = (error) => {
-      console.error('Google Sign-In error:', error);
-      setError('Google Sign-In failed. Please try again.');
    };
 
    // Animation variants
@@ -425,7 +389,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center">
-                                 <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+                                 <GoogleSignIn />
                               </div>
                            </form>
                         </div>
@@ -544,6 +508,46 @@ function AuthPage() {
                            )}
 
                            <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                              {/* Profile Image */}
+                              <div className="flex justify-center mb-3">
+                                 <div
+                                    onClick={() => document.getElementById('profile-image').click()}
+                                    className="w-16 h-16 rounded-full cursor-pointer border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-purple-400 transition-colors bg-slate-50"
+                                 >
+                                    {previewUrl ? (
+                                       <img
+                                          src={previewUrl || '/placeholder.svg'}
+                                          alt="Profile Preview"
+                                          className="w-full h-full object-cover"
+                                       />
+                                    ) : (
+                                       <div className="text-center text-slate-400">
+                                          <svg
+                                             className="h-6 w-6 mx-auto"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor"
+                                          >
+                                             <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                             />
+                                          </svg>
+                                          <span className="text-xs">Photo</span>
+                                       </div>
+                                    )}
+                                 </div>
+                                 <input
+                                    id="profile-image"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                 />
+                              </div>
+
                               <div>
                                  <label className="block text-slate-700 font-semibold mb-1 text-sm">Username</label>
                                  <input
@@ -646,7 +650,7 @@ function AuthPage() {
                                  </div>
 
                                  <div className="flex justify-center">
-                                    <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+                                    <GoogleSignIn />
                                  </div>
                               </div>
                            </form>
@@ -737,7 +741,7 @@ function AuthPage() {
                            </div>
 
                            <div className="flex justify-center">
-                              <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+                              <GoogleSignIn />
                            </div>
 
                            <div className="text-center">
@@ -777,6 +781,46 @@ function AuthPage() {
                         )}
 
                         <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                           {/* Profile Image */}
+                           <div className="flex justify-center mb-3">
+                              <div
+                                 onClick={() => document.getElementById('mobile-profile-image').click()}
+                                 className="w-14 h-14 rounded-full cursor-pointer border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-purple-400 transition-colors bg-slate-50"
+                              >
+                                 {previewUrl ? (
+                                    <img
+                                       src={previewUrl || '/placeholder.svg'}
+                                       alt="Profile Preview"
+                                       className="w-full h-full object-cover"
+                                    />
+                                 ) : (
+                                    <div className="text-center text-slate-400">
+                                       <svg
+                                          className="h-5 w-5 mx-auto"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                       >
+                                          <path
+                                             strokeLinecap="round"
+                                             strokeLinejoin="round"
+                                             strokeWidth={2}
+                                             d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                          />
+                                       </svg>
+                                       <span className="text-xs">Photo</span>
+                                    </div>
+                                 )}
+                              </div>
+                              <input
+                                 id="mobile-profile-image"
+                                 type="file"
+                                 accept="image/*"
+                                 onChange={handleImageChange}
+                                 className="hidden"
+                              />
+                           </div>
+
                            <div>
                               <label className="block text-slate-700 font-semibold mb-1 text-sm">Username</label>
                               <input
@@ -877,7 +921,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center mb-3">
-                                 <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+                                 <GoogleSignIn />
                               </div>
 
                               <div className="text-center">

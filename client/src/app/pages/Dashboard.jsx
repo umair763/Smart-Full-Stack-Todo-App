@@ -5,12 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { useSocket } from '../context/SocketContext';
-import DisplayTodoList from '../../components/DisplayTodoList';
-import AddTask from '../../components/AddTask';
-import DeleteTaskModal from '../../components/DeleteTaskModal';
 import { toast } from 'react-hot-toast';
-import ModernSortTabs from '../../components/ModernSortTabs';
-import DependencyView from '../../components/DependencyView';
 import notificationService from '../../services/notificationService';
 
 // Hardcoded backend URL
@@ -70,8 +65,8 @@ function Dashboard() {
 
             if (!token) {
                console.error('No authentication token found');
-               logout();
-               navigate('/auth/login');
+               setError('Authentication required. Please log in again.');
+               setLoading(false);
                return;
             }
 
@@ -163,18 +158,17 @@ function Dashboard() {
 
    // Initial data fetch
    useEffect(() => {
-      if (!isLoggedIn) {
-         navigate('/auth/login');
+      if (!isLoggedIn || !token) {
          return;
       }
 
       fetchTasks();
       fetchDependencies();
-   }, [isLoggedIn, fetchTasks, fetchDependencies, navigate]);
+   }, [isLoggedIn, token, fetchTasks, fetchDependencies]);
 
    // Periodic refresh of data (since we don't have real-time updates)
    useEffect(() => {
-      if (!isLoggedIn) return;
+      if (!isLoggedIn || !token) return;
 
       // Refresh data every 30 seconds
       const interval = setInterval(() => {

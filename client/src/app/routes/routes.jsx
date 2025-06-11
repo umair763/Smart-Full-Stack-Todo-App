@@ -19,8 +19,18 @@ const AppRoutes = () => {
    const navigationCount = useRef(0);
    const lastAuthState = useRef(null);
    const lastPath = useRef('');
+   const navigationLock = useRef(false);
 
    useEffect(() => {
+      // Prevent navigation during initial load
+      if (loading) return;
+
+      // Prevent navigation lock
+      if (navigationLock.current) {
+         console.log('Navigation locked, skipping redirect');
+         return;
+      }
+
       // Prevent rapid navigation (debounce)
       const now = Date.now();
       if (now - lastNavigationTime.current < 500) {
@@ -42,14 +52,19 @@ const AppRoutes = () => {
          }, 5000);
 
          // If too many navigations, stop redirecting
-         if (navigationCount.current > 10) {
-            console.error('Too many navigations detected, stopping auto-redirects');
+         if (navigationCount.current > 5) {
+            console.error('Too many navigations detected, locking redirects for 3 seconds');
+            navigationLock.current = true;
+            setTimeout(() => {
+               navigationLock.current = false;
+               navigationCount.current = 0;
+            }, 3000);
             return;
          }
       }
 
       // Only handle redirects if auth state actually changed and we're not already navigating
-      if (loading || isNavigating || lastAuthState.current === isLoggedIn) {
+      if (isNavigating || lastAuthState.current === isLoggedIn) {
          return;
       }
 
