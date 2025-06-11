@@ -1,5 +1,6 @@
 'use client';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import AuthPage from '../pages/auth/AuthPage';
 import Layout from '../layout/Layout';
 import LandingPageLayout from '../layout/LandingPageLayout';
@@ -9,8 +10,60 @@ import Settings from '../pages/Settings';
 import Insights from '../pages/Insights';
 import { useAuth } from '../context/AuthContext';
 
-const AppRoutes = () => { 
+const AppRoutes = () => {
    const { isLoggedIn, loading } = useAuth();
+   const location = useLocation();
+   const navigate = useNavigate();
+   const [isNavigating, setIsNavigating] = useState(false);
+   const [lastAuthState, setLastAuthState] = useState(null);
+   const [lastPath, setLastPath] = useState('');
+
+   // Prevent navigation loops
+   useEffect(() => {
+      if (lastAuthState !== isLoggedIn) {
+         console.log(`Auth state changed: ${lastAuthState} -> ${isLoggedIn}`);
+         setLastAuthState(isLoggedIn);
+      }
+
+      // Detect and prevent navigation loops
+      if (lastPath === location.pathname) {
+         return; // Skip if path hasn't changed
+      }
+
+      console.log(`Navigation: ${lastPath} -> ${location.pathname}`);
+      setLastPath(location.pathname);
+
+      // Prevent rapid navigation
+      if (isNavigating) {
+         console.warn('Navigation already in progress, skipping');
+         return;
+      }
+
+      // Handle auth-based redirects with debounce
+      if (!loading) {
+         const currentPath = location.pathname;
+
+         // Check if we need to redirect based on auth state
+         if (isLoggedIn && (currentPath === '/auth/login' || currentPath === '/auth/register')) {
+            setIsNavigating(true);
+            console.log('User is logged in but on auth page, redirecting to dashboard');
+            setTimeout(() => {
+               navigate('/dashboard', { replace: true });
+               setIsNavigating(false);
+            }, 100);
+         } else if (
+            !isLoggedIn &&
+            (currentPath === '/dashboard' || currentPath === '/settings' || currentPath === '/insights')
+         ) {
+            setIsNavigating(true);
+            console.log('User is not logged in but on protected page, redirecting to login');
+            setTimeout(() => {
+               navigate('/auth/login', { replace: true });
+               setIsNavigating(false);
+            }, 100);
+         }
+      }
+   }, [isLoggedIn, loading, location.pathname, navigate, isNavigating, lastPath, lastAuthState]);
 
    // Show loading spinner while checking authentication
    if (loading) {

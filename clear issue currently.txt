@@ -11,3 +11,10 @@ The database is connected, collections are created, and users are saved properly
 When the settings tab is clicked, the settings page loads correctly, but the header still continues to flash.
 
 Start by analyzing the vercel.json file in the client/ directory. Identify and resolve the issue(s) causing these problems.
+
+ Key Issues Identified:
+
+1. WebSocket Connection Failures: Repeated failures connecting to `wss://smart-todo-task-  management-backend.vercel.app/socket.io/`
+2. Authentication Loop: Causing the flashing between `/login` and `/dashboard` routes
+3. Navigation Throttling: Browser throttling due to excessive redirects
+4. Dashboard Not Loading: Likely due to failed API calls or socket connection issues

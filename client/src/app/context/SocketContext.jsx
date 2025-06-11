@@ -1,127 +1,91 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import io from 'socket.io-client';
-import toast from 'react-hot-toast';
+'use client';
 
-// Get socket URL from environment variable
-const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'https://smart-todo-task-management-backend.vercel.app';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
+import { useAuth } from './AuthContext';
 
-// Create context
-const SocketContext = createContext(null);
+const SocketContext = createContext();
 
-// Socket provider component
+export const useSocket = () => useContext(SocketContext);
+
 export const SocketProvider = ({ children }) => {
    const [socket, setSocket] = useState(null);
-   const [connected, setConnected] = useState(false);
+   const [isConnected, setIsConnected] = useState(false);
+   const [connectionAttempts, setConnectionAttempts] = useState(0);
+   const { isLoggedIn, user } = useAuth();
+   const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
+   const MAX_RECONNECT_ATTEMPTS = 3;
 
-   // Initialize socket connection
    useEffect(() => {
-      // Create socket instance
-      const newSocket = io(SOCKET_URL, {
-         path: '/socket.io',
-         transports: ['websocket', 'polling'],
-         reconnection: true,
-         reconnectionAttempts: 5,
-         reconnectionDelay: 1000,
-      });
+      let socketInstance = null;
 
-      // Handle connection events
-      newSocket.on('connect', () => {
-         console.log('Socket connected:', newSocket.id);
-         setConnected(true);
+      // Only attempt to connect if the user is logged in
+      if (isLoggedIn && user && !socket) {
+         try {
+            console.log('Attempting to connect to socket server...');
 
-         // Try to authenticate if token exists
-         const token = localStorage.getItem('token');
-         const userId = localStorage.getItem('userId');
+            // Create socket connection with error handling
+            socketInstance = io(BACKEND_URL, {
+               transports: ['polling', 'websocket'], // Try polling first, then websocket
+               reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+               reconnectionDelay: 1000,
+               timeout: 10000,
+               auth: {
+                  token: localStorage.getItem('token'),
+               },
+               query: {
+                  userId: user.id,
+               },
+            });
 
-         if (userId) {
-            newSocket.emit('authenticate', userId);
+            // Connection event handlers
+            socketInstance.on('connect', () => {
+               console.log('Socket connected successfully');
+               setIsConnected(true);
+               setConnectionAttempts(0);
+            });
+
+            socketInstance.on('connect_error', (err) => {
+               console.error('Socket connection error:', err.message);
+               setConnectionAttempts((prev) => prev + 1);
+
+               if (connectionAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                  console.warn('Max reconnection attempts reached, continuing without socket connection');
+                  socketInstance.disconnect();
+                  // Don't show error toast to users - just continue without real-time features
+               }
+            });
+
+            socketInstance.on('disconnect', (reason) => {
+               console.log('Socket disconnected:', reason);
+               setIsConnected(false);
+            });
+
+            setSocket(socketInstance);
+         } catch (error) {
+            console.error('Error initializing socket:', error);
          }
-      });
+      }
 
-      newSocket.on('disconnect', () => {
-         console.log('Socket disconnected');
-         setConnected(false);
-      });
-
-      // Handle notification events
-      newSocket.on('db_change', (data) => {
-         const { operation, message, type } = data;
-
-         // Customize notification based on operation type
-         switch (operation) {
-            case 'create':
-            case 'update':
-            case 'delete':
-            case 'status_change':
-               toast(message, {
-                  duration: 3000,
-                  style: {
-                     background: 'white',
-                     color: '#333',
-                     border: '1px solid #ddd',
-                     padding: '12px 20px',
-                     borderRadius: '8px',
-                     fontSize: '14px',
-                     fontWeight: '500',
-                  },
-               });
-               break;
-            case 'reminder_set':
-               toast(message, {
-                  icon: '⏰',
-                  duration: 5000,
-                  style: {
-                     background: '#4CAF50',
-                     color: 'white',
-                     border: '1px solid #45a049',
-                     padding: '12px 20px',
-                     borderRadius: '8px',
-                     fontSize: '14px',
-                     fontWeight: '500',
-                  },
-               });
-               break;
-            case 'reminder':
-               toast(message, {
-                  icon: '🔔',
-                  duration: 60000, // 1 minute
-                  style: {
-                     background: '#FFD700',
-                     color: 'black',
-                     border: '1px solid #DAA520',
-                     padding: '12px 20px',
-                     borderRadius: '8px',
-                     fontSize: '14px',
-                     fontWeight: '500',
-                  },
-                  iconTheme: {
-                     primary: '#DAA520',
-                     secondary: 'black',
-                  },
-               });
-               break;
-            default:
-               toast(message, {
-                  duration: 3000,
-               });
-         }
-      });
-
-      // Cleanup on unmount
-      setSocket(newSocket);
+      // Cleanup function
       return () => {
-         newSocket.disconnect();
+         if (socketInstance) {
+            console.log('Cleaning up socket connection');
+            socketInstance.disconnect();
+         }
       };
-   }, []);
+   }, [isLoggedIn, user, connectionAttempts]);
 
-   return <SocketContext.Provider value={{ socket, connected }}>{children}</SocketContext.Provider>;
+   // Provide a way to manually reconnect
+   const reconnect = () => {
+      if (socket) {
+         socket.disconnect();
+         setSocket(null);
+      }
+      setConnectionAttempts(0);
+   };
+
+   return <SocketContext.Provider value={{ socket, isConnected, reconnect }}>{children}</SocketContext.Provider>;
 };
 
-// Hook to use the socket context
-export const useSocket = () => {
-   const context = useContext(SocketContext);
-   if (context === null) {
-      throw new Error('useSocket must be used within a SocketProvider');
-   }
-   return context;
-};
+export default SocketContext;
