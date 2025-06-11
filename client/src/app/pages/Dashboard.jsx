@@ -11,6 +11,7 @@ import DeleteTaskModal from '../../components/DeleteTaskModal';
 import { toast } from 'react-hot-toast';
 import ModernSortTabs from '../../components/ModernSortTabs';
 import DependencyView from '../../components/DependencyView';
+import notificationService from '../../services/notificationService';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
@@ -27,12 +28,38 @@ function Dashboard() {
    const [sortOption, setSortOption] = useState('date');
    const [filterOption, setFilterOption] = useState('all');
    const [viewOption, setViewOption] = useState('list');
-   const { isLoggedIn, logout } = useAuth();
-   const { notifications, unreadCount, addNotification } = useNotification();
+   const { isLoggedIn, token, logout } = useAuth();
+   const { createSuccessNotification, createErrorNotification } = useNotification();
    const { socket, isConnected } = useSocket();
    const navigate = useNavigate();
    const [apiRetries, setApiRetries] = useState(0);
    const [loadingText, setLoadingText] = useState('Loading tasks...');
+
+   // Initialize notification service
+   useEffect(() => {
+      if (token) {
+         notificationService.initialize(token, socket);
+
+         // Listen for notifications
+         const unsubscribe = notificationService.onNotification((notification) => {
+            if (notification.type === 'notificationCreated') {
+               const notif = notification.data;
+               if (notif.type === 'create') {
+                  createSuccessNotification(notif.message, true);
+               } else if (notif.type === 'error') {
+                  createErrorNotification(notif.message, true);
+               } else {
+                  createSuccessNotification(notif.message, true);
+               }
+            }
+         });
+
+         return () => {
+            unsubscribe();
+            notificationService.stop();
+         };
+      }
+   }, [token, socket, createSuccessNotification, createErrorNotification]);
 
    // Function to fetch tasks from the server with improved error handling
    const fetchTasks = useCallback(
@@ -41,7 +68,6 @@ function Dashboard() {
             setLoading(true);
             setLoadingText(retryCount > 0 ? `Retrying... (${retryCount}/3)` : 'Loading tasks...');
 
-            const token = localStorage.getItem('token');
             if (!token) {
                console.error('No authentication token found');
                logout();
@@ -96,42 +122,44 @@ function Dashboard() {
             }
          }
       },
-      [logout, navigate]
+      [token, logout, navigate]
    );
 
    // Function to fetch dependencies with improved error handling
-   const fetchDependencies = useCallback(async (retryCount = 0) => {
-      try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
+   const fetchDependencies = useCallback(
+      async (retryCount = 0) => {
+         try {
+            if (!token) {
+               throw new Error('Authentication required');
+            }
+
+            const response = await fetch(`${BACKEND_URL}/api/dependencies`, {
+               method: 'GET',
+               headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+               },
+            });
+
+            if (!response.ok) {
+               throw new Error(`HTTP ${response.status}: Failed to fetch dependencies`);
+            }
+
+            const data = await response.json();
+            setDependencies(data);
+            console.log('Dependencies fetched successfully:', data.length);
+         } catch (error) {
+            console.error('Error fetching dependencies:', error);
+
+            // Retry logic for dependencies (less critical)
+            if (retryCount < 2) {
+               setTimeout(() => fetchDependencies(retryCount + 1), (retryCount + 1) * 1000);
+            }
+            // Don't show error toast for dependencies as it's not critical
          }
-
-         const response = await fetch(`${BACKEND_URL}/api/dependencies`, {
-            method: 'GET',
-            headers: {
-               Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
-            },
-         });
-
-         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: Failed to fetch dependencies`);
-         }
-
-         const data = await response.json();
-         setDependencies(data);
-         console.log('Dependencies fetched successfully:', data.length);
-      } catch (error) {
-         console.error('Error fetching dependencies:', error);
-
-         // Retry logic for dependencies (less critical)
-         if (retryCount < 2) {
-            setTimeout(() => fetchDependencies(retryCount + 1), (retryCount + 1) * 1000);
-         }
-         // Don't show error toast for dependencies as it's not critical
-      }
-   }, []);
+      },
+      [token]
+   );
 
    // Initial data fetch
    useEffect(() => {
@@ -158,165 +186,139 @@ function Dashboard() {
       return () => clearInterval(interval);
    }, [isLoggedIn, fetchTasks, fetchDependencies]);
 
-   const handleAddTask = async (newTask) => {
-      try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
+   // Fixed handleAddTask function
+   const handleAddTask = useCallback(
+      async (newTask) => {
+         try {
+            if (!token) {
+               throw new Error('Authentication required');
+            }
+
+            console.log('Adding new task:', newTask);
+
+            const response = await fetch(`${BACKEND_URL}/api/tasks`, {
+               method: 'POST',
+               headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+               },
+               body: JSON.stringify(newTask),
+            });
+
+            if (!response.ok) {
+               const errorData = await response.json().catch(() => ({}));
+               throw new Error(errorData.message || 'Failed to add task');
+            }
+
+            const data = await response.json();
+            console.log('Task added successfully:', data);
+
+            // Update local state
+            setTasks((prev) => [...prev, data]);
+            setList((prev) => [...prev, data]);
+
+            toast.success('Task added successfully');
+
+            // Refresh tasks to ensure consistency
+            setTimeout(() => {
+               fetchTasks();
+            }, 1000);
+         } catch (err) {
+            console.error('Error adding task:', err);
+            toast.error(err.message || 'Failed to add task');
+            setError(err.message);
          }
+      },
+      [token, fetchTasks]
+   );
 
-         const response = await fetch(`${BACKEND_URL}/api/tasks`, {
-            method: 'POST',
-            headers: {
-               'Content-Type': 'application/json',
-               Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(newTask),
-         });
+   // Fixed handleDeleteTask function
+   const handleDeleteTask = useCallback(
+      async (taskId) => {
+         try {
+            if (!token) {
+               throw new Error('Authentication required');
+            }
 
-         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Failed to add task');
+            console.log('Deleting task:', taskId);
+
+            const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}`, {
+               method: 'DELETE',
+               headers: {
+                  Authorization: `Bearer ${token}`,
+               },
+            });
+
+            if (!response.ok) {
+               const errorData = await response.json().catch(() => ({}));
+               throw new Error(errorData.message || 'Failed to delete task');
+            }
+
+            console.log('Task deleted successfully');
+
+            // Update local state
+            setTasks((prev) => prev.filter((task) => task._id !== taskId));
+            setList((prev) => prev.filter((task) => task._id !== taskId));
+
+            toast.success('Task deleted successfully');
+
+            // Refresh tasks to ensure consistency
+            setTimeout(() => {
+               fetchTasks();
+            }, 1000);
+         } catch (err) {
+            console.error('Error deleting task:', err);
+            toast.error(err.message || 'Failed to delete task');
+            setError(err.message);
          }
+      },
+      [token, fetchTasks]
+   );
 
-         const data = await response.json();
-         setTasks((prev) => [...prev, data]);
-         setList((prev) => [...prev, data]);
-         toast.success('Task added successfully');
-      } catch (err) {
-         console.error('Error adding task:', err);
-         toast.error(err.message || 'Failed to add task');
-         setError(err.message);
-      }
-   };
-
-   const handleDeleteTask = async () => {
-      if (!deleteModal.taskId) return;
-
-      try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const response = await fetch(`${BACKEND_URL}/api/tasks/${deleteModal.taskId}`, {
-            method: 'DELETE',
-            headers: {
-               Authorization: `Bearer ${token}`,
-            },
-         });
-
-         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Failed to delete task');
-         }
-
-         setTasks((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
-         setList((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
-         setDeleteModal({ show: false, taskId: null });
-         toast.success('Task deleted successfully');
-      } catch (err) {
-         console.error('Error deleting task:', err);
-         toast.error(err.message || 'Failed to delete task');
-         setError(err.message);
-      }
-   };
-
-   const handleDeleteWithCascade = async () => {
-      if (!deleteModal.taskId) return;
-
-      try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const cascadeResponse = await fetch(`${BACKEND_URL}/api/tasks/${deleteModal.taskId}`, {
-            method: 'DELETE',
-            headers: {
-               Authorization: `Bearer ${token}`,
-               'X-Cascade-Delete': 'true',
-            },
-         });
-
-         if (!cascadeResponse.ok) {
-            const errorData = await cascadeResponse.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Failed to delete task and dependencies');
-         }
-
-         setTasks((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
-         setList((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
-         setDeleteModal({ show: false, taskId: null });
-         toast.success('Task and dependencies deleted successfully');
-      } catch (err) {
-         console.error('Error deleting task with cascade:', err);
-         toast.error(err.message || 'Failed to delete task and dependencies');
-         setError(err.message);
-      }
-   };
-
-   // Function to add a new task
-   const addTask = (newTask) => {
-      setList([...list, newTask]);
-   };
-
-   // Function to handle task deletion
-   const handleDeleteTask2 = (taskId) => {
-      const taskToDelete = list.find((task) => task._id === taskId);
-      setTaskToDelete(taskToDelete);
-      setShowDeleteModal(true);
-   };
+   // Function to handle task deletion with modal
+   const handleDeleteTask2 = useCallback(
+      (taskId) => {
+         const taskToDelete = list.find((task) => task._id === taskId);
+         setTaskToDelete(taskToDelete);
+         setShowDeleteModal(true);
+      },
+      [list]
+   );
 
    // Function to confirm task deletion
-   const confirmDeleteTask = async () => {
+   const confirmDeleteTask = useCallback(async () => {
       if (!taskToDelete) return;
 
       try {
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
-         }
-
-         const response = await fetch(`${BACKEND_URL}/api/tasks/${taskToDelete._id}`, {
-            method: 'DELETE',
-            headers: {
-               Authorization: `Bearer ${token}`,
-            },
-         });
-
-         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Failed to delete task');
-         }
-
-         // Remove the task from the list
-         setList(list.filter((task) => task._id !== taskToDelete._id));
-         toast.success('Task deleted successfully');
+         await handleDeleteTask(taskToDelete._id);
       } catch (error) {
-         console.error('Error deleting task:', error);
-         toast.error(error.message || 'Failed to delete task');
+         console.error('Error in confirmDeleteTask:', error);
       } finally {
          setShowDeleteModal(false);
          setTaskToDelete(null);
       }
-   };
+   }, [taskToDelete, handleDeleteTask]);
 
    // Function to update a task
-   const handleUpdateTask = (taskId, updatedTask) => {
-      setList(list.map((task) => (task._id === taskId ? { ...task, ...updatedTask } : task)));
-   };
+   const handleUpdateTask = useCallback((taskId, updatedTask) => {
+      setList((prevList) => prevList.map((task) => (task._id === taskId ? { ...task, ...updatedTask } : task)));
+      setTasks((prevTasks) => prevTasks.map((task) => (task._id === taskId ? { ...task, ...updatedTask } : task)));
+   }, []);
 
    // Function to handle task status change
-   const handleTaskStatusChange = (taskId, currentStatus, errorMessage) => {
-      if (errorMessage) {
-         toast.error(errorMessage);
-      } else {
-         // Refresh the task list to get updated data
-         setTimeout(() => {
-            fetchTasks();
-         }, 1000);
-      }
-   };
+   const handleTaskStatusChange = useCallback(
+      (taskId, currentStatus, errorMessage) => {
+         if (errorMessage) {
+            toast.error(errorMessage);
+         } else {
+            // Refresh the task list to get updated data
+            setTimeout(() => {
+               fetchTasks();
+            }, 1000);
+         }
+      },
+      [fetchTasks]
+   );
 
    // Sort and filter tasks
    const sortedAndFilteredTasks = [...list]
@@ -339,12 +341,12 @@ function Dashboard() {
       });
 
    // Check if a task's deadline has passed
-   const isDeadlineExceeded = (task) => {
+   const isDeadlineExceeded = useCallback((task) => {
       if (task.completed) return false;
       const today = new Date();
       const taskDate = new Date(`${task.date} ${task.time}`);
       return taskDate < today;
-   };
+   }, []);
 
    if (loading) {
       return (

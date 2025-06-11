@@ -2,13 +2,21 @@
 
 import { useState } from 'react';
 import { FiSearch, FiPlus, FiTrash2, FiFilter, FiX } from 'react-icons/fi';
-import { HiSparkles, HiLightningBolt, HiViewGrid } from 'react-icons/hi';
+import { HiSparkles, HiViewGrid } from 'react-icons/hi';
+import AddTaskForm from './AddTaskForm';
 
-function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }) {
+function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange, onAddTask }) {
    const [searchTask, setSearchTask] = useState('');
+   const [isAddFormVisible, setIsAddFormVisible] = useState(false);
 
-   function handleAddTask() {
-      SetisAddFormVisible(true);
+   function handleAddTask(newTask) {
+      // Call the parent's onAddTask function
+      if (onAddTask && typeof onAddTask === 'function') {
+         onAddTask(newTask);
+         setIsAddFormVisible(false);
+      } else {
+         console.error('onAddTask is not a function:', onAddTask);
+      }
    }
 
    function handleDeleteTask() {
@@ -95,7 +103,7 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }
                   <div className="flex flex-row gap-2 sm:gap-3 lg:gap-4 lg:flex-shrink-0 justify-center sm:justify-start">
                      {/* Add Task Button */}
                      <button
-                        onClick={handleAddTask}
+                        onClick={() => setIsAddFormVisible(true)}
                         className="group relative overflow-hidden mt-2 h-9 sm:h-10 px-3 sm:px-4 lg:px-5 bg-gradient-to-r from-[#9406E6] via-[#C724B1] to-[#9406E6] text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0"
                      >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
@@ -130,6 +138,14 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange }
                )}
             </div>
          </div>
+         {/* Add Task Form Modal */}
+         {isAddFormVisible && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+               <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <AddTaskForm SetisAddFormVisible={setIsAddFormVisible} addTask={handleAddTask} />
+               </div>
+            </div>
+         )}
       </div>
    );
 }

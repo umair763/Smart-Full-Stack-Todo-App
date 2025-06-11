@@ -33,31 +33,86 @@ const upload = multer({
 // Upload middleware for profile images
 export const profileImageUploadMiddleware = upload.single("picture");
 
-// Register a new user
+// Register a new user with improved error handling
 export const register = async (req, res) => {
     try {
+        console.log("Registration request received:", {
+            body: req.body,
+            file: req.file ? { originalname: req.file.originalname, size: req.file.size } : null,
+        });
+
         const { username, email, password } = req.body;
 
+        // Validate required fields
+        if (!username || !email || !password) {
+            return res.status(400).json({
+                message: "Username, email, and password are required",
+                missing: {
+                    username: !username,
+                    email: !email,
+                    password: !password,
+                },
+            });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
+
+        // Validate password length
+        if (password.length < 3) {
+            return res.status(400).json({ message: "Password must be at least 3 characters long" });
+        }
+
         // Check if user already exists
-        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        const existingUser = await User.findOne({
+            $or: [{ email: email.toLowerCase() }, { username }],
+        });
+
         if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
+            const field = existingUser.email === email.toLowerCase() ? "email" : "username";
+            return res.status(400).json({
+                message: `User with this ${field} already exists`,
+                field,
+            });
+        }
+
+        // Create user data object
+        const userData = {
+            username: username.trim(),
+            email: email.toLowerCase().trim(),
+            password: password,
+        };
+
+        // Handle profile image if provided
+        if (req.file) {
+            try {
+                const { buffer, mimetype } = req.file;
+                // Convert buffer to base64 data URL
+                const base64Image = `data:${mimetype};base64,${buffer.toString("base64")}`;
+                userData.profileImage = base64Image;
+                console.log("Profile image processed successfully");
+            } catch (imageError) {
+                console.error("Error processing profile image:", imageError);
+                // Continue without image rather than failing registration
+                console.log("Continuing registration without profile image");
+            }
         }
 
         // Create new user
-        const user = new User({
-            username,
-            email,
-            password,
-        });
-
+        const user = new User(userData);
         await user.save();
+
+        console.log("User created successfully:", { id: user._id, username: user.username, email: user.email });
 
         // Generate token
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
             expiresIn: "7d",
         });
 
+        // Return success response
         res.status(201).json({
             message: "User registered successfully",
             token,
@@ -69,8 +124,34 @@ export const register = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error("Registration error:", error);
-        res.status(500).json({ message: "Error registering user" });
+        console.error("Registration error details:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+        });
+
+        // Handle specific MongoDB errors
+        if (error.name === "ValidationError") {
+            const validationErrors = Object.values(error.errors).map((err) => err.message);
+            return res.status(400).json({
+                message: "Validation failed",
+                errors: validationErrors,
+            });
+        }
+
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            return res.status(400).json({
+                message: `User with this ${field} already exists`,
+                field,
+            });
+        }
+
+        // Generic error response
+        res.status(500).json({
+            message: "Error registering user",
+            error: process.env.NODE_ENV === "development" ? error.message : undefined,
+        });
     }
 };
 
@@ -79,8 +160,12 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required" });
+        }
+
         // Find user
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
@@ -256,49 +341,46 @@ export const updateProfileImage = async (req, res) => {
 export const deleteAccount = async (req, res) => {
     try {
         const userId = req.user._id;
-        
+
         console.log(`Starting account deletion for user: ${userId}`);
 
         // Get all user's tasks first (needed for dependencies)
-        const userTasks = await Task.find({ userId }).select('_id');
-        const taskIds = userTasks.map(task => task._id);
+        const userTasks = await Task.find({ userId }).select("_id");
+        const taskIds = userTasks.map((task) => task._id);
 
         // Delete all associated data in the correct order to handle dependencies
         const deletionPromises = [
             // Delete streaks
             Streak.deleteMany({ userId }),
-            
+
             // Delete notifications
             Notification.deleteMany({ userId }),
-            
+
             // Delete reminders
             Reminder.deleteMany({ userId }),
-            
+
             // Delete attachments
             Attachment.deleteMany({ userId }),
-            
+
             // Delete notes
             Note.deleteMany({ userId }),
-            
+
             // Delete subtasks
             Subtask.deleteMany({ userId }),
-            
+
             // Delete dependencies (both where user's tasks are dependent or prerequisite)
             Dependency.deleteMany({
-                $or: [
-                    { dependentTaskId: { $in: taskIds } },
-                    { prerequisiteTaskId: { $in: taskIds } }
-                ]
+                $or: [{ dependentTaskId: { $in: taskIds } }, { prerequisiteTaskId: { $in: taskIds } }],
             }),
-            
+
             // Delete tasks
             Task.deleteMany({ userId }),
         ];
 
         // Execute all deletions
         const results = await Promise.all(deletionPromises);
-        
-        console.log('Deletion results:', {
+
+        console.log("Deletion results:", {
             streaks: results[0].deletedCount,
             notifications: results[1].deletedCount,
             reminders: results[2].deletedCount,
@@ -311,10 +393,10 @@ export const deleteAccount = async (req, res) => {
 
         // Finally, delete the user account
         await User.findByIdAndDelete(userId);
-        
+
         console.log(`Account deletion completed for user: ${userId}`);
 
-        res.json({ 
+        res.json({
             message: "Account and all associated data deleted successfully",
             deletedData: {
                 streaks: results[0].deletedCount,
@@ -325,13 +407,13 @@ export const deleteAccount = async (req, res) => {
                 subtasks: results[5].deletedCount,
                 dependencies: results[6].deletedCount,
                 tasks: results[7].deletedCount,
-            }
+            },
         });
     } catch (error) {
         console.error("Delete account error:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             message: "Error deleting account",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === "development" ? error.message : undefined,
         });
     }
 };
