@@ -271,7 +271,7 @@ function Settings() {
    }
 
    return (
-      <div className="w-full h-[calc(100vh-2rem)] p-1.5 sm:p-2 md:p-4 lg:p-6 mx-auto bg-gradient-to-br from-indigo-900/80 via-purple-900/80 to-pink-900/80 dark:from-gray-900/80 dark:via-gray-800/80 dark:to-gray-900/80 flex flex-col overflow-hidden rounded-xl">
+      <div className="w-11/12 p-6 mx-auto bg-gradient-to-br from-slate-900/80 via-purple-900/80 to-slate-900/80 dark:from-gray-900/80 dark:via-gray-800/80 dark:to-gray-900/80 flex flex-col overflow-hidden rounded-xl">
          <div className="grid grid-cols-1 lg:grid-cols-[280px,1fr] gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 flex-1 min-h-0 overflow-hidden">
             {/* Enhanced Sidebar */}
             <div className="bg-white/10 dark:bg-white/5 backdrop-blur-xl rounded-xl p-2 sm:p-3 md:p-4 border border-white/20 dark:border-white/10 flex flex-col overflow-hidden">
@@ -300,7 +300,9 @@ function Settings() {
                                  <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-white" />
                               </div>
                               <div className="min-w-0">
-                                 <div className="font-medium text-[10px] sm:text-xs md:text-sm text-white">{tab.label}</div>
+                                 <div className="font-medium text-[10px] sm:text-xs md:text-sm text-white">
+                                    {tab.label}
+                                 </div>
                                  <div className="text-[8px] sm:text-[10px] md:text-xs text-white/70 line-clamp-1 leading-relaxed">
                                     {tab.description}
                                  </div>
@@ -337,7 +339,9 @@ function Settings() {
                            </div>
                            <div>
                               <h3 className="text-base sm:text-lg md:text-xl font-bold text-white">Account Details</h3>
-                              <p className="text-white/70 text-[10px] sm:text-xs md:text-sm">Manage your profile image and username</p>
+                              <p className="text-white/70 text-[10px] sm:text-xs md:text-sm">
+                                 Manage your profile image and username
+                              </p>
                            </div>
                         </div>
 
@@ -361,7 +365,9 @@ function Settings() {
                                     </div>
                                     <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400/20 to-indigo-600/20 blur-lg group-hover:blur-xl transition-all duration-300"></div>
                                  </div>
-                                 <h4 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-0.5 sm:mb-1 md:mb-2">{userDetails?.username}</h4>
+                                 <h4 className="text-sm sm:text-base md:text-lg font-semibold text-white mb-0.5 sm:mb-1 md:mb-2">
+                                    {userDetails?.username}
+                                 </h4>
                                  <p className="text-white/60 text-[10px] sm:text-xs md:text-sm">{userDetails?.email}</p>
                               </div>
 
@@ -395,7 +401,9 @@ function Settings() {
 
                            {/* Enhanced Username Section */}
                            <div className="bg-white/5 dark:bg-white/3 rounded-xl p-2 sm:p-3 md:p-4 lg:p-6 border border-white/10 dark:border-white/5">
-                              <h4 className="text-white font-semibold mb-2 sm:mb-3 md:mb-4 text-sm sm:text-base md:text-lg">Username Settings</h4>
+                              <h4 className="text-white font-semibold mb-2 sm:mb-3 md:mb-4 text-sm sm:text-base md:text-lg">
+                                 Username Settings
+                              </h4>
                               <form
                                  onSubmit={(e) => {
                                     e.preventDefault();
@@ -404,7 +412,9 @@ function Settings() {
                                  className="space-y-2 sm:space-y-3 md:space-y-4"
                               >
                                  <div>
-                                    <label className="block text-white font-medium mb-1 sm:mb-2 md:mb-3 text-[10px] sm:text-xs md:text-sm">Username</label>
+                                    <label className="block text-white font-medium mb-1 sm:mb-2 md:mb-3 text-[10px] sm:text-xs md:text-sm">
+                                       Username
+                                    </label>
                                     <input
                                        type="text"
                                        value={username}
@@ -435,7 +445,9 @@ function Settings() {
                            </div>
                            <div>
                               <h3 className="text-base sm:text-lg md:text-xl font-bold text-white">Appearance</h3>
-                              <p className="text-white/70 text-[10px] sm:text-xs md:text-sm">Customize your theme preferences</p>
+                              <p className="text-white/70 text-[10px] sm:text-xs md:text-sm">
+                                 Customize your theme preferences
+                              </p>
                            </div>
                         </div>
 
@@ -484,7 +496,9 @@ function Settings() {
                                           <span className="text-white font-medium text-[10px] sm:text-xs md:text-sm block">
                                              {themeOption.label}
                                           </span>
-                                          <span className="text-white/60 text-[8px] sm:text-[10px] md:text-xs">{themeOption.description}</span>
+                                          <span className="text-white/60 text-[8px] sm:text-[10px] md:text-xs">
+                                             {themeOption.description}
+                                          </span>
                                        </div>
                                        {isSelected && (
                                           <div className="absolute top-1.5 sm:top-2 md:top-3 right-1.5 sm:right-2 md:right-3">
@@ -531,13 +545,17 @@ function Settings() {
                            </div>
                            <div>
                               <h3 className="text-base sm:text-lg md:text-xl font-bold text-white">Data Management</h3>
-                              <p className="text-white/70 text-[10px] sm:text-xs md:text-sm">Export and import your data</p>
+                              <p className="text-white/70 text-[10px] sm:text-xs md:text-sm">
+                                 Export and import your data
+                              </p>
                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6 flex-shrink-0">
                            <div className="bg-white/5 dark:bg-white/3 rounded-xl p-2 sm:p-3 md:p-4 lg:p-6 border border-white/10 dark:border-white/5">
-                              <h4 className="text-white font-semibold mb-1.5 sm:mb-2 md:mb-3 text-sm sm:text-base md:text-lg">Export Data</h4>
+                              <h4 className="text-white font-semibold mb-1.5 sm:mb-2 md:mb-3 text-sm sm:text-base md:text-lg">
+                                 Export Data
+                              </h4>
                               <p className="text-white/70 text-[10px] sm:text-xs md:text-sm mb-2 sm:mb-3 md:mb-4">
                                  Download all your tasks, notes, and settings as a JSON file
                               </p>
@@ -552,7 +570,9 @@ function Settings() {
                            </div>
 
                            <div className="bg-white/5 dark:bg-white/3 rounded-xl p-2 sm:p-3 md:p-4 lg:p-6 border border-white/10 dark:border-white/5">
-                              <h4 className="text-white font-semibold mb-1.5 sm:mb-2 md:mb-3 text-sm sm:text-base md:text-lg">Import Data</h4>
+                              <h4 className="text-white font-semibold mb-1.5 sm:mb-2 md:mb-3 text-sm sm:text-base md:text-lg">
+                                 Import Data
+                              </h4>
                               <p className="text-white/70 text-[10px] sm:text-xs md:text-sm mb-2 sm:mb-3 md:mb-4">
                                  Upload a previously exported JSON file to restore your data
                               </p>
@@ -584,7 +604,9 @@ function Settings() {
                            </div>
                            <div>
                               <h3 className="text-base sm:text-lg md:text-xl font-bold text-white">Danger Zone</h3>
-                              <p className="text-white/70 text-[10px] sm:text-xs md:text-sm">Permanent account deletion</p>
+                              <p className="text-white/70 text-[10px] sm:text-xs md:text-sm">
+                                 Permanent account deletion
+                              </p>
                            </div>
                         </div>
 
@@ -595,9 +617,12 @@ function Settings() {
                                     <FiTrash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 text-red-400" />
                                  </div>
                                  <div>
-                                    <h4 className="text-white font-semibold text-[10px] sm:text-xs md:text-sm mb-0.5 sm:mb-1">Delete Account</h4>
+                                    <h4 className="text-white font-semibold text-[10px] sm:text-xs md:text-sm mb-0.5 sm:mb-1">
+                                       Delete Account
+                                    </h4>
                                     <p className="text-white/70 text-[8px] sm:text-[10px] md:text-xs">
-                                       Permanently delete your account and all associated data. This action cannot be undone.
+                                       Permanently delete your account and all associated data. This action cannot be
+                                       undone.
                                     </p>
                                  </div>
                               </div>
