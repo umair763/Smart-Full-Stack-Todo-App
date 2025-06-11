@@ -919,13 +919,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         </button>
                      )}
 
-                     {/* Connection Status Indicator */}
-                     {/* {!isConnected && (
-                        <div className="flex items-center space-x-1 px-2 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
-                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                           <span className="hidden xs:inline">Offline</span>
-                        </div>
-                     )} */}
                   </div>
 
                   {/* Right Actions */}
@@ -1059,7 +1052,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             </div>
 
             {/* Desktop Layout (>= 640px) - Original Grid Layout Enhanced */}
-            <div className="hidden sm:grid grid-cols-[25px,1fr,auto] md:grid-cols-[30px,1fr,auto] w-full px-3 md:px-4 py-3 items-center gap-3">
+            <div className="hidden sm:grid grid-cols-[25px,1fr,auto] md:grid-cols-[30px,1fr,auto] w-full px-3 md:px-2 py-3 items-center gap-3">
                {/* Priority Radio Button */}
                <input
                   type="radio"
@@ -1124,14 +1117,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                            <FiLink className="h-4 w-4" />
                         </button>
                      )}
-
-                     {/* Connection Status Indicator */}
-                     {/* {!isConnected && (
-                        <div className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">
-                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                           <span>Offline</span>
-                        </div>
-                     )} */}
                   </div>
 
                   {/* Subtask progress indicator */}

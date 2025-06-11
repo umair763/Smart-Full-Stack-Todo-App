@@ -117,22 +117,23 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
          </div>
 
          {/* Right Section - Priority, Date, and Actions */}
-         <div className="flex items-center space-x-1.5 flex-shrink-0">
+         <div className="flex items-center gap-2 flex-shrink-0 text-sm text-gray-600">
             {/* Priority Badge */}
             <div className="flex-shrink-0">{renderPriorityBadge()}</div>
 
             {/* Due Date */}
-            <div className="flex items-center text-xs text-gray-500 flex-shrink-0">
-               <HiCalendar className="w-3 h-3 mr-1" />
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+               <HiCalendar className="w-3 h-3" />
                <span>{subtask.date}</span>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-0.5 flex-shrink-0">
+            <div className="flex items-center gap-1 ml-auto">
                {/* Edit Button */}
                <button
                   onClick={handleEdit}
-                  className="p-1 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-blue-50/50"
+                  aria-label="Edit Subtask"
+                  className="p-1 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-100/50 transition-colors"
                >
                   <HiPencilAlt className="w-4 h-4" />
                </button>
@@ -140,16 +141,18 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                {/* Delete Button */}
                <button
                   onClick={handleDelete}
-                  className="p-1 text-gray-500 hover:text-red-600 transition-colors rounded-full hover:bg-red-50/50"
+                  aria-label="Delete Subtask"
+                  className="p-1 rounded-full text-gray-500 hover:text-red-600 hover:bg-red-100/50 transition-colors"
                >
                   <FiTrash2 className="w-4 h-4" />
                </button>
 
-               {/* Status Checkbox - Rightmost */}
+               {/* Completion Checkbox */}
                <button
                   onClick={handleStatusChange}
                   disabled={isUpdating}
-                  className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  aria-label="Mark Subtask as Complete"
+                  className={`w-5 h-5 flex items-center justify-center rounded-full border-2 transition-colors ${
                      completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-500'
                   }`}
                >
