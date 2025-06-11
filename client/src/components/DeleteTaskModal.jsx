@@ -22,14 +22,14 @@ const DeleteTaskModal = ({ isOpen, onClose, onConfirm, isDeleting, taskName }) =
    };
 
    const modalContent = (
-      <div 
+      <div
          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[99999] p-4"
          style={{
             animation: 'modalBackdropFadeIn 0.3s ease-out forwards',
          }}
          onClick={handleBackdropClick}
       >
-         <div 
+         <div
             className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 ease-out"
             style={{
                animation: 'modalSlideIn 0.4s ease-out forwards',
@@ -63,7 +63,7 @@ const DeleteTaskModal = ({ isOpen, onClose, onConfirm, isDeleting, taskName }) =
                         You are about to delete the following task:
                      </p>
                      <div className="bg-white border border-red-200 rounded p-3">
-                        <p className="text-gray-900 font-semibold">"{taskName}"</p>
+                        <p className="text-gray-900 text-sm font-medium">"{taskName}"</p>
                      </div>
                   </div>
                   <p className="text-gray-600 text-sm">

@@ -106,10 +106,10 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
    return (
       <>
          {/* Mobile Layout (< 640px) - Card Style */}
-         <div className={`mt-3 sm:hidden p-3 sm:p-4 rounded-lg border-l-4 ${getPriorityColorClass()}`}>
+         <div className={`mt-2 sm:hidden p-2.5 sm:p-3 rounded-lg border-l-4 ${getPriorityColorClass()}`}>
             {/* Header Section - Title & Priority */}
-            <div className="flex items-start justify-between mb-3">
-               <div className="flex items-start space-x-3 flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-2">
+               <div className="flex items-start space-x-2 flex-1 min-w-0">
                   {/* Priority Radio Button */}
                   <input
                      type="radio"
@@ -121,14 +121,14 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                      <h4
                         className={`${
                            completed ? 'line-through text-gray-500' : 'text-gray-900'
-                        } font-medium text-base leading-tight mb-2 transition-all`}
+                        } font-medium text-base leading-tight mb-1.5 transition-all`}
                      >
                         {subtask.title}
                      </h4>
 
                      {/* Description - Enhanced size */}
                      {subtask.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">{subtask.description}</p>
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-1.5">{subtask.description}</p>
                      )}
 
                      {/* Priority Badge */}
@@ -151,7 +151,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
             {/* Date & Time Section */}
             <div className="flex items-center justify-between">
-               <div className="flex items-center space-x-3 text-sm text-gray-600">
+               <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-1.5 rounded">
                      <HiCalendar className="h-4 w-4 text-white" />
                   </div>
@@ -188,7 +188,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
          {/* Desktop Layout (>= 640px) - Grid Layout */}
          <div
-            className={`mt-3 hidden sm:grid grid-cols-[24px,1fr,auto] w-full px-3 sm:px-4 py-3 sm:py-3.5 rounded-lg border-l-4 ${getPriorityColorClass()} items-center gap-3 sm:gap-4`}
+            className={`mt-2 hidden sm:grid grid-cols-[24px,1fr,auto] w-full px-2.5 sm:px-3 py-2.5 sm:py-3 rounded-lg border-l-4 ${getPriorityColorClass()} items-center gap-2 sm:gap-3`}
          >
             {/* Priority Radio Button */}
             <input
@@ -198,76 +198,55 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
             {/* Main Content Section */}
             <div className="flex flex-col min-w-0">
-               <div className="flex items-center flex-wrap gap-2 sm:gap-3">
-                  {/* Subtask Title - Enhanced size */}
-                  <p
-                     className={`${
-                        completed ? 'line-through text-gray-600' : 'text-gray-900'
-                     } font-medium text-base sm:text-lg transition-all truncate flex-1 min-w-0`}
-                  >
-                     {subtask.title}
-                  </p>
+               {/* Subtask Title */}
+               <h4
+                  className={`${
+                     completed ? 'line-through text-gray-500' : 'text-gray-900'
+                  } font-medium text-base leading-tight mb-1 transition-all`}
+               >
+                  {subtask.title}
+               </h4>
 
-                  {/* Priority badge */}
-                  {renderPriorityBadge()}
-               </div>
+               {/* Description */}
+               {subtask.description && <p className="text-sm text-gray-600 line-clamp-1 mb-1">{subtask.description}</p>}
 
-               {/* Description - Enhanced size */}
-               {subtask.description && (
-                  <p className="text-sm sm:text-base text-gray-600 line-clamp-1 mt-1.5">{subtask.description}</p>
-               )}
+               {/* Priority Badge */}
+               {renderPriorityBadge()}
             </div>
 
-            {/* Right Section - Date, Time & Actions */}
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 flex-shrink-0">
-               {/* Date and Time Section */}
-               <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 text-right">
-                  <p
-                     className={`${
-                        completed ? 'line-through text-gray-600' : 'text-gray-700'
-                     } font-medium text-sm sm:text-base transition-all whitespace-nowrap`}
-                  >
+            {/* Right Section - Date, Time, Actions */}
+            <div className="flex items-center space-x-3">
+               {/* Date & Time */}
+               <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-1.5 rounded">
+                     <HiCalendar className="h-4 w-4 text-white" />
+                  </div>
+                  <span className={`${completed ? 'line-through text-gray-500' : 'text-gray-700'} font-medium`}>
                      {subtask.date}
-                  </p>
-                  <p
-                     className={`${
-                        completed ? 'line-through text-gray-600' : 'text-gray-600'
-                     } text-sm sm:text-base transition-all whitespace-nowrap`}
-                  >
+                  </span>
+                  <span className={`${completed ? 'line-through text-gray-500' : 'text-gray-600'}`}>
                      {subtask.time}
-                  </p>
+                  </span>
                </div>
 
-               {/* Action buttons */}
-               <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                  {/* Edit button */}
+               {/* Action Buttons */}
+               <div className="flex items-center space-x-2">
+                  {/* Edit */}
                   <button
                      onClick={handleEdit}
-                     className="text-blue-600 hover:text-blue-800 p-1 sm:p-1.5 rounded transition-colors"
+                     className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
                      title="Edit subtask"
                   >
-                     <HiPencilAlt className="h-4 w-4 sm:h-5 sm:w-5" />
+                     <HiPencilAlt className="h-4 w-4" />
                   </button>
 
-                  {/* Delete button */}
+                  {/* Delete */}
                   <button
                      onClick={handleDelete}
-                     className="text-red-600 hover:text-red-800 p-1 sm:p-1.5 rounded transition-colors"
+                     className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded transition-colors"
                      title="Delete subtask"
                   >
-                     <FiTrash2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </button>
-
-                  {/* Completion checkbox */}
-                  <button
-                     onClick={handleStatusChange}
-                     className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
-                        completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
-                     }`}
-                     disabled={isUpdating}
-                     title={completed ? 'Mark as incomplete' : 'Mark as complete'}
-                  >
-                     {completed && <HiCheck className="h-3 w-3 sm:h-4 sm:w-4" />}
+                     <FiTrash2 className="h-4 w-4" />
                   </button>
                </div>
             </div>
