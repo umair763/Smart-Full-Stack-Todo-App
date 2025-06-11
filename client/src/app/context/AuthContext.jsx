@@ -21,21 +21,20 @@ export const AuthProvider = ({ children }) => {
    const [loading, setLoading] = useState(true);
    const [user, setUser] = useState(null);
    const authCheckComplete = useRef(false);
-   const authStateChangeCount = useRef(0);
-   const lastAuthCheck = useRef(0);
+   const isProcessingAuth = useRef(false);
 
    useEffect(() => {
-      // Prevent multiple auth checks within a short time frame
-      const now = Date.now();
-      if (authCheckComplete.current && now - lastAuthCheck.current < 1000) {
+      // Prevent multiple simultaneous auth checks
+      if (isProcessingAuth.current) {
          return;
       }
 
-      lastAuthCheck.current = now;
+      isProcessingAuth.current = true;
 
       const checkAuth = () => {
-         const token = localStorage.getItem('token');
          console.log('AuthContext: Checking authentication state');
+
+         const token = localStorage.getItem('token');
 
          if (token) {
             try {
@@ -79,48 +78,39 @@ export const AuthProvider = ({ children }) => {
 
          setLoading(false);
          authCheckComplete.current = true;
+         isProcessingAuth.current = false;
       };
 
       checkAuth();
    }, []);
 
-   // Monitor for excessive auth state changes
-   useEffect(() => {
-      authStateChangeCount.current += 1;
-      const count = authStateChangeCount.current;
+   const login = (token) => {
+      console.log('AuthContext: Login called with token');
 
-      if (count > 3 && count < 8) {
-         console.warn(`Detected ${count} auth state changes - monitoring for loops`);
-      } else if (count >= 8) {
-         console.error(`Detected ${count} auth state changes - possible auth loop!`);
-         // Reset counter to prevent console spam
-         authStateChangeCount.current = 0;
+      if (!token) {
+         console.error('No token provided to login function');
+         return;
       }
 
-      // Reset counter after 10 seconds of stability
-      const timer = setTimeout(() => {
-         authStateChangeCount.current = 0;
-      }, 10000);
-
-      return () => clearTimeout(timer);
-   }, [isLoggedIn]);
-
-   const login = (token) => {
-      console.log('AuthContext: Login called');
-      localStorage.setItem('token', token);
-
       try {
+         localStorage.setItem('token', token);
+
          const tokenData = parseJwt(token);
          if (tokenData) {
+            console.log('Token parsed successfully, setting user state');
             setUser({
                id: tokenData.userId,
                exp: tokenData.exp,
             });
             localStorage.setItem('userId', tokenData.userId);
             setIsLoggedIn(true);
+         } else {
+            console.error('Failed to parse token during login');
+            localStorage.removeItem('token');
          }
       } catch (e) {
-         console.error('Error parsing token during login:', e);
+         console.error('Error during login:', e);
+         localStorage.removeItem('token');
       }
    };
 

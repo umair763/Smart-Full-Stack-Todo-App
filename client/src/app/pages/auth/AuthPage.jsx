@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -68,7 +68,8 @@ function AuthPage() {
                   localStorage.removeItem('token');
                }
             } catch (err) {
-               setError('Error validating token. Please log in again.');
+               console.error('Token validation error:', err);
+               localStorage.removeItem('token');
             }
          }
          setLoading(false);
@@ -115,6 +116,8 @@ function AuthPage() {
       setError('');
       setIsSubmitting(true);
 
+      console.log('Login form submitted with data:', loginData);
+
       if (!loginData.email || !loginData.password) {
          setError('Email and password are required');
          setIsSubmitting(false);
@@ -127,14 +130,18 @@ function AuthPage() {
             headers: {
                'Content-Type': 'application/json',
             },
-            body: JSON.stringify(loginData),
-            credentials: 'include',
+            body: JSON.stringify({
+               email: loginData.email.trim(),
+               password: loginData.password,
+            }),
          });
 
          const data = await response.json();
+         console.log('Login response:', data);
 
          if (response.ok) {
             if (data.token) {
+               console.log('Login successful, setting token');
                login(data.token);
                navigate('/dashboard');
             } else {
@@ -144,6 +151,7 @@ function AuthPage() {
             setError(data.message || 'Invalid credentials');
          }
       } catch (err) {
+         console.error('Login error:', err);
          setError('Unable to connect to the server. Please check your network connection and try again.');
       } finally {
          setIsSubmitting(false);
@@ -156,6 +164,9 @@ function AuthPage() {
       setSuccess('');
       setIsSubmitting(true);
 
+      console.log('Register form submitted with data:', registerData);
+
+      // Validation
       if (!registerData.username || !registerData.email || !registerData.password) {
          setError('All fields are required');
          setIsSubmitting(false);
@@ -168,41 +179,54 @@ function AuthPage() {
          return;
       }
 
-      const submitData = new FormData();
-      submitData.append('username', registerData.username);
-      submitData.append('email', registerData.email);
-      submitData.append('password', registerData.password);
-      if (profileImage) {
-         submitData.append('picture', profileImage);
+      if (registerData.password.length < 3) {
+         setError('Password must be at least 3 characters long');
+         setIsSubmitting(false);
+         return;
       }
 
       try {
+         // Prepare the request body
+         const requestBody = {
+            username: registerData.username.trim(),
+            email: registerData.email.trim(),
+            password: registerData.password,
+         };
+
+         console.log('Sending registration request:', requestBody);
+
          const response = await fetch(`${BACKEND_URL}/api/users/register`, {
             method: 'POST',
-            body: submitData,
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
          });
 
-         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Registration failed');
-         }
-
          const data = await response.json();
-         setSuccess('Registration successful!');
-         setError('');
+         console.log('Registration response:', data);
 
-         if (data.token) {
-            localStorage.setItem('token', data.token);
-            setTimeout(() => {
-               navigate('/dashboard');
-            }, 1000);
+         if (response.ok) {
+            setSuccess('Registration successful!');
+            setError('');
+
+            if (data.token) {
+               console.log('Registration successful, setting token');
+               login(data.token);
+               setTimeout(() => {
+                  navigate('/dashboard');
+               }, 1000);
+            } else {
+               setTimeout(() => {
+                  navigate('/auth/login');
+               }, 1000);
+            }
          } else {
-            setTimeout(() => {
-               navigate('/auth/login');
-            }, 1000);
+            setError(data.message || 'Registration failed. Please try again.');
          }
       } catch (error) {
-         setError(error.message || 'Registration failed. Please try again.');
+         console.error('Registration error:', error);
+         setError('Registration failed. Please check your network connection and try again.');
       } finally {
          setIsSubmitting(false);
       }
@@ -215,6 +239,8 @@ function AuthPage() {
 
    const handleGoogleSuccess = async (response) => {
       try {
+         console.log('Google sign-in response received:', response);
+
          const result = await fetch(`${BACKEND_URL}/api/users/google-signin`, {
             method: 'POST',
             headers: {
@@ -226,16 +252,25 @@ function AuthPage() {
          });
 
          const data = await result.json();
+         console.log('Google sign-in backend response:', data);
 
          if (result.ok) {
-            localStorage.setItem('token', data.token);
+            console.log('Google sign-in successful, setting token');
+            login(data.token);
             navigate('/dashboard');
          } else {
             console.error('Google sign-in failed:', data.message);
+            setError(data.message || 'Google sign-in failed');
          }
       } catch (error) {
          console.error('Error during Google sign-in:', error);
+         setError('Google sign-in failed. Please try again.');
       }
+   };
+
+   const handleGoogleError = (error) => {
+      console.error('Google Sign-In error:', error);
+      setError('Google Sign-In failed. Please try again.');
    };
 
    // Animation variants
@@ -390,7 +425,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center">
-                                 <GoogleSignIn onSuccess={handleGoogleSuccess} />
+                                 <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
                               </div>
                            </form>
                         </div>
@@ -509,46 +544,6 @@ function AuthPage() {
                            )}
 
                            <form onSubmit={handleRegisterSubmit} className="space-y-3">
-                              {/* Profile Image */}
-                              <div className="flex justify-center mb-3">
-                                 <div
-                                    onClick={() => document.getElementById('profile-image').click()}
-                                    className="w-16 h-16 rounded-full cursor-pointer border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-purple-400 transition-colors bg-slate-50"
-                                 >
-                                    {previewUrl ? (
-                                       <img
-                                          src={previewUrl}
-                                          alt="Profile Preview"
-                                          className="w-full h-full object-cover"
-                                       />
-                                    ) : (
-                                       <div className="text-center text-slate-400">
-                                          <svg
-                                             className="h-6 w-6 mx-auto"
-                                             fill="none"
-                                             viewBox="0 0 24 24"
-                                             stroke="currentColor"
-                                          >
-                                             <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                             />
-                                          </svg>
-                                          <span className="text-xs">Photo</span>
-                                       </div>
-                                    )}
-                                 </div>
-                                 <input
-                                    id="profile-image"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                    className="hidden"
-                                 />
-                              </div>
-
                               <div>
                                  <label className="block text-slate-700 font-semibold mb-1 text-sm">Username</label>
                                  <input
@@ -651,7 +646,7 @@ function AuthPage() {
                                  </div>
 
                                  <div className="flex justify-center">
-                                    <GoogleSignIn onSuccess={handleGoogleSuccess} />
+                                    <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
                                  </div>
                               </div>
                            </form>
@@ -742,7 +737,7 @@ function AuthPage() {
                            </div>
 
                            <div className="flex justify-center">
-                              <GoogleSignIn onSuccess={handleGoogleSuccess} />
+                              <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
                            </div>
 
                            <div className="text-center">
@@ -782,46 +777,6 @@ function AuthPage() {
                         )}
 
                         <form onSubmit={handleRegisterSubmit} className="space-y-3">
-                           {/* Profile Image */}
-                           <div className="flex justify-center mb-3">
-                              <div
-                                 onClick={() => document.getElementById('mobile-profile-image').click()}
-                                 className="w-14 h-14 rounded-full cursor-pointer border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden hover:border-purple-400 transition-colors bg-slate-50"
-                              >
-                                 {previewUrl ? (
-                                    <img
-                                       src={previewUrl}
-                                       alt="Profile Preview"
-                                       className="w-full h-full object-cover"
-                                    />
-                                 ) : (
-                                    <div className="text-center text-slate-400">
-                                       <svg
-                                          className="h-5 w-5 mx-auto"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                          stroke="currentColor"
-                                       >
-                                          <path
-                                             strokeLinecap="round"
-                                             strokeLinejoin="round"
-                                             strokeWidth={2}
-                                             d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                                          />
-                                       </svg>
-                                       <span className="text-xs">Photo</span>
-                                    </div>
-                                 )}
-                              </div>
-                              <input
-                                 id="mobile-profile-image"
-                                 type="file"
-                                 accept="image/*"
-                                 onChange={handleImageChange}
-                                 className="hidden"
-                              />
-                           </div>
-
                            <div>
                               <label className="block text-slate-700 font-semibold mb-1 text-sm">Username</label>
                               <input
@@ -922,7 +877,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center mb-3">
-                                 <GoogleSignIn onSuccess={handleGoogleSuccess} />
+                                 <GoogleSignIn onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
                               </div>
 
                               <div className="text-center">
