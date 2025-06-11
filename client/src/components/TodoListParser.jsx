@@ -14,16 +14,7 @@ import { useNavigate } from 'react-router-dom';
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
-function TodoListParser({
-   searchTerm = '',
-   tasks: propTasks,
-   dependencies: propDependencies,
-   onDependencyChange,
-   onDeleteTask,
-   onUpdateTask,
-   onStatusChange,
-   isDeadlineExceeded,
-}) {
+function TodoListParser({ searchTerm = '' }) {
    const [todoList, setTodoList] = useState([]);
    const [filteredList, setFilteredList] = useState([]);
    const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +45,17 @@ function TodoListParser({
    const [containerHeight, setContainerHeight] = useState(0);
    const [isScrolling, setIsScrolling] = useState(false);
    const [scrollTimeout, setScrollTimeout] = useState(null);
-   const itemHeight = 85; // Reduced from 100 to 85 for more compact display
+   const itemHeight = 120; // Increased for better visibility and at least 4 tasks display
+   const minVisibleTasks = 4;
+   const getContainerHeight = () => {
+      if (typeof window !== 'undefined') {
+         const screenHeight = window.innerHeight;
+         if (screenHeight < 600) return '50vh'; // Mobile
+         if (screenHeight < 800) return '60vh'; // Small desktop
+         return Math.max(minVisibleTasks * itemHeight, screenHeight * 0.65) + 'px'; // At least 4 tasks or 65% of screen
+      }
+      return '65vh';
+   };
    const buffer = 5; // Number of items to render outside visible area
 
    // Calculate visible items for virtual scrolling
@@ -153,7 +154,7 @@ function TodoListParser({
          clearTimeout(scrollTimeout);
       }
 
-      // Hide scrolling indicator after 2 seconds of no scrolling (increased from 1.5s)
+      // Hide scrolling indicator after 2 seconds of no scrolling for better visibility
       const timeout = setTimeout(() => {
          setIsScrolling(false);
       }, 2000);
@@ -182,41 +183,85 @@ function TodoListParser({
    useEffect(() => {
       const style = document.createElement('style');
       style.textContent = `
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: ${isDark ? 'rgba(55, 65, 81, 0.2)' : 'rgba(229, 231, 235, 0.2)'};
-    border-radius: 3px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #9406E6, #7D05C3);
-    border-radius: 3px;
-    transition: background 0.2s ease;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #7D05C3, #6B04A8);
-  }
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #9406E6 ${isDark ? 'rgba(55, 65, 81, 0.2)' : 'rgba(229, 231, 235, 0.2)'};
-  }
-  .animate-fadeIn {
-    animation: fadeInUp 0.4s ease-out forwards;
-  }
-  @keyframes fadeInUp {
+         .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+         }
+         .custom-scrollbar::-webkit-scrollbar-track {
+            background: ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
+            border-radius: 4px;
+         }
+         .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #9406E6, #7D05C3);
+            border-radius: 4px;
+            transition: background 0.2s ease;
+         }
+         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #7D05C3, #6B04A8);
+         }
+         .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #9406E6 ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
+         }
+         .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+         }
+         @keyframes fadeIn {
+            from {
+               opacity: 0;
+               transform: translateY(-10px) translateX(10px);
+            }
+            to {
+               opacity: 1;
+               transform: translateY(0) translateX(0);
+            }
+         }
+      `;
+      style.textContent += `
+  @keyframes slideInRight {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateX(20px) translateY(-50%);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateX(0) translateY(-50%);
     }
   }
-  @media (max-width: 300px) {
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 4px;
+  
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+      transform: translateX(0) translateY(-50%);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(10px) translateY(-50%);
+    }
+  }
+  
+  /* Enhanced mobile responsiveness */
+  @media screen and (max-width: 300px) {
+    .task-container-mobile {
+      padding: 0.5rem;
+      margin: 0.25rem;
+    }
+    
+    .navigation-buttons {
+      bottom: 0.5rem;
+      left: 0.5rem;
+      gap: 0.25rem;
+    }
+    
+    .navigation-buttons button {
+      padding: 0.5rem;
+      width: 2rem;
+      height: 2rem;
+    }
+    
+    .date-indicator {
+      right: 0.5rem;
+      padding: 0.5rem;
+      font-size: 0.625rem;
     }
   }
 `;
@@ -238,20 +283,14 @@ function TodoListParser({
 
    // Fetch tasks when component mounts
    useEffect(() => {
-      if (propTasks) {
-         // Use tasks from props (from Dashboard)
-         setTodoList(propTasks);
-         if (propDependencies) {
-            setDependencies(propDependencies);
-         }
-      } else if (token) {
-         // Fallback to fetching if no props provided
-         fetchTasks();
-         fetchDependencies();
-      } else {
+      if (!token) {
          navigate('/login');
+         return;
       }
-   }, [token, searchTerm, propTasks, propDependencies]);
+
+      fetchTasks();
+      fetchDependencies();
+   }, [token, searchTerm]);
 
    // Listen for socket events
    useEffect(() => {
@@ -355,19 +394,16 @@ function TodoListParser({
 
    // Handle task deletion
    const handleDeleteTask = async (taskId) => {
-      if (onDeleteTask) {
-         // Use the prop function from Dashboard
-         onDeleteTask(taskId);
-      } else {
-         // Fallback to original logic
-         const taskToDelete = todoList.find((task) => task._id === taskId);
-         setDeleteModal({
-            isOpen: true,
-            taskId: taskId,
-            taskName: taskToDelete?.task || 'Unknown Task',
-            isDeleting: false,
-         });
-      }
+      // Find the task to get its name for the modal
+      const taskToDelete = todoList.find((task) => task._id === taskId);
+
+      // Show confirmation modal first
+      setDeleteModal({
+         isOpen: true,
+         taskId: taskId,
+         taskName: taskToDelete?.task || 'Unknown Task',
+         isDeleting: false,
+      });
    };
 
    // Handle simple delete confirmation
@@ -433,33 +469,29 @@ function TodoListParser({
 
    // Handle task update
    const handleUpdateTask = async (taskId, updatedTask) => {
-      if (onUpdateTask) {
-         // Use the prop function from Dashboard
-         onUpdateTask(taskId, updatedTask);
-      } else {
-         // Fallback to original logic
-         try {
-            const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}`, {
-               method: 'PUT',
-               headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-               },
-               body: JSON.stringify(updatedTask),
-            });
+      try {
+         const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: {
+               Authorization: `Bearer ${token}`,
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatedTask),
+         });
 
-            if (!response.ok) {
-               const errorData = await response.json();
-               throw new Error(errorData.message || 'Failed to update task');
-            }
-
-            const data = await response.json();
-            setTodoList((prevList) => prevList.map((task) => (task._id === taskId ? data : task)));
-         } catch (error) {
-            console.error('Error updating task:', error);
-            createErrorNotification(error.message || 'Failed to update task');
-            throw error;
+         if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update task');
          }
+
+         const data = await response.json();
+
+         // Update the task in the local state
+         setTodoList((prevList) => prevList.map((task) => (task._id === taskId ? data : task)));
+      } catch (error) {
+         console.error('Error updating task:', error);
+         createErrorNotification(error.message || 'Failed to update task');
+         throw error; // Re-throw the error to be handled by the caller
       }
    };
 
@@ -657,7 +689,7 @@ function TodoListParser({
    };
 
    // Check if a task's deadline has passed
-   const isDeadlineExceededLocal = (task) => {
+   const isDeadlineExceeded = (task) => {
       if (task.completed) return false;
 
       try {
@@ -781,208 +813,212 @@ function TodoListParser({
 
          {/* Enhanced Task Display Container */}
          <div className="relative">
-            {/* Main Task Container with Fixed Height and Better Sizing */}
+            {/* Main scrollable container with dynamic height */}
             <div
-               className={`relative rounded-2xl border shadow-lg overflow-hidden ${
-                  isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-               }`}
-               style={{ height: 'clamp(400px, 65vh, 700px)' }}
+               className="overflow-y-auto pr-2 custom-scrollbar scroll-smooth relative"
+               style={{ height: getContainerHeight() }}
+               id="task-list-container"
+               onScroll={handleScroll}
             >
-               {/* Scrollable Task List */}
-               <div
-                  className="h-full overflow-y-auto px-2 sm:px-4 py-3 custom-scrollbar scroll-smooth"
-                  id="task-list-container"
-                  onScroll={handleScroll}
-               >
-                  {filteredList.length === 0 ? (
-                     <div
-                        className={`text-center p-6 sm:p-8 rounded-xl ${
-                           isDark
-                              ? 'bg-gradient-to-r from-gray-700 to-gray-600'
-                              : 'bg-gradient-to-r from-gray-50 to-gray-100'
-                        }`}
-                     >
-                        <div className="flex flex-col items-center space-y-4">
-                           <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-full">
-                              <HiClipboardList className="h-8 w-8 text-white" />
-                           </div>
-                           <div>
-                              <h3
-                                 className={`text-lg font-semibold mb-2 font-proza ${
-                                    isDark ? 'text-gray-200' : 'text-gray-700'
-                                 }`}
-                              >
-                                 {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
-                              </h3>
-                              <p className={`max-w-md text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                 {searchTerm
-                                    ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
-                                    : 'Create your first task to get started with organizing your work!'}
-                              </p>
-                           </div>
-                        </div>
-                     </div>
-                  ) : (
-                     <div
-                        style={{
-                           height: filteredList.length * itemHeight,
-                           position: 'relative',
-                        }}
-                     >
-                        {/* Virtual scrolling spacer for items before visible area */}
-                        <div style={{ height: startIndex * itemHeight }} />
-
-                        {/* Visible items */}
-                        <div className="space-y-2">
-                           {visibleItems.map((task, index) => (
-                              <div
-                                 key={task._id}
-                                 style={{
-                                    minHeight: itemHeight - 8, // Account for spacing
-                                    position: 'relative',
-                                    animationDelay: `${index * 50}ms`,
-                                 }}
-                                 className="animate-fadeIn"
-                              >
-                                 <DisplayTodoList
-                                    list={task}
-                                    isexceeded={
-                                       isDeadlineExceeded ? isDeadlineExceeded(task) : isDeadlineExceededLocal(task)
-                                    }
-                                    onDelete={handleDeleteTask}
-                                    onUpdate={handleUpdateTask}
-                                    onStatusChange={handleTaskStatusChange}
-                                    dependencies={dependencies}
-                                    onDependencyChange={fetchDependencies}
-                                 />
-                              </div>
-                           ))}
-                        </div>
-
-                        {/* Virtual scrolling spacer for items after visible area */}
-                        <div style={{ height: (filteredList.length - endIndex - 1) * itemHeight }} />
-                     </div>
-                  )}
-               </div>
-
-               {/* Enhanced Date Range Indicator - Right Side */}
-               {isScrolling && getCurrentDateRange() && filteredList.length > 4 && (
+               {filteredList.length === 0 ? (
                   <div
-                     className={`absolute top-4 right-4 transform transition-all duration-500 ease-out z-30 ${
-                        isScrolling ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+                     className={`text-center p-8 sm:p-12 rounded-2xl border shadow-lg ${
+                        isDark
+                           ? 'bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600'
+                           : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'
                      }`}
                   >
-                     <div
-                        className={`backdrop-blur-md text-white text-sm font-medium px-4 py-3 rounded-xl shadow-xl border ${
-                           isDark
-                              ? 'bg-gradient-to-br from-purple-800/90 to-purple-900/90 border-purple-600/30'
-                              : 'bg-gradient-to-br from-purple-800/90 to-purple-900/90 border-white/30'
-                        }`}
-                     >
-                        <div className="flex items-center gap-3">
-                           <div className="p-1.5 bg-white/20 rounded-lg">
-                              <HiCalendar className="h-4 w-4" />
-                           </div>
-                           <div>
-                              <div className="text-xs opacity-80 mb-0.5">Date Range</div>
-                              <div className="font-semibold">{getCurrentDateRange()}</div>
-                           </div>
+                     <div className="flex flex-col items-center space-y-4">
+                        <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-full">
+                           <HiClipboardList className="h-8 w-8 text-white" />
+                        </div>
+                        <div>
+                           <h3
+                              className={`text-lg font-semibold mb-2 font-proza ${
+                                 isDark ? 'text-gray-200' : 'text-gray-700'
+                              }`}
+                           >
+                              {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
+                           </h3>
+                           <p className={`max-w-md ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {searchTerm
+                                 ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
+                                 : 'Create your first task to get started with organizing your work!'}
+                           </p>
                         </div>
                      </div>
                   </div>
-               )}
-
-               {/* Enhanced Task Position Indicator - Right Side */}
-               {isScrolling && filteredList.length > 8 && (
+               ) : (
                   <div
-                     className={`absolute top-20 right-4 transform transition-all duration-500 ease-out z-30 ${
-                        isScrolling ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
-                     }`}
+                     style={{
+                        height: filteredList.length * itemHeight,
+                        position: 'relative',
+                     }}
                   >
-                     <div
-                        className={`backdrop-blur-md text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg border ${
-                           isDark
-                              ? 'bg-gradient-to-br from-indigo-700/90 to-indigo-800/90 border-indigo-600/30'
-                              : 'bg-gradient-to-br from-indigo-700/90 to-indigo-800/90 border-white/30'
-                        }`}
-                     >
-                        <div className="flex items-center gap-2">
-                           <HiClipboardList className="h-3 w-3" />
-                           <span>
-                              {(() => {
-                                 const { visible, total, startIndex, endIndex } = getVisibleTaskCount();
-                                 return `${startIndex}-${endIndex} of ${total}`;
-                              })()}
-                           </span>
-                        </div>
+                     {/* Virtual scrolling spacer for items before visible area */}
+                     <div style={{ height: startIndex * itemHeight }} />
+
+                     {/* Visible items */}
+                     <div>
+                        {visibleItems.map((task, index) => (
+                           <div
+                              key={task._id}
+                              style={{
+                                 minHeight: itemHeight,
+                                 position: 'relative',
+                              }}
+                           >
+                              <DisplayTodoList
+                                 list={task}
+                                 isexceeded={isDeadlineExceeded(task)}
+                                 onDelete={handleDeleteTask}
+                                 onUpdate={handleUpdateTask}
+                                 onStatusChange={handleTaskStatusChange}
+                                 dependencies={dependencies}
+                                 onDependencyChange={fetchDependencies}
+                              />
+                           </div>
+                        ))}
                      </div>
+
+                     {/* Virtual scrolling spacer for items after visible area */}
+                     <div style={{ height: (filteredList.length - endIndex - 1) * itemHeight }} />
                   </div>
-               )}
-
-               {/* Enhanced Navigation Controls - Left Bottom Corner */}
-               {filteredList.length > 4 && (
-                  <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-30">
-                     {/* Scroll to Top Button */}
-                     <button
-                        onClick={scrollToTop}
-                        className={`group p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
-                           isDark
-                              ? 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
-                              : 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/30'
-                        }`}
-                        title="Scroll to top"
-                     >
-                        <HiChevronUp className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
-                        <div className="absolute inset-0 rounded-full bg-purple-400 animate-ping opacity-20 group-hover:opacity-30"></div>
-                     </button>
-
-                     {/* Scroll to Bottom Button */}
-                     <button
-                        onClick={scrollToBottom}
-                        className={`group p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
-                           isDark
-                              ? 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
-                              : 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/30'
-                        }`}
-                        title="Scroll to bottom"
-                     >
-                        <HiChevronDown className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
-                        <div className="absolute inset-0 rounded-full bg-purple-400 animate-ping opacity-20 group-hover:opacity-30"></div>
-                     </button>
-
-                     {/* Task Count Badge */}
-                     <div
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold text-center shadow-lg backdrop-blur-sm ${
-                           isDark
-                              ? 'bg-gray-800/80 text-gray-200 border border-gray-600/50'
-                              : 'bg-white/80 text-gray-700 border border-gray-300/50'
-                        }`}
-                     >
-                        {filteredList.length}
-                     </div>
-                  </div>
-               )}
-
-               {/* Subtle Top/Bottom Fade Overlays */}
-               {filteredList.length > 4 && (
-                  <>
-                     <div
-                        className={`absolute top-0 left-0 right-0 h-8 pointer-events-none z-20 ${
-                           isDark
-                              ? 'bg-gradient-to-b from-gray-800 via-gray-800/60 to-transparent'
-                              : 'bg-gradient-to-b from-white via-white/60 to-transparent'
-                        }`}
-                     />
-                     <div
-                        className={`absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-20 ${
-                           isDark
-                              ? 'bg-gradient-to-t from-gray-800 via-gray-800/60 to-transparent'
-                              : 'bg-gradient-to-t from-white via-white/60 to-transparent'
-                        }`}
-                     />
-                  </>
                )}
             </div>
+
+            {/* Enhanced Navigation Controls - Fixed at Left Bottom */}
+            {filteredList.length > minVisibleTasks && (
+               <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-30">
+                  {/* Scroll to top button */}
+                  <button
+                     onClick={scrollToTop}
+                     className={`group backdrop-blur-sm text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl ${
+                        isDark
+                           ? 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
+                           : 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-white/30'
+                     }`}
+                     title="Scroll to top"
+                  >
+                     <HiChevronUp className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+                  </button>
+
+                  {/* Scroll to bottom button */}
+                  <button
+                     onClick={scrollToBottom}
+                     className={`group backdrop-blur-sm text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl ${
+                        isDark
+                           ? 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
+                           : 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-white/30'
+                     }`}
+                     title="Scroll to bottom"
+                  >
+                     <HiChevronDown className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+                  </button>
+
+                  {/* Current position indicator */}
+                  <div
+                     className={`backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-lg shadow-lg transition-all duration-300 ${
+                        isDark
+                           ? 'bg-gradient-to-r from-purple-800/80 to-purple-900/80 border border-purple-600/30'
+                           : 'bg-gradient-to-r from-purple-800/80 to-purple-900/80 border border-white/30'
+                     }`}
+                  >
+                     {(() => {
+                        const { startIndex, endIndex } = getVisibleTaskCount();
+                        return `${startIndex}-${endIndex}`;
+                     })()}
+                  </div>
+               </div>
+            )}
+
+            {/* Enhanced Date Range Indicator - Right Side */}
+            {isScrolling && getCurrentDateRange() && filteredList.length > minVisibleTasks && (
+               <div
+                  className={`absolute top-1/2 right-4 transform -translate-y-1/2 backdrop-blur-md text-white px-4 py-3 rounded-xl shadow-xl z-30 transition-all duration-500 ease-out ${
+                     isDark
+                        ? 'bg-gradient-to-br from-purple-800/90 via-purple-900/90 to-indigo-800/90 border border-purple-600/40'
+                        : 'bg-gradient-to-br from-purple-800/90 via-purple-900/90 to-indigo-800/90 border border-white/40'
+                  }`}
+                  style={{
+                     animation: 'slideInRight 0.3s ease-out, fadeOut 0.5s ease-out 1.5s forwards',
+                  }}
+               >
+                  <div className="flex items-center gap-3">
+                     <div className="bg-white/20 p-2 rounded-lg">
+                        <HiCalendar className="h-4 w-4" />
+                     </div>
+                     <div>
+                        <div className="text-xs font-medium opacity-80 mb-1">Date Range</div>
+                        <div className="text-sm font-bold">{getCurrentDateRange()}</div>
+                     </div>
+                  </div>
+                  {/* Animated border */}
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400/20 via-indigo-400/20 to-purple-400/20 animate-pulse"></div>
+               </div>
+            )}
+
+            {/* Task Progress Indicator - Right Side */}
+            {isScrolling && filteredList.length > minVisibleTasks && (
+               <div
+                  className={`absolute top-20 right-4 backdrop-blur-md text-white px-3 py-2 rounded-lg shadow-lg z-30 transition-all duration-500 ease-out ${
+                     isDark
+                        ? 'bg-gradient-to-r from-indigo-700/80 to-purple-700/80 border border-indigo-500/30'
+                        : 'bg-gradient-to-r from-indigo-700/80 to-purple-700/80 border border-white/30'
+                  }`}
+                  style={{
+                     animation: 'slideInRight 0.4s ease-out 0.1s both, fadeOut 0.5s ease-out 1.5s forwards',
+                  }}
+               >
+                  <div className="flex items-center gap-2">
+                     <HiClipboardList className="h-3 w-3" />
+                     <span className="text-xs font-medium">
+                        {(() => {
+                           const { visible, total } = getVisibleTaskCount();
+                           return `${visible}/${total} tasks`;
+                        })()}
+                     </span>
+                  </div>
+               </div>
+            )}
+
+            {/* Scroll Progress Bar - Right Edge */}
+            {filteredList.length > minVisibleTasks && (
+               <div className="absolute right-0 top-0 bottom-0 w-1 bg-gray-200/30 rounded-full overflow-hidden">
+                  <div
+                     className="bg-gradient-to-b from-purple-500 to-indigo-600 w-full transition-all duration-300 ease-out rounded-full"
+                     style={{
+                        height: `${Math.min(100, (containerHeight / (filteredList.length * itemHeight)) * 100)}%`,
+                        transform: `translateY(${
+                           (scrollTop / (filteredList.length * itemHeight - containerHeight)) * 100
+                        }%)`,
+                     }}
+                  />
+               </div>
+            )}
+
+            {/* Top and Bottom Fade Overlays */}
+            {filteredList.length > 0 && (
+               <>
+                  {/* Top fade */}
+                  <div
+                     className={`absolute top-0 left-0 right-0 h-8 pointer-events-none z-20 rounded-t-xl ${
+                        isDark
+                           ? 'bg-gradient-to-b from-gray-800/60 via-gray-800/30 to-transparent'
+                           : 'bg-gradient-to-b from-white/60 via-white/30 to-transparent'
+                     }`}
+                  />
+
+                  {/* Bottom fade */}
+                  <div
+                     className={`absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-20 rounded-b-xl ${
+                        isDark
+                           ? 'bg-gradient-to-t from-gray-800/60 via-gray-800/30 to-transparent'
+                           : 'bg-gradient-to-t from-white/60 via-white/30 to-transparent'
+                     }`}
+                  />
+               </>
+            )}
          </div>
 
          {/* Simple Delete Task Modal */}
