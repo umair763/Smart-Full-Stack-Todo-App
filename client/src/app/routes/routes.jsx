@@ -1,145 +1,126 @@
 'use client';
+
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState, useRef } from 'react';
-import AuthPage from '../pages/auth/AuthPage';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import Layout from '../layout/Layout';
 import LandingPageLayout from '../layout/LandingPageLayout';
-import LandingPage from '../pages/LandingPage';
 import Dashboard from '../pages/Dashboard';
 import Settings from '../pages/Settings';
 import Insights from '../pages/Insights';
-import { useAuth } from '../context/AuthContext';
+import LandingPage from '../pages/LandingPage';
+import AuthPage from '../pages/auth/AuthPage';
 
 const AppRoutes = () => {
    const { isLoggedIn, loading } = useAuth();
    const location = useLocation();
    const navigate = useNavigate();
-   const [isNavigating, setIsNavigating] = useState(false);
-   const lastNavigationTime = useRef(0);
-   const navigationCount = useRef(0);
-   const lastAuthState = useRef(null);
-   const lastPath = useRef('');
-   const navigationLock = useRef(false);
+   const [navigationLock, setNavigationLock] = useState(false);
+   const [lastNavigation, setLastNavigation] = useState('');
+   const [navigationCount, setNavigationCount] = useState(0);
 
+   // Handle navigation and prevent loops
    useEffect(() => {
-      // Prevent navigation during initial load
-      if (loading) return;
+      const currentPath = location.pathname;
+      setNavigationCount((prev) => prev + 1);
+      console.log(`Navigation ${navigationCount}: ${currentPath}`);
 
-      // Prevent navigation lock
-      if (navigationLock.current) {
-         console.log('Navigation locked, skipping redirect');
-         return;
-      }
-
-      // Prevent rapid navigation (debounce)
-      const now = Date.now();
-      if (now - lastNavigationTime.current < 500) {
+      // Prevent rapid navigation (potential loops)
+      if (lastNavigation === currentPath && Date.now() - lastNavigation.timestamp < 1000) {
          console.log('Navigation debounced - too rapid');
          return;
       }
 
-      // Track navigation count to detect loops
-      if (lastPath.current !== location.pathname) {
-         navigationCount.current += 1;
-         lastPath.current = location.pathname;
-         lastNavigationTime.current = now;
+      // Update last navigation
+      setLastNavigation({
+         path: currentPath,
+         timestamp: Date.now(),
+      });
 
-         console.log(`Navigation ${navigationCount.current}: ${location.pathname}`);
-
-         // Reset navigation count after 5 seconds
-         setTimeout(() => {
-            navigationCount.current = 0;
-         }, 5000);
-
-         // If too many navigations, stop redirecting
-         if (navigationCount.current > 5) {
-            console.error('Too many navigations detected, locking redirects for 3 seconds');
-            navigationLock.current = true;
-            setTimeout(() => {
-               navigationLock.current = false;
-               navigationCount.current = 0;
-            }, 3000);
-            return;
-         }
-      }
-
-      // Only handle redirects if auth state actually changed and we're not already navigating
-      if (isNavigating || lastAuthState.current === isLoggedIn) {
-         return;
-      }
-
-      lastAuthState.current = isLoggedIn;
-      console.log(`Auth state changed to: ${isLoggedIn}`);
-
-      const currentPath = location.pathname;
-
-      // Handle auth-based redirects with proper checks
-      if (isLoggedIn) {
-         // User is logged in
-         if (currentPath === '/auth/login' || currentPath === '/auth/register' || currentPath === '/') {
+      // Handle auth-based redirects
+      if (!loading) {
+         if (isLoggedIn) {
             console.log('User logged in, redirecting to dashboard');
-            setIsNavigating(true);
-            setTimeout(() => {
-               navigate('/dashboard', { replace: true });
-               setIsNavigating(false);
-            }, 100);
-         }
-      } else {
-         // User is not logged in
-         if (currentPath === '/dashboard' || currentPath === '/settings' || currentPath === '/insights') {
+            if (currentPath === '/' || currentPath.startsWith('/auth')) {
+               if (!navigationLock) {
+                  setNavigationLock(true);
+                  navigate('/dashboard');
+                  setTimeout(() => setNavigationLock(false), 1000);
+               }
+            }
+         } else {
             console.log('User not logged in, redirecting to login');
-            setIsNavigating(true);
-            setTimeout(() => {
-               navigate('/auth/login', { replace: true });
-               setIsNavigating(false);
-            }, 100);
+            if (currentPath !== '/' && !currentPath.startsWith('/auth') && !navigationLock) {
+               setNavigationLock(true);
+               navigate('/auth/login');
+               setTimeout(() => setNavigationLock(false), 1000);
+            }
          }
       }
-   }, [isLoggedIn, loading, location.pathname, navigate, isNavigating]);
+   }, [location.pathname, isLoggedIn, loading, navigate, navigationLock]);
 
-   // Show loading spinner while checking authentication
+   // Show loading state while auth is being determined
    if (loading) {
       return (
-         <div className="min-h-screen bg-gradient-to-br from-[#9406E6] to-[#00FFFF] dark:from-gray-900 dark:to-gray-800 flex justify-center items-center">
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl">
-               <div className="flex justify-center items-center h-20">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6] dark:border-purple-400"></div>
-               </div>
-               <p className="text-center mt-4 text-gray-600 dark:text-gray-300">Loading...</p>
-            </div>
+         <div className="flex items-center justify-center h-screen">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6]"></div>
          </div>
       );
    }
 
    return (
       <Routes>
-         {/* Landing Page - accessible to both authenticated and unauthenticated users */}
-         <Route element={<LandingPageLayout />}>
-            <Route path="/home" element={<LandingPage />} />
-            <Route path="/" element={<LandingPage />} />
-         </Route>
+         {/* Public routes */}
+         <Route
+            path="/"
+            element={
+               <LandingPageLayout>
+                  <LandingPage />
+               </LandingPageLayout>
+            }
+         />
+         <Route path="/auth/:authType" element={isLoggedIn ? <Navigate to="/dashboard" /> : <AuthPage />} />
 
-         {!isLoggedIn ? (
-            <>
-               {/* Authentication routes */}
-               <Route path="/auth/login" element={<AuthPage />} />
-               <Route path="/auth/register" element={<AuthPage />} />
-               {/* Redirect all other routes to login when not logged in */}
-               <Route path="*" element={<Navigate to="/auth/login" replace />} />
-            </>
-         ) : (
-            <>
-               {/* Protected routes */}
-               <Route element={<Layout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/insights" element={<Insights />} />
-               </Route>
-               <Route path="/app" element={<Navigate to="/dashboard" replace />} />
-               {/* Redirect all other routes to dashboard when logged in */}
-               <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </>
-         )}
+         {/* Protected routes */}
+         <Route
+            path="/dashboard"
+            element={
+               isLoggedIn ? (
+                  <Layout>
+                     <Dashboard />
+                  </Layout>
+               ) : (
+                  <Navigate to="/auth/login" />
+               )
+            }
+         />
+         <Route
+            path="/settings"
+            element={
+               isLoggedIn ? (
+                  <Layout>
+                     <Settings />
+                  </Layout>
+               ) : (
+                  <Navigate to="/auth/login" />
+               )
+            }
+         />
+         <Route
+            path="/insights"
+            element={
+               isLoggedIn ? (
+                  <Layout>
+                     <Insights />
+                  </Layout>
+               ) : (
+                  <Navigate to="/auth/login" />
+               )
+            }
+         />
+
+         {/* Fallback route */}
+         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
    );
 };

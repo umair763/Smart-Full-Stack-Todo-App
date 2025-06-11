@@ -5,7 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { useSocket } from '../context/SocketContext';
+import DisplayTodoList from '../../components/DisplayTodoList';
+import AddTask from '../../components/AddTask';
+import DeleteTaskModal from '../../components/DeleteTaskModal';
 import { toast } from 'react-hot-toast';
+import ModernSortTabs from '../../components/ModernSortTabs';
+import DependencyView from '../../components/DependencyView';
 import notificationService from '../../services/notificationService';
 
 // Hardcoded backend URL
@@ -33,26 +38,31 @@ function Dashboard() {
    // Initialize notification service
    useEffect(() => {
       if (token) {
-         notificationService.initialize(token, socket);
+         try {
+            // Initialize notification service with token and socket
+            notificationService.initialize(token, socket);
 
-         // Listen for notifications
-         const unsubscribe = notificationService.onNotification((notification) => {
-            if (notification.type === 'notificationCreated') {
-               const notif = notification.data;
-               if (notif.type === 'create') {
-                  createSuccessNotification(notif.message, true);
-               } else if (notif.type === 'error') {
-                  createErrorNotification(notif.message, true);
-               } else {
-                  createSuccessNotification(notif.message, true);
+            // Listen for notifications
+            const unsubscribe = notificationService.onNotification((notification) => {
+               if (notification.type === 'notificationCreated') {
+                  const notif = notification.data;
+                  if (notif.type === 'create') {
+                     createSuccessNotification(notif.message, true);
+                  } else if (notif.type === 'error') {
+                     createErrorNotification(notif.message, true);
+                  } else {
+                     createSuccessNotification(notif.message, true);
+                  }
                }
-            }
-         });
+            });
 
-         return () => {
-            unsubscribe();
-            notificationService.stop();
-         };
+            return () => {
+               unsubscribe();
+               notificationService.stop();
+            };
+         } catch (error) {
+            console.error('Failed to initialize notification service:', error);
+         }
       }
    }, [token, socket, createSuccessNotification, createErrorNotification]);
 
@@ -178,7 +188,7 @@ function Dashboard() {
       }, 30000);
 
       return () => clearInterval(interval);
-   }, [isLoggedIn, fetchTasks, fetchDependencies]);
+   }, [isLoggedIn, token, fetchTasks, fetchDependencies]);
 
    // Fixed handleAddTask function
    const handleAddTask = useCallback(

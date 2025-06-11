@@ -1,97 +1,133 @@
 'use client';
 
-import { useState } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
-// Use the consistent API base URL
-const API_BASE_URL = 'https://smart-todo-task-management-backend.vercel.app';
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
-function GoogleSignIn({ onSuccess, onError }) {
+const GoogleSignIn = () => {
    const { login } = useAuth();
    const navigate = useNavigate();
-   const [error, setError] = useState(null);
    const [isLoading, setIsLoading] = useState(false);
+   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-   const handleLoginSuccess = async (response) => {
-      console.log('Google login success response:', response);
-      setError(null);
+   useEffect(() => {
+      // Load Google Sign-In script
+      const loadGoogleScript = () => {
+         // Check if script is already loaded
+         if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+            setIsScriptLoaded(true);
+            return;
+         }
+
+         const script = document.createElement('script');
+         script.src = 'https://accounts.google.com/gsi/client';
+         script.async = true;
+         script.defer = true;
+         script.onload = () => {
+            setIsScriptLoaded(true);
+         };
+         script.onerror = () => {
+            console.error('Failed to load Google Sign-In script');
+            toast.error('Failed to load Google Sign-In');
+         };
+         document.body.appendChild(script);
+      };
+
+      loadGoogleScript();
+
+      return () => {
+         // Cleanup if needed
+      };
+   }, []);
+
+   useEffect(() => {
+      if (!isScriptLoaded || !window.google) return;
+
+      try {
+         window.google.accounts.id.initialize({
+            client_id: '726557724768-qplqm3h12oea644a7pqmnvf26umqssfr.apps.googleusercontent.com',
+            callback: handleGoogleResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+         });
+
+         window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
+            theme: 'outline',
+            size: 'large',
+            width: '100%',
+            text: 'continue_with',
+            shape: 'rectangular',
+         });
+      } catch (error) {
+         console.error('Error initializing Google Sign-In:', error);
+      }
+   }, [isScriptLoaded]);
+
+   const handleGoogleResponse = async (response) => {
+      console.log('Google login success response: ', response);
+
+      if (!response || !response.credential) {
+         console.error('Invalid Google response');
+         toast.error('Google sign-in failed');
+         return;
+      }
+
       setIsLoading(true);
 
       try {
-         const { credential } = response;
-
-         if (!credential) {
-            throw new Error('No credential received from Google');
-         }
-
          console.log('Sending credential to backend...');
 
-         // Send the credential token to backend
-         const backendResponse = await fetch(`${API_BASE_URL}/api/users/google-signin`, {
+         const backendResponse = await fetch(`${BACKEND_URL}/api/auth/google`, {
             method: 'POST',
             headers: {
                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ token: credential }),
+            body: JSON.stringify({ token: response.credential }),
          });
 
          const data = await backendResponse.json();
-         console.log('Backend response:', data);
+         console.log('Backend response: ', data);
 
          if (!backendResponse.ok) {
-            throw new Error(data.message || `Server returned ${backendResponse.status}`);
+            throw new Error(data.message || 'Google sign-in failed');
          }
 
-         // On success, call the parent's onSuccess function
-         if (data && data.token) {
-            console.log('Google sign-in successful, setting token directly');
-            login(data.token);
+         console.log('Google sign-in successful, calling onSuccess');
+
+         // Handle successful login
+         if (data.token) {
+            console.log('Google sign-in response received: ', data);
+            login(data.token, data.user);
+            toast.success('Signed in with Google successfully!');
             navigate('/dashboard');
          } else {
-            throw new Error('No token received from server');
+            console.error('Google sign-in backend response: ', data);
+            throw new Error('Invalid response from server');
          }
       } catch (error) {
-         console.error('Error during Google login:', error);
-         const errorMessage = error.message || 'Failed to login with Google. Please try again.';
-         setError(errorMessage);
-         if (onError) {
-            onError(error);
-         }
+         console.error('Google sign-in failed:', error.message);
+         toast.error(`Google sign-in failed: ${error.message}`);
       } finally {
          setIsLoading(false);
       }
    };
 
-   const handleLoginFailure = (error) => {
-      console.error('Google Sign-In failed:', error);
-      const errorMessage = 'Google Sign-In failed. Please try again.';
-      setError(errorMessage);
-      if (onError) {
-         onError(new Error(errorMessage));
-      }
-   };
-
    return (
-      <div className="pt-1">
-         {error && <div className="text-red-500 text-sm mb-2 text-center">{error}</div>}
-         {isLoading ? (
-            <div className="flex items-center justify-center py-2">
-               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
-               <span className="ml-2 text-sm text-gray-600">Signing in...</span>
-            </div>
-         ) : (
-            <GoogleLogin
-               onSuccess={handleLoginSuccess}
-               onError={handleLoginFailure}
-               useOneTap={false}
-               auto_select={false}
-               cancel_on_tap_outside={true}
-            />
-         )}
+      <div className="w-full">
+         <div className="relative">
+            {isLoading && (
+               <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#9406E6]"></div>
+               </div>
+            )}
+            <div id="google-signin-button" className="w-full"></div>
+         </div>
       </div>
    );
-}
+};
 
 export default GoogleSignIn;

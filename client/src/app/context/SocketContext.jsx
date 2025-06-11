@@ -1,48 +1,89 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth } from './AuthContext';
+import { io } from 'socket.io-client';
+
+// Hardcoded backend URL
+const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 const SocketContext = createContext();
 
-export const useSocket = () => {
-   const context = useContext(SocketContext);
-   if (!context) {
-      throw new Error('useSocket must be used within a SocketProvider');
-   }
-   return context;
-};
+export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
    const [socket, setSocket] = useState(null);
    const [isConnected, setIsConnected] = useState(false);
-   const { isLoggedIn, user } = useAuth();
-
-   // Since the backend is serverless and doesn't support Socket.io,
-   // we'll provide a mock socket context that always returns null
-   // This prevents errors while maintaining the same API
+   const [isServerless, setIsServerless] = useState(true);
 
    useEffect(() => {
-      console.log('Socket.io disabled - running in serverless mode');
-      // Don't attempt to connect to socket in serverless environment
-      setSocket(null);
-      setIsConnected(false);
-   }, [isLoggedIn, user]);
+      // Check if we're running in a serverless environment
+      // Vercel functions have limited execution time, so we need to detect this
+      const checkServerlessMode = async () => {
+         try {
+            const response = await fetch(`${BACKEND_URL}/api/socket-status`, {
+               method: 'GET',
+               headers: { 'Content-Type': 'application/json' },
+            });
 
-   const value = {
-      socket: null, // Always null in serverless mode
-      isConnected: false, // Always false in serverless mode
-      connectionAttempts: 0,
-      maxReconnectAttempts: 0,
-      reconnect: () => {
-         console.log('Socket reconnection disabled in serverless mode');
-      },
-      disconnect: () => {
-         console.log('Socket disconnection disabled in serverless mode');
-      },
-   };
+            if (response.ok) {
+               const data = await response.json();
+               setIsServerless(!data.socketEnabled);
+               return !data.socketEnabled;
+            }
+            return true; // Default to serverless mode if check fails
+         } catch (error) {
+            console.log('Socket status check failed, assuming serverless mode');
+            return true;
+         }
+      };
 
-   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
+      const initializeSocket = async () => {
+         const serverlessMode = await checkServerlessMode();
+
+         if (serverlessMode) {
+            console.log('Socket.io disabled - running in serverless mode');
+            setIsServerless(true);
+            setIsConnected(false);
+            return;
+         }
+
+         try {
+            const socketInstance = io(BACKEND_URL, {
+               withCredentials: true,
+               transports: ['websocket', 'polling'],
+               reconnectionAttempts: 5,
+               reconnectionDelay: 1000,
+               timeout: 10000,
+            });
+
+            socketInstance.on('connect', () => {
+               setIsConnected(true);
+               console.log('Socket connected');
+            });
+
+            socketInstance.on('disconnect', () => {
+               setIsConnected(false);
+               console.log('Socket disconnected');
+            });
+
+            socketInstance.on('connect_error', (error) => {
+               console.error('Socket connection error:', error);
+               setIsConnected(false);
+            });
+
+            setSocket(socketInstance);
+
+            return () => {
+               socketInstance.disconnect();
+            };
+         } catch (error) {
+            console.error('Socket initialization error:', error);
+            setIsServerless(true);
+         }
+      };
+
+      initializeSocket();
+   }, []);
+
+   return <SocketContext.Provider value={{ socket, isConnected, isServerless }}>{children}</SocketContext.Provider>;
 };
-
-export default SocketContext;
