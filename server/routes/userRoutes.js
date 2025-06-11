@@ -15,7 +15,7 @@ router.use(auth);
 router.get("/profile", userController.getProfile);
 router.get("/export-data", userController.exportUserData);
 router.put("/username", userController.updateUsername);
-router.put("/profile-image", userController.profileImageUploadMiddleware, userController.updateProfileImage);
+router.put("/profile-image", userController.updateProfileImage);
 router.delete("/account", userController.deleteAccount);
 
 // Task routes

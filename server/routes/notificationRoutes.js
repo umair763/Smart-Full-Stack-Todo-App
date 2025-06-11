@@ -1,36 +1,28 @@
 import express from "express";
-import {
-    getNotifications,
-    createNotification,
-    deleteNotification,
-    clearNotifications,
-    markAllAsRead,
-    markAsRead,
-    getNotificationsSince,
-} from "../controllers/notificationController.js";
-import { authenticateToken } from "../middleware/auth.js";
+import * as notificationController from "../controllers/notificationController.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Get all notifications for a user
-router.get("/", authenticateToken, getNotifications);
+// All notification routes are protected
+router.use(auth);
+
+// Get all notifications for current user
+router.get("/", notificationController.getNotifications);
 
 // Get notifications since a specific timestamp (for polling)
-router.get("/since/:timestamp", authenticateToken, getNotificationsSince);
-
-// Create a new notification
-router.post("/", authenticateToken, createNotification);
-
-// Mark all notifications as read
-router.put("/read-all", authenticateToken, markAllAsRead);
+router.get("/since/:timestamp", notificationController.getNotificationsSince);
 
 // Mark a specific notification as read
-router.put("/:id/read", authenticateToken, markAsRead);
+router.patch("/:id/read", notificationController.markAsRead);
 
-// Delete a specific notification
-router.delete("/:id", authenticateToken, deleteNotification);
+// Mark all notifications as read
+router.patch("/mark-all-read", notificationController.markAllAsRead);
 
-// Clear all notifications
-router.delete("/", authenticateToken, clearNotifications);
+// Delete a notification
+router.delete("/:id", notificationController.deleteNotification);
+
+// Clear all notifications for current user
+router.delete("/", notificationController.clearNotifications);
 
 export default router;

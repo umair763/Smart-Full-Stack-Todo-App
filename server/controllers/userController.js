@@ -9,37 +9,13 @@ import Reminder from "../models/Reminder.js";
 import Notification from "../models/Notification.js";
 import Streak from "../models/Streak.js";
 import { OAuth2Client } from "google-auth-library";
-import multer from "multer";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Configure multer for profile image upload
-const storage = multer.memoryStorage();
-const upload = multer({
-    storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-    },
-    fileFilter: (req, file, cb) => {
-        // Only allow image files
-        if (file.mimetype.startsWith("image/")) {
-            cb(null, true);
-        } else {
-            cb(new Error("Only image files are allowed"), false);
-        }
-    },
-});
-
-// Upload middleware for profile images
-export const profileImageUploadMiddleware = upload.single("picture");
-
-// Register a new user with improved error handling
+// Register a new user
 export const register = async (req, res) => {
     try {
-        console.log("Registration request received:", {
-            body: req.body,
-            file: req.file ? { originalname: req.file.originalname, size: req.file.size } : null,
-        });
+        console.log("Registration request received:", req.body);
 
         const { username, email, password } = req.body;
 
@@ -47,11 +23,6 @@ export const register = async (req, res) => {
         if (!username || !email || !password) {
             return res.status(400).json({
                 message: "Username, email, and password are required",
-                missing: {
-                    username: !username,
-                    email: !email,
-                    password: !password,
-                },
             });
         }
 
@@ -67,52 +38,25 @@ export const register = async (req, res) => {
         }
 
         // Check if user already exists
-        const existingUser = await User.findOne({
-            $or: [{ email: email.toLowerCase() }, { username }],
-        });
-
+        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
-            const field = existingUser.email === email.toLowerCase() ? "email" : "username";
-            return res.status(400).json({
-                message: `User with this ${field} already exists`,
-                field,
-            });
-        }
-
-        // Create user data object
-        const userData = {
-            username: username.trim(),
-            email: email.toLowerCase().trim(),
-            password: password,
-        };
-
-        // Handle profile image if provided
-        if (req.file) {
-            try {
-                const { buffer, mimetype } = req.file;
-                // Convert buffer to base64 data URL
-                const base64Image = `data:${mimetype};base64,${buffer.toString("base64")}`;
-                userData.profileImage = base64Image;
-                console.log("Profile image processed successfully");
-            } catch (imageError) {
-                console.error("Error processing profile image:", imageError);
-                // Continue without image rather than failing registration
-                console.log("Continuing registration without profile image");
-            }
+            return res.status(400).json({ message: "User already exists" });
         }
 
         // Create new user
-        const user = new User(userData);
-        await user.save();
+        const user = new User({
+            username,
+            email,
+            password,
+        });
 
-        console.log("User created successfully:", { id: user._id, username: user.username, email: user.email });
+        await user.save();
 
         // Generate token
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
             expiresIn: "7d",
         });
 
-        // Return success response
         res.status(201).json({
             message: "User registered successfully",
             token,
@@ -124,11 +68,7 @@ export const register = async (req, res) => {
             },
         });
     } catch (error) {
-        console.error("Registration error details:", {
-            message: error.message,
-            stack: error.stack,
-            name: error.name,
-        });
+        console.error("Registration error:", error);
 
         // Handle specific MongoDB errors
         if (error.name === "ValidationError") {
@@ -147,7 +87,6 @@ export const register = async (req, res) => {
             });
         }
 
-        // Generic error response
         res.status(500).json({
             message: "Error registering user",
             error: process.env.NODE_ENV === "development" ? error.message : undefined,
@@ -160,12 +99,8 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required" });
-        }
-
         // Find user
-        const user = await User.findOne({ email: email.toLowerCase() });
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
@@ -307,19 +242,16 @@ export const updateUsername = async (req, res) => {
     }
 };
 
-// Update profile image
+// Update profile image - simplified version without multer for now
 export const updateProfileImage = async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: "No image file uploaded" });
+        const { profileImage } = req.body;
+
+        if (!profileImage) {
+            return res.status(400).json({ message: "Profile image data is required" });
         }
 
-        const { buffer, mimetype } = req.file;
-
-        // Convert buffer to base64 data URL
-        const base64Image = `data:${mimetype};base64,${buffer.toString("base64")}`;
-
-        const user = await User.findByIdAndUpdate(req.user._id, { profileImage: base64Image }, { new: true }).select("-password");
+        const user = await User.findByIdAndUpdate(req.user._id, { profileImage }, { new: true }).select("-password");
 
         // Return user with picture field for compatibility
         const userResponse = {

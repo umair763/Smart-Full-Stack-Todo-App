@@ -1,162 +1,110 @@
-// Notification service that works in both serverless and serverfull environments
 class NotificationService {
    constructor() {
-      this.isServerless = true; // Default to serverless mode
+      this.isServerless = true; // Assume serverless by default
       this.pollingInterval = null;
-      this.lastNotificationCheck = new Date();
+      this.lastFetchTime = Date.now();
       this.callbacks = new Set();
+      this.isPolling = false;
+   }
 
-      // Check if we're in serverless mode
+   // Initialize the service
+   init() {
+      // Check if we're in serverless environment
       this.detectEnvironment();
-   }
-
-   detectEnvironment() {
-      // For now, assume serverless (Vercel)
-      // In the future, this could be determined by environment variables or API response
-      this.isServerless = true;
-      console.log('Notification service running in:', this.isServerless ? 'serverless' : 'serverfull', 'mode');
-   }
-
-   // Initialize the notification service
-   initialize(token, socket = null) {
-      this.token = token;
-      this.socket = socket;
 
       if (this.isServerless) {
          this.startPolling();
-      } else {
-         this.setupSocketListeners();
       }
    }
 
-   // Add callback for notification updates
-   onNotification(callback) {
-      this.callbacks.add(callback);
-      return () => this.callbacks.delete(callback);
-   }
-
-   // Emit notification to all callbacks
-   emitNotification(notification) {
-      this.callbacks.forEach((callback) => {
-         try {
-            callback(notification);
-         } catch (error) {
-            console.error('Error in notification callback:', error);
-         }
-      });
+   // Detect if we're in serverless environment
+   detectEnvironment() {
+      // For now, assume serverless. In the future, we can detect Socket.io availability
+      this.isServerless = true;
    }
 
    // Start polling for notifications (serverless mode)
    startPolling() {
-      if (this.pollingInterval) {
-         clearInterval(this.pollingInterval);
-      }
+      if (this.isPolling) return;
 
-      // Poll every 10 seconds
+      this.isPolling = true;
       this.pollingInterval = setInterval(() => {
-         this.pollNotifications();
-      }, 10000);
-
-      // Initial poll
-      this.pollNotifications();
+         this.fetchNewNotifications();
+      }, 10000); // Poll every 10 seconds
    }
 
-   // Poll for new notifications
-   async pollNotifications() {
+   // Stop polling
+   stopPolling() {
+      if (this.pollingInterval) {
+         clearInterval(this.pollingInterval);
+         this.pollingInterval = null;
+      }
+      this.isPolling = false;
+   }
+
+   // Fetch new notifications since last check
+   async fetchNewNotifications() {
       try {
+         const token = localStorage.getItem('token');
+         if (!token) return;
+
          const response = await fetch(
-            `https://smart-todo-task-management-backend.vercel.app/api/notifications?since=${this.lastNotificationCheck.toISOString()}`,
+            `${
+               import.meta.env.VITE_BACKEND_URL || 'https://smart-todo-task-management-backend.vercel.app'
+            }/api/notifications/since/${this.lastFetchTime}`,
             {
                headers: {
-                  Authorization: `Bearer ${this.token}`,
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
                },
             }
          );
 
          if (response.ok) {
-            const notifications = await response.json();
+            const newNotifications = await response.json();
 
-            // Update last check time
-            this.lastNotificationCheck = new Date();
+            if (newNotifications.length > 0) {
+               // Update last fetch time
+               this.lastFetchTime = Date.now();
 
-            // Emit new notifications
-            notifications.forEach((notification) => {
-               this.emitNotification({
-                  type: 'notificationCreated',
-                  data: notification,
-               });
-            });
-         }
-      } catch (error) {
-         console.error('Error polling notifications:', error);
-      }
-   }
-
-   // Setup socket listeners (serverfull mode)
-   setupSocketListeners() {
-      if (!this.socket) return;
-
-      this.socket.on('notificationCreated', (notification) => {
-         this.emitNotification({
-            type: 'notificationCreated',
-            data: notification,
-         });
-      });
-
-      this.socket.on('notificationUpdate', (update) => {
-         this.emitNotification({
-            type: 'notificationUpdate',
-            data: update,
-         });
-      });
-   }
-
-   // Create a notification (works in both modes)
-   async createNotification(notification) {
-      try {
-         const response = await fetch('https://smart-todo-task-management-backend.vercel.app/api/notifications', {
-            method: 'POST',
-            headers: {
-               'Content-Type': 'application/json',
-               Authorization: `Bearer ${this.token}`,
-            },
-            body: JSON.stringify(notification),
-         });
-
-         if (response.ok) {
-            const savedNotification = await response.json();
-
-            // In serverless mode, emit immediately
-            if (this.isServerless) {
-               this.emitNotification({
-                  type: 'notificationCreated',
-                  data: savedNotification,
+               // Notify all callbacks
+               this.callbacks.forEach((callback) => {
+                  try {
+                     callback(newNotifications);
+                  } catch (error) {
+                     console.error('Error in notification callback:', error);
+                  }
                });
             }
-
-            return savedNotification;
          }
       } catch (error) {
-         console.error('Error creating notification:', error);
+         console.error('Error fetching new notifications:', error);
       }
    }
 
-   // Stop the service
-   stop() {
-      if (this.pollingInterval) {
-         clearInterval(this.pollingInterval);
-         this.pollingInterval = null;
-      }
+   // Subscribe to notification updates
+   subscribe(callback) {
+      this.callbacks.add(callback);
 
-      if (this.socket) {
-         this.socket.off('notificationCreated');
-         this.socket.off('notificationUpdate');
-      }
+      // Return unsubscribe function
+      return () => {
+         this.callbacks.delete(callback);
+      };
+   }
 
+   // Manually trigger notification fetch
+   async refresh() {
+      await this.fetchNewNotifications();
+   }
+
+   // Cleanup
+   destroy() {
+      this.stopPolling();
       this.callbacks.clear();
    }
 }
 
-// Export singleton instance
-export const notificationService = new NotificationService();
+// Create singleton instance
+const notificationService = new NotificationService();
+
 export default notificationService;
