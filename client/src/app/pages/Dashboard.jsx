@@ -8,7 +8,6 @@ import { useSocket } from '../context/SocketContext';
 import AddTask from '../../components/AddTask';
 import DeleteTaskModal from '../../components/DeleteTaskModal';
 import { toast } from 'react-hot-toast';
-import ModernSortTabs from '../../components/ModernSortTabs';
 import DependencyView from '../../components/DependencyView';
 import TodoListParser from '../../components/TodoListParser';
 
@@ -31,9 +30,9 @@ function Dashboard() {
    const { isLoggedIn, token, logout } = useAuth();
    const { createSuccessNotification, createErrorNotification } = useNotification();
    const { socket, isConnected } = useSocket();
-   const navigate = useNavigate();
    const [apiRetries, setApiRetries] = useState(0);
    const [loadingText, setLoadingText] = useState('Loading tasks...');
+   const navigate = useNavigate();
 
    // Function to fetch tasks from the server with improved error handling
    const fetchTasks = useCallback(
@@ -417,88 +416,45 @@ function Dashboard() {
    }
 
    return (
-      <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-6 sm:py-8 max-w-7xl">
-         {/* Header Section */}
-         {/* <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-800 dark:text-white">Task Dashboard</h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+         <div className="mb-6">
+            <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-white">Task Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-300">
                Manage your tasks and track your progress
                {!isConnected && (
-                  <span className="ml-2 text-blue-600 dark:text-blue-400 text-xs sm:text-sm">
+                  <span className="ml-2 text-blue-600 dark:text-blue-400 text-sm">
                      (Real-time updates disabled in serverless mode)
                   </span>
                )}
             </p>
-         </div> */}
+         </div>
 
-         {/* Main Content Grid */}
-         <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
-            {/* Left Column - Add Task */}
-            <div className="xl:col-span-4 2xl:col-span-3">
-               <div className="sticky top-4">
-                  <AddTask
-                     onAddTask={handleAddTask}
-                     tasks={list}
-                     onDeleteTask={handleDeleteTask}
-                     onSearchChange={handleSearchChange}
-                  />
-               </div>
-            </div>
+         {/* Task Management Component - Search, Add, Delete */}
+         <div className="mb-6">
+            <AddTask
+               onAddTask={handleAddTask}
+               tasks={list}
+               onDeleteTask={handleDeleteTask}
+               onSearchChange={handleSearchChange}
+            />
+         </div>
 
-            {/* Right Column - Task List */}
-            <div className="xl:col-span-8 2xl:col-span-9">
-               {/* Sort and Filter Options */}
-               <div className="mb-4 sm:mb-6">
-                  <ModernSortTabs onSortChange={handleSortChange} />
-               </div>
-
-               {/* Task List or Dependency View */}
-               {viewOption === 'list' ? (
-                  <div>
-                     {sortedAndFilteredTasks.length > 0 ? (
-                        <TodoListParser
-                           searchTerm={searchTerm}
-                           tasks={sortedAndFilteredTasks}
-                           dependencies={dependencies}
-                           onDependencyChange={fetchDependencies}
-                           onDeleteTask={handleDeleteTask2}
-                           onUpdateTask={handleUpdateTask}
-                           onStatusChange={handleTaskStatusChange}
-                           isDeadlineExceeded={isDeadlineExceeded}
-                        />
-                     ) : (
-                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                           <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-[#9406E6] to-[#00FFFF] rounded-full flex items-center justify-center">
-                              <svg
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 className="h-8 w-8 text-white"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor"
-                              >
-                                 <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                                 />
-                              </svg>
-                           </div>
-                           <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">No tasks found</h3>
-                           <p className="text-gray-600 dark:text-gray-300">
-                              {searchTerm
-                                 ? `No tasks found matching "${searchTerm}"`
-                                 : filterOption !== 'all'
-                                 ? `No ${filterOption} tasks available. Try changing the filter.`
-                                 : 'Add your first task to get started!'}
-                           </p>
-                        </div>
-                     )}
-                  </div>
-               ) : (
-                  <DependencyView tasks={list} dependencies={dependencies} onDependencyChange={fetchDependencies} />
-               )}
-            </div>
+         {/* Task List with integrated Sort and Display */}
+         <div>
+            {viewOption === 'list' ? (
+               <TodoListParser
+                  searchTerm={searchTerm}
+                  tasks={sortedAndFilteredTasks}
+                  onDelete={handleDeleteTask2}
+                  onUpdate={handleUpdateTask}
+                  onStatusChange={handleTaskStatusChange}
+                  dependencies={dependencies}
+                  onDependencyChange={fetchDependencies}
+                  isDeadlineExceeded={isDeadlineExceeded}
+               />
+            ) : (
+               <DependencyView tasks={list} dependencies={dependencies} onDependencyChange={fetchDependencies} />
+            )}
          </div>
 
          {/* Delete Task Modal */}

@@ -1,26 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import DisplayTodoList from './DisplayTodoList';
 import { useSocket } from '../app/context/SocketContext';
 import { useNotification } from '../app/context/NotificationContext';
 import { useTheme } from '../app/context/ThemeContext';
 import ModernSortTabs from './ModernSortTabs';
 import DeleteTaskModal from './DeleteTaskModal';
-import {
-   HiSortAscending,
-   HiClipboardList,
-   HiChevronUp,
-   HiChevronDown,
-   HiCalendar,
-   HiCheck,
-   HiX,
-   HiClock,
-   HiExclamationCircle,
-} from 'react-icons/hi';
+import { HiClipboardList, HiChevronUp, HiChevronDown, HiCalendar } from 'react-icons/hi';
 import { useAuth } from '../app/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
@@ -56,7 +45,17 @@ function TodoListParser({ searchTerm = '' }) {
    const [containerHeight, setContainerHeight] = useState(0);
    const [isScrolling, setIsScrolling] = useState(false);
    const [scrollTimeout, setScrollTimeout] = useState(null);
-   const itemHeight = 85; // Reduced from 100 to 85 for more compact display
+   const itemHeight = 90; // Reduced from 120 to 90 for tighter spacing
+   const minVisibleTasks = 4;
+   const getContainerHeight = () => {
+      if (typeof window !== 'undefined') {
+         const screenHeight = window.innerHeight;
+         if (screenHeight < 600) return '45vh'; // Mobile - reduced
+         if (screenHeight < 800) return '55vh'; // Small desktop - reduced
+         return Math.max(minVisibleTasks * itemHeight, screenHeight * 0.6) + 'px'; // Reduced from 0.65 to 0.6
+      }
+      return '60vh'; // Reduced from 65vh
+   };
    const buffer = 5; // Number of items to render outside visible area
 
    // Calculate visible items for virtual scrolling
@@ -155,10 +154,10 @@ function TodoListParser({ searchTerm = '' }) {
          clearTimeout(scrollTimeout);
       }
 
-      // Hide scrolling indicator after 1.5 seconds of no scrolling
+      // Hide scrolling indicator after 2 seconds of no scrolling for better visibility
       const timeout = setTimeout(() => {
          setIsScrolling(false);
-      }, 1500);
+      }, 2000);
 
       setScrollTimeout(timeout);
    };
@@ -217,6 +216,55 @@ function TodoListParser({ searchTerm = '' }) {
             }
          }
       `;
+      style.textContent += `
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px) translateY(-50%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) translateY(-50%);
+    }
+  }
+  
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+      transform: translateX(0) translateY(-50%);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(10px) translateY(-50%);
+    }
+  }
+  
+  /* Enhanced mobile responsiveness */
+  @media screen and (max-width: 300px) {
+    .task-container-mobile {
+      padding: 0.5rem;
+      margin: 0.25rem;
+    }
+    
+    .navigation-buttons {
+      bottom: 0.5rem;
+      left: 0.5rem;
+      gap: 0.25rem;
+    }
+    
+    .navigation-buttons button {
+      padding: 0.5rem;
+      width: 2rem;
+      height: 2rem;
+    }
+    
+    .date-indicator {
+      right: 0.5rem;
+      padding: 0.5rem;
+      font-size: 0.625rem;
+    }
+  }
+`;
       document.head.appendChild(style);
 
       return () => {
@@ -491,7 +539,7 @@ function TodoListParser({ searchTerm = '' }) {
                const period = timeParts[1];
 
                const [hours, minutes] = time.split(':');
-               let hour24 = parseInt(hours, 10);
+               let hour24 = Number.parseInt(hours, 10);
 
                if (period === 'AM' && hour24 === 12) {
                   hour24 = 0;
@@ -670,7 +718,7 @@ function TodoListParser({ searchTerm = '' }) {
             const period = timeParts[1];
 
             const [hours, minutes] = time.split(':');
-            let hour24 = parseInt(hours, 10);
+            let hour24 = Number.parseInt(hours, 10);
 
             if (period === 'AM' && hour24 === 12) {
                hour24 = 0;
@@ -735,7 +783,7 @@ function TodoListParser({ searchTerm = '' }) {
    return (
       <div className="w-full">
          {/* Enhanced Sort UI - Reduced Size */}
-         <div className="relative mb-4">
+         <div className="relative mb-3">
             {/* Background with theme-responsive styling */}
             <div
                className={`absolute inset-0 rounded-xl border shadow-lg ${
@@ -744,9 +792,9 @@ function TodoListParser({ searchTerm = '' }) {
             ></div>
 
             {/* Content */}
-            <div className="relative p-3 sm:p-4">
+            <div className="relative p-2 sm:p-3">
                <ModernSortTabs onSortChange={handleSortChange} />
-               <div className="flex items-center justify-between mb-3">
+               <div className="flex items-center justify-between mb-2">
                   {/* Task count badge */}
                   <div
                      className={`backdrop-blur-sm px-2 sm:px-3 py-1 rounded-full border ${
@@ -763,11 +811,12 @@ function TodoListParser({ searchTerm = '' }) {
             </div>
          </div>
 
-         {/* Task list with enhanced styling and scrollable container */}
+         {/* Enhanced Task Display Container */}
          <div className="relative">
-            {/* Scrollable container with fixed height */}
+            {/* Main scrollable container with dynamic height */}
             <div
-               className="h-[70vh] overflow-y-auto pr-2 custom-scrollbar scroll-smooth"
+               className="overflow-y-auto pr-2 custom-scrollbar scroll-smooth relative"
+               style={{ height: getContainerHeight() }}
                id="task-list-container"
                onScroll={handleScroll}
             >
@@ -838,92 +887,136 @@ function TodoListParser({ searchTerm = '' }) {
                )}
             </div>
 
-            {/* Scroll indicators and controls */}
-            {filteredList.length > 5 && (
-               <>
-                  {/* Top fade indicator */}
-                  <div
-                     className={`absolute top-0 left-0 right-0 h-6 pointer-events-none z-10 rounded-t-xl ${
+            {/* Enhanced Navigation Controls - Fixed at Left Bottom */}
+            {filteredList.length > minVisibleTasks && (
+               <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-30">
+                  {/* Scroll to top button */}
+                  <button
+                     onClick={scrollToTop}
+                     className={`group backdrop-blur-sm text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl ${
                         isDark
-                           ? 'bg-gradient-to-b from-gray-800/30 via-gray-800/10 to-transparent'
-                           : 'bg-gradient-to-b from-white/30 via-white/10 to-transparent'
+                           ? 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
+                           : 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-white/30'
                      }`}
-                  ></div>
+                     title="Scroll to top"
+                  >
+                     <HiChevronUp className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+                  </button>
 
-                  {/* Bottom fade indicator */}
-                  <div
-                     className={`absolute bottom-0 left-0 right-0 h-6 pointer-events-none z-10 rounded-b-xl ${
+                  {/* Scroll to bottom button */}
+                  <button
+                     onClick={scrollToBottom}
+                     className={`group backdrop-blur-sm text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl ${
                         isDark
-                           ? 'bg-gradient-to-t from-gray-800/30 via-gray-800/10 to-transparent'
-                           : 'bg-gradient-to-t from-white/30 via-white/10 to-transparent'
+                           ? 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
+                           : 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-white/30'
                      }`}
-                  ></div>
+                     title="Scroll to bottom"
+                  >
+                     <HiChevronDown className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+                  </button>
 
-                  {/* Date indicator - shows while scrolling */}
-                  {isScrolling && getCurrentDateRange() && (
-                     <div
-                        className={`absolute top-1/2 right-4 transform -translate-y-1/2 backdrop-blur-sm text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg z-30 animate-fade-in ${
-                           isDark
-                              ? 'bg-gradient-to-r from-purple-800 to-purple-900 border border-purple-600/20'
-                              : 'bg-gradient-to-r from-purple-800 to-purple-900 border border-white/20'
-                        }`}
-                     >
-                        <div className="flex items-center gap-2">
-                           <HiCalendar className="h-3 w-3" />
-                           <span>{getCurrentDateRange()}</span>
-                        </div>
-                     </div>
-                  )}
-
-                  {/* Task count indicator - shows while scrolling */}
-                  {isScrolling && filteredList.length > 10 && (
-                     <div
-                        className={`absolute top-16 right-4 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg z-30 animate-fade-in ${
-                           isDark
-                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-500/20'
-                              : 'bg-gradient-to-r from-purple-600 to-purple-700 border border-white/20'
-                        }`}
-                     >
-                        <div className="flex items-center gap-2">
-                           <HiClipboardList className="h-3 w-3" />
-                           <span>
-                              {(() => {
-                                 const { visible, total, startIndex, endIndex } = getVisibleTaskCount();
-                                 return `${startIndex}-${endIndex} of ${total}`;
-                              })()}
-                           </span>
-                        </div>
-                     </div>
-                  )}
-
-                  {/* Navigation buttons container - bottom left */}
-                  <div className="absolute bottom-3 left-6 flex flex-col gap-2 z-20">
-                     {/* Scroll to top button */}
-                     <button
-                        onClick={scrollToTop}
-                        className={`backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105 ${
-                           isDark
-                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/20'
-                              : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/20'
-                        }`}
-                        title="Scroll to top"
-                     >
-                        <HiChevronUp className="h-4 w-4" />
-                     </button>
-
-                     {/* Scroll to bottom button */}
-                     <button
-                        onClick={scrollToBottom}
-                        className={`backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105 ${
-                           isDark
-                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/20'
-                              : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/20'
-                        }`}
-                        title="Scroll to bottom"
-                     >
-                        <HiChevronDown className="h-4 w-4" />
-                     </button>
+                  {/* Current position indicator */}
+                  <div
+                     className={`backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded-lg shadow-lg transition-all duration-300 ${
+                        isDark
+                           ? 'bg-gradient-to-r from-purple-800/80 to-purple-900/80 border border-purple-600/30'
+                           : 'bg-gradient-to-r from-purple-800/80 to-purple-900/80 border border-white/30'
+                     }`}
+                  >
+                     {(() => {
+                        const { startIndex, endIndex } = getVisibleTaskCount();
+                        return `${startIndex}-${endIndex}`;
+                     })()}
                   </div>
+               </div>
+            )}
+
+            {/* Enhanced Date Range Indicator - Right Side */}
+            {isScrolling && getCurrentDateRange() && filteredList.length > minVisibleTasks && (
+               <div
+                  className={`absolute top-1/2 right-4 transform -translate-y-1/2 backdrop-blur-md text-white px-4 py-3 rounded-xl shadow-xl z-30 transition-all duration-500 ease-out ${
+                     isDark
+                        ? 'bg-gradient-to-br from-purple-800/90 via-purple-900/90 to-indigo-800/90 border border-purple-600/40'
+                        : 'bg-gradient-to-br from-purple-800/90 via-purple-900/90 to-indigo-800/90 border border-white/40'
+                  }`}
+                  style={{
+                     animation: 'slideInRight 0.3s ease-out, fadeOut 0.5s ease-out 1.5s forwards',
+                  }}
+               >
+                  <div className="flex items-center gap-3">
+                     <div className="bg-white/20 p-2 rounded-lg">
+                        <HiCalendar className="h-4 w-4" />
+                     </div>
+                     <div>
+                        <div className="text-xs font-medium opacity-80 mb-1">Date Range</div>
+                        <div className="text-sm font-bold">{getCurrentDateRange()}</div>
+                     </div>
+                  </div>
+                  {/* Animated border */}
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400/20 via-indigo-400/20 to-purple-400/20 animate-pulse"></div>
+               </div>
+            )}
+
+            {/* Task Progress Indicator - Right Side */}
+            {isScrolling && filteredList.length > minVisibleTasks && (
+               <div
+                  className={`absolute top-20 right-4 backdrop-blur-md text-white px-3 py-2 rounded-lg shadow-lg z-30 transition-all duration-500 ease-out ${
+                     isDark
+                        ? 'bg-gradient-to-r from-indigo-700/80 to-purple-700/80 border border-indigo-500/30'
+                        : 'bg-gradient-to-r from-indigo-700/80 to-purple-700/80 border border-white/30'
+                  }`}
+                  style={{
+                     animation: 'slideInRight 0.4s ease-out 0.1s both, fadeOut 0.5s ease-out 1.5s forwards',
+                  }}
+               >
+                  <div className="flex items-center gap-2">
+                     <HiClipboardList className="h-3 w-3" />
+                     <span className="text-xs font-medium">
+                        {(() => {
+                           const { visible, total } = getVisibleTaskCount();
+                           return `${visible}/${total} tasks`;
+                        })()}
+                     </span>
+                  </div>
+               </div>
+            )}
+
+            {/* Scroll Progress Bar - Right Edge */}
+            {filteredList.length > minVisibleTasks && (
+               <div className="absolute right-0 top-0 bottom-0 w-1 bg-gray-200/30 rounded-full overflow-hidden">
+                  <div
+                     className="bg-gradient-to-b from-purple-500 to-indigo-600 w-full transition-all duration-300 ease-out rounded-full"
+                     style={{
+                        height: `${Math.min(100, (containerHeight / (filteredList.length * itemHeight)) * 100)}%`,
+                        transform: `translateY(${
+                           (scrollTop / (filteredList.length * itemHeight - containerHeight)) * 100
+                        }%)`,
+                     }}
+                  />
+               </div>
+            )}
+
+            {/* Top and Bottom Fade Overlays */}
+            {filteredList.length > 0 && (
+               <>
+                  {/* Top fade */}
+                  <div
+                     className={`absolute top-0 left-0 right-0 h-8 pointer-events-none z-20 rounded-t-xl ${
+                        isDark
+                           ? 'bg-gradient-to-b from-gray-800/60 via-gray-800/30 to-transparent'
+                           : 'bg-gradient-to-b from-white/60 via-white/30 to-transparent'
+                     }`}
+                  />
+
+                  {/* Bottom fade */}
+                  <div
+                     className={`absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-20 rounded-b-xl ${
+                        isDark
+                           ? 'bg-gradient-to-t from-gray-800/60 via-gray-800/30 to-transparent'
+                           : 'bg-gradient-to-t from-white/60 via-white/30 to-transparent'
+                     }`}
+                  />
                </>
             )}
          </div>
