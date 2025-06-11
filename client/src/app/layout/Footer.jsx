@@ -43,7 +43,7 @@ const Footer = () => {
                            <li>
                               <a
                                  href="#"
-                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-sm"
+                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-xs"
                               >
                                  Version 1.0
                               </a>
@@ -51,7 +51,7 @@ const Footer = () => {
                            <li>
                               <a
                                  href="#"
-                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-sm"
+                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-xs"
                               >
                                  Version 1.2
                               </a>
@@ -59,7 +59,7 @@ const Footer = () => {
                            <li>
                               <a
                                  href="#"
-                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-sm"
+                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-xs"
                               >
                                  Version 1.3
                               </a>
@@ -67,7 +67,7 @@ const Footer = () => {
                            <li>
                               <a
                                  href="#"
-                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-sm"
+                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-xs"
                               >
                                  Version 1.4
                               </a>
@@ -75,7 +75,7 @@ const Footer = () => {
                            <li>
                               <a
                                  href="#"
-                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-sm"
+                                 className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors text-xs"
                               >
                                  Version 1.5 mega
                               </a>
