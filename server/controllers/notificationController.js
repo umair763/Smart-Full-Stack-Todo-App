@@ -66,10 +66,11 @@ export const deleteNotification = async (req, res) => {
     }
 };
 
-// Mark all notifications as read
+// Mark all notifications as read for a user
 export const markAllAsRead = async (req, res) => {
     try {
-        await Notification.updateMany({ userId: req.user._id, read: false }, { read: true });
+        const userId = req.user._id;
+        await Notification.updateMany({ userId, read: false }, { $set: { read: true } });
         res.json({ message: "All notifications marked as read" });
     } catch (error) {
         console.error("Mark all as read error:", error);
@@ -99,5 +100,17 @@ export const clearNotifications = async (req, res) => {
         res.json({ message: "All notifications cleared" });
     } catch (error) {
         res.status(500).json({ message: "Error clearing notifications" });
+    }
+};
+
+// Delete all notifications for a user
+export const deleteAllNotifications = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        await Notification.deleteMany({ userId });
+        res.json({ message: "All notifications deleted" });
+    } catch (error) {
+        console.error("Delete all notifications error:", error);
+        res.status(500).json({ message: "Error deleting notifications" });
     }
 };

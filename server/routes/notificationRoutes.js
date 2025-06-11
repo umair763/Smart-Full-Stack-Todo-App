@@ -25,4 +25,10 @@ router.delete("/:id", notificationController.deleteNotification);
 // Clear all notifications for current user
 router.delete("/", notificationController.clearNotifications);
 
+// Create a new notification
+router.post("/", notificationController.createNotification);
+
+// Delete all notifications
+router.delete("/delete-all", notificationController.deleteAllNotifications);
+
 export default router;

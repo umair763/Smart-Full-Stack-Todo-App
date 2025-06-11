@@ -208,36 +208,10 @@ export function NotificationProvider({ children }) {
       }
    };
 
-   // Clear all notifications
-   const clearNotifications = async () => {
-      try {
-         const response = await fetch(`${BACKEND_URL}/api/notifications`, {
-            method: 'DELETE',
-            headers: {
-               Authorization: `Bearer ${token}`,
-            },
-         });
-
-         if (response.ok) {
-            // Emit socket event for real-time update
-            if (socket) {
-               socket.emit('notificationsCleared');
-            }
-         } else {
-            // If backend fails, revert optimistic update
-            fetchNotifications();
-         }
-      } catch (error) {
-         console.error('Error clearing notifications:', error);
-         // Revert optimistic update on error
-         fetchNotifications();
-      }
-   };
-
-   // Mark all as read
+   // Mark all notifications as read
    const markAllAsRead = async () => {
       try {
-         const response = await fetch(`${BACKEND_URL}/api/notifications/read-all`, {
+         const response = await fetch(`${BACKEND_URL}/api/notifications/mark-all-read`, {
             method: 'PUT',
             headers: {
                Authorization: `Bearer ${token}`,
@@ -245,16 +219,34 @@ export function NotificationProvider({ children }) {
          });
 
          if (response.ok) {
-            // Emit socket event for real-time update
-            if (socket) {
-               socket.emit('notificationsMarkedAsRead');
-            }
-         } else {
-            // If backend fails, revert optimistic update
-            fetchNotifications();
+            // Optimistically update the UI
+            setPersistentNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+            setUnreadCount(0);
          }
       } catch (error) {
          console.error('Error marking all notifications as read:', error);
+         // Revert optimistic update on error
+         fetchNotifications();
+      }
+   };
+
+   // Clear all notifications
+   const clearNotifications = async () => {
+      try {
+         const response = await fetch(`${BACKEND_URL}/api/notifications/delete-all`, {
+            method: 'DELETE',
+            headers: {
+               Authorization: `Bearer ${token}`,
+            },
+         });
+
+         if (response.ok) {
+            // Optimistically update the UI
+            setPersistentNotifications([]);
+            setUnreadCount(0);
+         }
+      } catch (error) {
+         console.error('Error clearing notifications:', error);
          // Revert optimistic update on error
          fetchNotifications();
       }

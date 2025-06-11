@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { FiBell, FiX, FiAlertCircle, FiCheckCircle, FiInfo, FiTrash2 } from 'react-icons/fi';
+import { FiBell, FiX, FiAlertCircle, FiCheckCircle, FiInfo, FiTrash2, FiCheck } from 'react-icons/fi';
 import { useNotification } from '../app/context/NotificationContext';
 import { useSocket } from '../app/context/SocketContext';
 
@@ -108,6 +108,32 @@ function NotificationBell() {
          await removeReminderNotification(notification.reminderId);
       } else {
          await removeNotification(notification._id);
+      }
+   };
+
+   // Handle delete all notifications
+   const handleDeleteAll = async () => {
+      try {
+         await clearNotifications();
+         // Emit socket event for real-time update
+         if (socket) {
+            socket.emit('notificationUpdate', { type: 'clearAll' });
+         }
+      } catch (error) {
+         console.error('Error deleting all notifications:', error);
+      }
+   };
+
+   // Handle mark all as read
+   const handleMarkAllAsRead = async () => {
+      try {
+         await markAllAsRead();
+         // Emit socket event for real-time update
+         if (socket) {
+            socket.emit('notificationUpdate', { type: 'markAllRead' });
+         }
+      } catch (error) {
+         console.error('Error marking all notifications as read:', error);
       }
    };
 
@@ -223,28 +249,20 @@ function NotificationBell() {
                            </div>
                         </div>
                         {persistentNotifications.length > 0 && (
-                           <div className="flex items-center space-x-1 sm:space-x-2">
+                           <div className="flex items-center space-x-2">
                               <button
-                                 onClick={(e) => {
-                                    e.stopPropagation();
-                                    markAllAsRead();
-                                 }}
-                                 className="px-2 sm:px-3 py-1 sm:py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-medium transition-colors"
+                                 onClick={handleMarkAllAsRead}
+                                 className="p-1.5 rounded-lg hover:bg-white/20 transition-colors duration-200"
                                  title="Mark all as read"
                               >
-                                 <span className="hidden sm:inline">Mark Read</span>
-                                 <span className="sm:hidden">Read</span>
+                                 <FiCheck className="h-4 w-4" />
                               </button>
                               <button
-                                 onClick={(e) => {
-                                    e.stopPropagation();
-                                    clearNotifications();
-                                 }}
-                                 className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-xs font-medium transition-colors"
-                                 title="Clear all notifications"
+                                 onClick={handleDeleteAll}
+                                 className="p-1.5 rounded-lg hover:bg-white/20 transition-colors duration-200"
+                                 title="Delete all notifications"
                               >
-                                 <span className="hidden sm:inline">Clear All</span>
-                                 <span className="sm:hidden">Clear</span>
+                                 <FiTrash2 className="h-4 w-4" />
                               </button>
                            </div>
                         )}

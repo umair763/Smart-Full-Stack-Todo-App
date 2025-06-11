@@ -55,6 +55,11 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
          return;
       }
 
+      // Prevent double submission
+      if (isLoading) {
+         return;
+      }
+
       setIsLoading(true);
       setError('');
 
