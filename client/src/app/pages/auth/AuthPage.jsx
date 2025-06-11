@@ -186,21 +186,18 @@ function AuthPage() {
       }
 
       try {
-         // Create FormData for multipart/form-data submission (for profile image)
-         const formData = new FormData();
-         formData.append('username', registerData.username.trim());
-         formData.append('email', registerData.email.trim());
-         formData.append('password', registerData.password);
-
-         if (profileImage) {
-            formData.append('picture', profileImage);
-         }
-
-         console.log('Sending registration request with FormData');
+         console.log('Sending registration request');
 
          const response = await fetch(`${BACKEND_URL}/api/users/register`, {
             method: 'POST',
-            body: formData, // No Content-Type header needed, browser sets it with boundary
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+               username: registerData.username.trim(),
+               email: registerData.email.trim(),
+               password: registerData.password,
+            }),
          });
 
          const data = await response.json();

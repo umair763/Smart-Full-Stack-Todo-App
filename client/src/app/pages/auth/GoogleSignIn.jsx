@@ -127,7 +127,7 @@ const GoogleSignIn = () => {
             )}
             <div
                id="google-signin-button"
-               className="w-full flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div]:!justify-center"
+               className="w-full flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div]:!justify-center [&>div]:!h-[40px] [&>div]:!min-h-[40px] [&>div]:!max-h-[40px]"
             ></div>
          </div>
       </div>

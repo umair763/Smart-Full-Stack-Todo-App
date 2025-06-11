@@ -80,21 +80,18 @@ function RegisterUser() {
          return;
       }
 
-      // Create form data for submission
-      const submitData = new FormData();
-      submitData.append('username', formData.username);
-      submitData.append('email', formData.email);
-      submitData.append('password', formData.password);
-      if (profileImage) {
-         submitData.append('picture', profileImage);
-      }
-
       try {
          // Send registration request
          const response = await fetch(`${API_BASE_URL}/api/users/register`, {
             method: 'POST',
-            body: submitData,
-            // Don't set Content-Type header as FormData sets it automatically with boundary
+            headers: {
+               'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+               username: formData.username.trim(),
+               email: formData.email.trim(),
+               password: formData.password,
+            }),
          });
 
          // Handle response
