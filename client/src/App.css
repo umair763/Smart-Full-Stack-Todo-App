@@ -1,321 +1,321 @@
 @font-face {
-   font-family: "Caros Light";
-   src: url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot");
-   src: url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot?#iefix") format("embedded-opentype"),
-     url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff2") format("woff2"),
-     url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff") format("woff"),
-     url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.ttf") format("truetype"),
-     url("https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.svg#Caros Light") format("svg");
- }
- 
- body {
-   padding: 4px 0.5px;
-   height: 93vh;
- }
- .grid {
-   display: grid;
-   grid-template-rows: 1fr;
-   grid-template-columns: 1fr 300px;
-   /* grid-template-columns: 5fr 1fr 25px; */
-   margin-right: 4%;
- }
- 
- .text {
-   padding-left: 10px;
-   font-weight: 700;
-   color: rgb(253, 148, 67);
-   font-family: "Caros Light", sans-serif;
- }
- .backgroundForm {
+  font-family: 'Caros Light';
+  src: url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot');
+  src: url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.eot?#iefix') format('embedded-opentype'),
+     url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff2') format('woff2'),
+     url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.woff') format('woff'),
+     url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.ttf') format('truetype'),
+     url('https://db.onlinewebfonts.com/t/9180dec2cdd1711edd6b8d86954aae05.svg#Caros Light') format('svg');
+}
+
+body {
+  padding: 4px 0.5px;
+  height: 93vh;
+}
+.grid {
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr 300px;
+  /* grid-template-columns: 5fr 1fr 25px; */
+  margin-right: 4%;
+}
+
+.text {
+  padding-left: 10px;
+  font-weight: 700;
+  color: rgb(253, 148, 67);
+  font-family: 'Caros Light', sans-serif;
+}
+
+.backgroundForm {
    border-radius: 15px;
    align-items: center;
    justify-content: center;
    box-shadow: 0 10px 15px 0 rgba(0, 0, 0, 0.152);
    padding: 5px 20px 5px 20px;
- }
- 
- /* Responsive body padding and grid margins for better dashboard spacing */
- @media screen and (max-width: 479px) {
+}
+
+/* Responsive body padding and grid margins for better dashboard spacing */
+@media screen and (max-width: 479px) {
    body {
-     padding: 2px 0.25px;
+      padding: 2px 0.25px;
    }
    .grid {
-     margin-right: 2%;
+      margin-right: 2%;
    }
- }
- 
- @media screen and (min-width: 480px) {
+}
+
+@media screen and (min-width: 480px) {
    body {
-     padding: 10px 2px;
+      padding: 10px 2px;
    }
    .grid {
-     margin-right: 6%;
+      margin-right: 6%;
    }
- }
- 
- @media screen and (min-width: 640px) {
+}
+
+@media screen and (min-width: 640px) {
    body {
-     padding: 12px 3px;
+      padding: 12px 3px;
    }
    .grid {
-     margin-right: 7%;
+      margin-right: 7%;
    }
- }
- 
- @media screen and (min-width: 768px) {
+}
+
+@media screen and (min-width: 768px) {
    body {
-     padding: 14px 4px;
+      padding: 14px 4px;
    }
    .grid {
-     margin-right: 8%;
+      margin-right: 8%;
    }
- }
- 
- @media screen and (min-width: 1024px) {
+}
+
+@media screen and (min-width: 1024px) {
    body {
-     padding: 16px 6px;
+      padding: 16px 6px;
    }
    .grid {
-     margin-right: 10%;
+      margin-right: 10%;
    }
- }
- 
- @media screen and (min-width: 1280px) {
+}
+
+@media screen and (min-width: 1280px) {
    body {
-     padding: 18px 8px;
+      padding: 18px 8px;
    }
    .grid {
-     margin-right: 12%;
+      margin-right: 12%;
    }
- }
- 
- /* Enhanced responsive design for very small screens */
- @media screen and (max-width: 300px) {
+}
+
+/* Enhanced responsive design for very small screens */
+@media screen and (max-width: 300px) {
    body {
-     padding: 1px 0.1px;
-     font-size: 14px;
+      padding: 1px 0.1px;
+      font-size: 14px;
    }
- 
+
    .grid {
-     grid-template-columns: 1fr;
-     margin-right: 0.5% !important;
-     gap: 8px;
+      grid-template-columns: 1fr;
+      margin-right: 0.5% !important;
+      gap: 8px;
    }
- 
+
    .text {
-     padding-left: 1px;
-     margin: 0;
-     width: calc(100vw - 20px);
-     font-size: 0.85rem;
+      padding-left: 1px;
+      margin: 0;
+      width: calc(100vw - 20px);
+      font-size: 0.85rem;
    }
- 
+
    .text h1 {
-     font-size: 1.25rem !important;
-     margin-bottom: 0.25rem;
+      font-size: 1.25rem !important;
+      margin-bottom: 0.25rem;
    }
- 
+
    .text h3 {
-     font-size: 0.875rem !important;
+      font-size: 0.875rem !important;
    }
- 
+
    .backgroundForm {
-     padding: 2px 4px !important;
-     width: 98% !important;
-     margin: 2px auto;
+      padding: 2px 4px !important;
+      width: 98% !important;
+      margin: 2px auto;
    }
- 
+
    .right-side {
-     padding: 0;
-     border-left: transparent;
-     margin-top: 8px;
+      padding: 0;
+      border-left: transparent;
+      margin-top: 8px;
    }
- 
+
    /* Task container adjustments for very small screens */
    .task-container-mobile {
-     padding: 6px !important;
-     margin: 2px 0;
-     border-radius: 8px !important;
+      padding: 6px !important;
+      margin: 2px 0;
+      border-radius: 8px !important;
    }
- 
+
    /* Button sizing for very small screens */
    .btn-sm-mobile {
-     padding: 4px 6px !important;
-     font-size: 0.75rem !important;
-     border-radius: 4px !important;
+      padding: 4px 6px !important;
+      font-size: 0.75rem !important;
+      border-radius: 4px !important;
    }
- 
+
    /* Navigation buttons for very small screens */
    .nav-btn-mobile {
-     width: 32px !important;
-     height: 32px !important;
-     padding: 6px !important;
+      width: 32px !important;
+      height: 32px !important;
+      padding: 6px !important;
    }
- }
- 
- /* Small Screens (280px - 300px) */
- @media screen and (min-width: 280px) and (max-width: 300px) {
+}
+
+/* Small Screens (280px - 300px) */
+@media screen and (min-width: 280px) and (max-width: 300px) {
    .text {
-     padding-left: 2px;
-     margin: 0;
-     width: 220px;
+      padding-left: 2px;
+      margin: 0;
+      width: 220px;
    }
    .backgroundForm {
-     padding: 3px !important;
-     width: 96%;
+      padding: 3px !important;
+      width: 96%;
    }
    .grid {
-     grid-template-columns: 1fr;
-     margin-right: 1% !important;
+      grid-template-columns: 1fr;
+      margin-right: 1% !important;
    }
- 
+
    .right-side {
-     padding: 0;
-     border-left: transparent;
+      padding: 0;
+      border-left: transparent;
    }
- 
+
    .text h1 {
-     font-size: 1.5rem;
+      font-size: 1.5rem;
    }
- 
+
    .text h3 {
-     font-size: 1rem;
+      font-size: 1rem;
    }
- }
- 
- @media screen and (min-width: 301px) and (max-width: 350px) {
+}
+
+@media screen and (min-width: 301px) and (max-width: 350px) {
    .text {
-     padding-left: 4px;
-     margin: 0;
-     width: 270px;
+      padding-left: 4px;
+      margin: 0;
+      width: 270px;
    }
    .backgroundForm {
-     padding: 5px !important;
-     width: 97% !important;
+      padding: 5px !important;
+      width: 97% !important;
    }
    .grid {
-     grid-template-columns: 1fr;
-     margin-right: 1.5% !important;
+      grid-template-columns: 1fr;
+      margin-right: 1.5% !important;
    }
- 
+
    .right-side {
-     padding: 0;
-     border-left: transparent;
+      padding: 0;
+      border-left: transparent;
    }
- 
+
    .text h1 {
-     font-size: 1.5rem;
+      font-size: 1.5rem;
    }
- 
+
    .text h3 {
-     font-size: 1rem;
+      font-size: 1rem;
    }
- }
- @media screen and (min-width: 351px) and (max-width: 400px) {
+}
+@media screen and (min-width: 351px) and (max-width: 400px) {
    .text {
-     padding-left: 2px;
-     margin: 0;
-     min-width: 300px;
+      padding-left: 2px;
+      margin: 0;
+      min-width: 300px;
    }
    .backgroundForm {
-     padding: 3px !important;
-     width: 96%;
+      padding: 3px !important;
+      width: 96%;
    }
    .grid {
-     grid-template-columns: 1fr;
-     margin-right: 2% !important;
+      grid-template-columns: 1fr;
+      margin-right: 2% !important;
    }
- 
+
    .right-side {
-     padding: 0;
-     border-left: transparent;
+      padding: 0;
+      border-left: transparent;
    }
- 
+
    .text h1 {
-     font-size: 1.5rem;
+      font-size: 1.5rem;
    }
- 
+
    .text h3 {
-     font-size: 1rem;
+      font-size: 1rem;
    }
- }
- 
- @media screen and (min-width: 401px) and (max-width: 500px) {
+}
+
+@media screen and (min-width: 401px) and (max-width: 500px) {
    .text {
-     padding-left: 2px;
-     margin: 0;
-     width: 350px;
+      padding-left: 2px;
+      margin: 0;
+      width: 350px;
    }
    .backgroundForm {
-     padding: 8px !important;
-     width: 96%;
+      padding: 8px !important;
+      width: 96%;
    }
    .grid {
-     grid-template-columns: 1fr;
-     margin-right: 2.5% !important;
+      grid-template-columns: 1fr;
+      margin-right: 2.5% !important;
    }
- 
+
    .right-side {
-     padding: 0;
-     border-left: transparent;
+      padding: 0;
+      border-left: transparent;
    }
- 
+
    .text h1 {
-     font-size: 1.5rem;
+      font-size: 1.5rem;
    }
- 
+
    .text h3 {
-     font-size: 1rem;
+      font-size: 1rem;
    }
- }
- 
- @media screen and (min-width: 501px) and (max-width: 600px) {
+}
+
+@media screen and (min-width: 501px) and (max-width: 600px) {
    .text {
-     padding-left: 2px;
-     margin: 0;
-     width: 220px;
+      padding-left: 2px;
+      margin: 0;
+      width: 220px;
    }
    .backgroundForm {
-     padding: 3px !important;
-     width: 96%;
+      padding: 3px !important;
+      width: 96%;
    }
    .grid {
-     grid-template-columns: 1fr;
-     margin-right: 3% !important;
+      grid-template-columns: 1fr;
+      margin-right: 3% !important;
    }
- 
+
    .right-side {
-     padding: 0;
-     border-left: transparent;
+      padding: 0;
+      border-left: transparent;
    }
- 
+
    .text h1 {
-     font-size: 1.5rem;
+      font-size: 1.5rem;
    }
- 
+
    .text h3 {
-     font-size: 1rem;
+      font-size: 1rem;
    }
- }
- 
- /* Improved responsive grid layout */
- @media screen and (max-width: 1280px) {
+}
+
+/* Improved responsive grid layout */
+@media screen and (max-width: 1280px) {
    .dashboard-grid {
-     grid-template-columns: 1fr;
-     gap: 1rem;
+      grid-template-columns: 1fr;
+      gap: 1rem;
    }
- }
- 
- @media screen and (min-width: 1281px) {
+}
+
+@media screen and (min-width: 1281px) {
    .dashboard-grid {
-     grid-template-columns: 350px 1fr;
-     gap: 2rem;
+      grid-template-columns: 350px 1fr;
+      gap: 2rem;
    }
- }
- 
- @media screen and (min-width: 1536px) {
+}
+
+@media screen and (min-width: 1536px) {
    .dashboard-grid {
-     grid-template-columns: 400px 1fr;
-     gap: 2.5rem;
+      grid-template-columns: 400px 1fr;
+      gap: 2.5rem;
    }
- }
- 
+}
