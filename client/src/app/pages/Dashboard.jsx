@@ -22,75 +22,85 @@ function Dashboard() {
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState(null);
    const [deleteModal, setDeleteModal] = useState({ show: false, taskId: null });
-   const [showNotifications, setShowNotifications] = useState(false);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
    const [taskToDelete, setTaskToDelete] = useState(null);
-   const [sortOption, setSortOption] = useState('date'); // Default sort by date
-   const [filterOption, setFilterOption] = useState('all'); // Default show all tasks
-   const [viewOption, setViewOption] = useState('list'); // Default view is list
-   const { token, logout } = useAuth();
+   const [sortOption, setSortOption] = useState('date');
+   const [filterOption, setFilterOption] = useState('all');
+   const [viewOption, setViewOption] = useState('list');
+   const { isLoggedIn, logout } = useAuth();
    const { notifications, unreadCount, addNotification } = useNotification();
    const { socket, isConnected } = useSocket();
    const navigate = useNavigate();
    const [apiRetries, setApiRetries] = useState(0);
    const [loadingText, setLoadingText] = useState('Loading tasks...');
 
-   // Function to fetch tasks from the server
-   const fetchTasks = useCallback(async () => {
-      try {
-         setLoading(true);
-         setLoadingText('Loading tasks...');
+   // Function to fetch tasks from the server with improved error handling
+   const fetchTasks = useCallback(
+      async (retryCount = 0) => {
+         try {
+            setLoading(true);
+            setLoadingText(retryCount > 0 ? `Retrying... (${retryCount}/3)` : 'Loading tasks...');
 
-         const token = localStorage.getItem('token');
-         if (!token) {
-            throw new Error('Authentication required');
+            const token = localStorage.getItem('token');
+            if (!token) {
+               console.error('No authentication token found');
+               logout();
+               navigate('/auth/login');
+               return;
+            }
+
+            console.log('Fetching tasks from:', `${BACKEND_URL}/api/tasks`);
+            const response = await fetch(`${BACKEND_URL}/api/tasks`, {
+               method: 'GET',
+               headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+               },
+            });
+
+            if (!response.ok) {
+               if (response.status === 401) {
+                  console.error('Authentication failed');
+                  logout();
+                  navigate('/auth/login');
+                  return;
+               }
+               const errorData = await response.json().catch(() => ({}));
+               throw new Error(errorData.message || `HTTP ${response.status}: Failed to fetch tasks`);
+            }
+
+            const data = await response.json();
+            console.log('Tasks fetched successfully:', data.length);
+            setList(data);
+            setTasks(data);
+            setError(null);
+            setApiRetries(0);
+         } catch (error) {
+            console.error('Error fetching tasks:', error);
+            setError(`Failed to load tasks: ${error.message}`);
+
+            // Implement retry logic
+            if (retryCount < 3) {
+               const nextRetry = retryCount + 1;
+               setApiRetries(nextRetry);
+               console.log(`Retrying fetch tasks (${nextRetry}/3) in ${nextRetry * 1000}ms...`);
+
+               setTimeout(() => fetchTasks(nextRetry), nextRetry * 1000);
+            } else {
+               toast.error('Could not load tasks. Please refresh the page.');
+               setLoadingText('Failed to load tasks');
+            }
+         } finally {
+            if (retryCount === 0) {
+               setLoading(false);
+            }
          }
+      },
+      [logout, navigate]
+   );
 
-         console.log('Fetching tasks from:', `${BACKEND_URL}/api/tasks`);
-         const response = await fetch(`${BACKEND_URL}/api/tasks`, {
-            method: 'GET',
-            headers: {
-               Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
-            },
-         });
-
-         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Failed to fetch tasks');
-         }
-
-         const data = await response.json();
-         console.log('Tasks fetched successfully:', data.length);
-         setList(data);
-         setTasks(data);
-         setError(null);
-         setApiRetries(0);
-      } catch (error) {
-         console.error('Error fetching tasks:', error);
-         setError(`Failed to load tasks: ${error.message}`);
-
-         // Implement retry logic
-         if (apiRetries < 3) {
-            const retryCount = apiRetries + 1;
-            setApiRetries(retryCount);
-            setLoadingText(`Retrying... (${retryCount}/3)`);
-
-            // Exponential backoff for retries
-            const delay = Math.pow(2, retryCount) * 1000;
-            setTimeout(() => fetchTasks(), delay);
-         } else {
-            toast.error('Could not load tasks. Please try refreshing the page.');
-         }
-      } finally {
-         if (apiRetries === 0) {
-            setLoading(false);
-         }
-      }
-   }, [token, apiRetries]);
-
-   // Function to fetch dependencies
-   const fetchDependencies = useCallback(async () => {
+   // Function to fetch dependencies with improved error handling
+   const fetchDependencies = useCallback(async (retryCount = 0) => {
       try {
          const token = localStorage.getItem('token');
          if (!token) {
@@ -106,54 +116,55 @@ function Dashboard() {
          });
 
          if (!response.ok) {
-            throw new Error('Failed to fetch dependencies');
+            throw new Error(`HTTP ${response.status}: Failed to fetch dependencies`);
          }
 
          const data = await response.json();
          setDependencies(data);
+         console.log('Dependencies fetched successfully:', data.length);
       } catch (error) {
          console.error('Error fetching dependencies:', error);
+
+         // Retry logic for dependencies (less critical)
+         if (retryCount < 2) {
+            setTimeout(() => fetchDependencies(retryCount + 1), (retryCount + 1) * 1000);
+         }
          // Don't show error toast for dependencies as it's not critical
       }
-   }, [token]);
+   }, []);
 
+   // Initial data fetch
    useEffect(() => {
-      if (!token) {
-         navigate('/login');
+      if (!isLoggedIn) {
+         navigate('/auth/login');
          return;
       }
 
       fetchTasks();
       fetchDependencies();
-      setupSocketListeners();
+   }, [isLoggedIn, fetchTasks, fetchDependencies, navigate]);
 
-      return () => {
-         if (socket) {
-            socket.off('taskCreated');
-            socket.off('taskUpdated');
-            socket.off('taskDeleted');
-         }
-      };
-   }, [token, socket, fetchTasks, fetchDependencies, navigate]);
+   // Periodic refresh of data (since we don't have real-time updates)
+   useEffect(() => {
+      if (!isLoggedIn) return;
 
-   const setupSocketListeners = () => {
-      if (socket) {
-         socket.on('taskCreated', (newTask) => {
-            setTasks((prev) => [...prev, newTask]);
-         });
+      // Refresh data every 30 seconds
+      const interval = setInterval(() => {
+         console.log('Periodic data refresh...');
+         fetchTasks();
+         fetchDependencies();
+      }, 30000);
 
-         socket.on('taskUpdated', (updatedTask) => {
-            setTasks((prev) => prev.map((task) => (task._id === updatedTask._id ? updatedTask : task)));
-         });
-
-         socket.on('taskDeleted', (deletedTaskId) => {
-            setTasks((prev) => prev.filter((task) => task._id !== deletedTaskId));
-         });
-      }
-   };
+      return () => clearInterval(interval);
+   }, [isLoggedIn, fetchTasks, fetchDependencies]);
 
    const handleAddTask = async (newTask) => {
       try {
+         const token = localStorage.getItem('token');
+         if (!token) {
+            throw new Error('Authentication required');
+         }
+
          const response = await fetch(`${BACKEND_URL}/api/tasks`, {
             method: 'POST',
             headers: {
@@ -164,12 +175,17 @@ function Dashboard() {
          });
 
          if (!response.ok) {
-            throw new Error('Failed to add task');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to add task');
          }
 
          const data = await response.json();
          setTasks((prev) => [...prev, data]);
+         setList((prev) => [...prev, data]);
+         toast.success('Task added successfully');
       } catch (err) {
+         console.error('Error adding task:', err);
+         toast.error(err.message || 'Failed to add task');
          setError(err.message);
       }
    };
@@ -178,6 +194,11 @@ function Dashboard() {
       if (!deleteModal.taskId) return;
 
       try {
+         const token = localStorage.getItem('token');
+         if (!token) {
+            throw new Error('Authentication required');
+         }
+
          const response = await fetch(`${BACKEND_URL}/api/tasks/${deleteModal.taskId}`, {
             method: 'DELETE',
             headers: {
@@ -186,12 +207,17 @@ function Dashboard() {
          });
 
          if (!response.ok) {
-            throw new Error('Failed to delete task');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to delete task');
          }
 
          setTasks((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
+         setList((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
          setDeleteModal({ show: false, taskId: null });
+         toast.success('Task deleted successfully');
       } catch (err) {
+         console.error('Error deleting task:', err);
+         toast.error(err.message || 'Failed to delete task');
          setError(err.message);
       }
    };
@@ -200,6 +226,11 @@ function Dashboard() {
       if (!deleteModal.taskId) return;
 
       try {
+         const token = localStorage.getItem('token');
+         if (!token) {
+            throw new Error('Authentication required');
+         }
+
          const cascadeResponse = await fetch(`${BACKEND_URL}/api/tasks/${deleteModal.taskId}`, {
             method: 'DELETE',
             headers: {
@@ -209,65 +240,20 @@ function Dashboard() {
          });
 
          if (!cascadeResponse.ok) {
-            throw new Error('Failed to delete task and dependencies');
+            const errorData = await cascadeResponse.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to delete task and dependencies');
          }
 
          setTasks((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
+         setList((prev) => prev.filter((task) => task._id !== deleteModal.taskId));
          setDeleteModal({ show: false, taskId: null });
+         toast.success('Task and dependencies deleted successfully');
       } catch (err) {
+         console.error('Error deleting task with cascade:', err);
+         toast.error(err.message || 'Failed to delete task and dependencies');
          setError(err.message);
       }
    };
-
-   const handleLogout = () => {
-      logout();
-      navigate('/login');
-   };
-
-   // Socket event listeners for real-time updates
-   useEffect(() => {
-      if (!socket) return;
-
-      // Handle task created event
-      const handleTaskCreated = (data) => {
-         console.log('Task created event received:', data);
-         setList((prevList) => [...prevList, data.task]);
-      };
-
-      // Handle task updated event
-      const handleTaskUpdated = (data) => {
-         console.log('Task updated event received:', data);
-         setList((prevList) => prevList.map((task) => (task._id === data.task._id ? data.task : task)));
-      };
-
-      // Handle task deleted event
-      const handleTaskDeleted = (data) => {
-         console.log('Task deleted event received:', data);
-         setList((prevList) => prevList.filter((task) => task._id !== data.taskId));
-      };
-
-      // Handle task status changed event
-      const handleTaskStatusChanged = (data) => {
-         console.log('Task status changed event received:', data);
-         setList((prevList) =>
-            prevList.map((task) => (task._id === data.taskId ? { ...task, completed: data.completed } : task))
-         );
-      };
-
-      // Register socket listeners
-      socket.on('taskCreated', handleTaskCreated);
-      socket.on('taskUpdated', handleTaskUpdated);
-      socket.on('taskDeleted', handleTaskDeleted);
-      socket.on('taskStatusChanged', handleTaskStatusChanged);
-
-      // Clean up listeners on unmount
-      return () => {
-         socket.off('taskCreated', handleTaskCreated);
-         socket.off('taskUpdated', handleTaskUpdated);
-         socket.off('taskDeleted', handleTaskDeleted);
-         socket.off('taskStatusChanged', handleTaskStatusChanged);
-      };
-   }, [socket]);
 
    // Function to add a new task
    const addTask = (newTask) => {
@@ -299,7 +285,8 @@ function Dashboard() {
          });
 
          if (!response.ok) {
-            throw new Error('Failed to delete task');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || 'Failed to delete task');
          }
 
          // Remove the task from the list
@@ -307,7 +294,7 @@ function Dashboard() {
          toast.success('Task deleted successfully');
       } catch (error) {
          console.error('Error deleting task:', error);
-         toast.error('Failed to delete task');
+         toast.error(error.message || 'Failed to delete task');
       } finally {
          setShowDeleteModal(false);
          setTaskToDelete(null);
@@ -323,6 +310,11 @@ function Dashboard() {
    const handleTaskStatusChange = (taskId, currentStatus, errorMessage) => {
       if (errorMessage) {
          toast.error(errorMessage);
+      } else {
+         // Refresh the task list to get updated data
+         setTimeout(() => {
+            fetchTasks();
+         }, 1000);
       }
    };
 
@@ -336,12 +328,10 @@ function Dashboard() {
       })
       .sort((a, b) => {
          if (sortOption === 'date') {
-            // Sort by date (and time if dates are equal)
             const dateA = new Date(`${a.date} ${a.time}`);
             const dateB = new Date(`${b.date} ${b.time}`);
             return dateA - dateB;
          } else if (sortOption === 'priority') {
-            // Sort by priority (High > Medium > Low)
             const priorityOrder = { High: 1, Medium: 2, Low: 3 };
             return (priorityOrder[a.priority] || 999) - (priorityOrder[b.priority] || 999);
          }
@@ -350,7 +340,7 @@ function Dashboard() {
 
    // Check if a task's deadline has passed
    const isDeadlineExceeded = (task) => {
-      if (task.completed) return false; // Don't mark completed tasks as exceeded
+      if (task.completed) return false;
       const today = new Date();
       const taskDate = new Date(`${task.date} ${task.time}`);
       return taskDate < today;
@@ -362,12 +352,13 @@ function Dashboard() {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6]"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-300">{loadingText}</p>
             {error && (
-               <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
-                  {error}
+               <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg max-w-md text-center">
+                  <p className="text-sm">{error}</p>
                   <button
-                     className="ml-2 underline text-red-600 hover:text-red-800"
+                     className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                      onClick={() => {
                         setApiRetries(0);
+                        setError(null);
                         fetchTasks();
                      }}
                   >
@@ -379,8 +370,35 @@ function Dashboard() {
       );
    }
 
-   if (error) {
-      return <div>Error: {error}</div>;
+   if (error && !loading) {
+      return (
+         <div className="flex flex-col items-center justify-center py-12">
+            <div className="text-center max-w-md">
+               <div className="text-red-600 mb-4">
+                  <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                     />
+                  </svg>
+               </div>
+               <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Tasks</h3>
+               <p className="text-gray-600 mb-4">{error}</p>
+               <button
+                  className="px-6 py-2 bg-[#9406E6] text-white rounded-lg hover:bg-[#7D05C3] transition-colors"
+                  onClick={() => {
+                     setError(null);
+                     setApiRetries(0);
+                     fetchTasks();
+                  }}
+               >
+                  Try Again
+               </button>
+            </div>
+         </div>
+      );
    }
 
    return (
@@ -390,8 +408,8 @@ function Dashboard() {
             <p className="text-gray-600 dark:text-gray-300">
                Manage your tasks and track your progress
                {!isConnected && (
-                  <span className="ml-2 text-yellow-600 dark:text-yellow-400 text-sm">
-                     (Offline Mode - Real-time updates disabled)
+                  <span className="ml-2 text-blue-600 dark:text-blue-400 text-sm">
+                     (Real-time updates disabled in serverless mode)
                   </span>
                )}
             </p>
@@ -399,7 +417,7 @@ function Dashboard() {
 
          {/* Add Task Component */}
          <div className="mb-8">
-            <AddTask onAddTask={addTask} />
+            <AddTask onAddTask={handleAddTask} />
          </div>
 
          {/* Sort and Filter Options */}
@@ -415,26 +433,7 @@ function Dashboard() {
          </div>
 
          {/* Task List or Dependency View */}
-         {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6]"></div>
-               <p className="mt-4 text-gray-600 dark:text-gray-300">{loadingText}</p>
-               {error && (
-                  <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
-                     {error}
-                     <button
-                        className="ml-2 underline text-red-600 hover:text-red-800"
-                        onClick={() => {
-                           setApiRetries(0);
-                           fetchTasks();
-                        }}
-                     >
-                        Retry Now
-                     </button>
-                  </div>
-               )}
-            </div>
-         ) : viewOption === 'list' ? (
+         {viewOption === 'list' ? (
             <div>
                {sortedAndFilteredTasks.length > 0 ? (
                   sortedAndFilteredTasks.map((task) => (

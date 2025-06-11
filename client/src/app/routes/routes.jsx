@@ -1,6 +1,6 @@
 'use client';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import AuthPage from '../pages/auth/AuthPage';
 import Layout from '../layout/Layout';
 import LandingPageLayout from '../layout/LandingPageLayout';
@@ -15,55 +15,72 @@ const AppRoutes = () => {
    const location = useLocation();
    const navigate = useNavigate();
    const [isNavigating, setIsNavigating] = useState(false);
-   const [lastAuthState, setLastAuthState] = useState(null);
-   const [lastPath, setLastPath] = useState('');
+   const lastNavigationTime = useRef(0);
+   const navigationCount = useRef(0);
+   const lastAuthState = useRef(null);
+   const lastPath = useRef('');
 
-   // Prevent navigation loops
    useEffect(() => {
-      if (lastAuthState !== isLoggedIn) {
-         console.log(`Auth state changed: ${lastAuthState} -> ${isLoggedIn}`);
-         setLastAuthState(isLoggedIn);
-      }
-
-      // Detect and prevent navigation loops
-      if (lastPath === location.pathname) {
-         return; // Skip if path hasn't changed
-      }
-
-      console.log(`Navigation: ${lastPath} -> ${location.pathname}`);
-      setLastPath(location.pathname);
-
-      // Prevent rapid navigation
-      if (isNavigating) {
-         console.warn('Navigation already in progress, skipping');
+      // Prevent rapid navigation (debounce)
+      const now = Date.now();
+      if (now - lastNavigationTime.current < 500) {
+         console.log('Navigation debounced - too rapid');
          return;
       }
 
-      // Handle auth-based redirects with debounce
-      if (!loading) {
-         const currentPath = location.pathname;
+      // Track navigation count to detect loops
+      if (lastPath.current !== location.pathname) {
+         navigationCount.current += 1;
+         lastPath.current = location.pathname;
+         lastNavigationTime.current = now;
 
-         // Check if we need to redirect based on auth state
-         if (isLoggedIn && (currentPath === '/auth/login' || currentPath === '/auth/register')) {
+         console.log(`Navigation ${navigationCount.current}: ${location.pathname}`);
+
+         // Reset navigation count after 5 seconds
+         setTimeout(() => {
+            navigationCount.current = 0;
+         }, 5000);
+
+         // If too many navigations, stop redirecting
+         if (navigationCount.current > 10) {
+            console.error('Too many navigations detected, stopping auto-redirects');
+            return;
+         }
+      }
+
+      // Only handle redirects if auth state actually changed and we're not already navigating
+      if (loading || isNavigating || lastAuthState.current === isLoggedIn) {
+         return;
+      }
+
+      lastAuthState.current = isLoggedIn;
+      console.log(`Auth state changed to: ${isLoggedIn}`);
+
+      const currentPath = location.pathname;
+
+      // Handle auth-based redirects with proper checks
+      if (isLoggedIn) {
+         // User is logged in
+         if (currentPath === '/auth/login' || currentPath === '/auth/register' || currentPath === '/') {
+            console.log('User logged in, redirecting to dashboard');
             setIsNavigating(true);
-            console.log('User is logged in but on auth page, redirecting to dashboard');
             setTimeout(() => {
                navigate('/dashboard', { replace: true });
                setIsNavigating(false);
             }, 100);
-         } else if (
-            !isLoggedIn &&
-            (currentPath === '/dashboard' || currentPath === '/settings' || currentPath === '/insights')
-         ) {
+         }
+      } else {
+         // User is not logged in
+         if (currentPath === '/dashboard' || currentPath === '/settings' || currentPath === '/insights') {
+            console.log('User not logged in, redirecting to login');
             setIsNavigating(true);
-            console.log('User is not logged in but on protected page, redirecting to login');
             setTimeout(() => {
                navigate('/auth/login', { replace: true });
                setIsNavigating(false);
             }, 100);
          }
       }
-   }, [isLoggedIn, loading, location.pathname, navigate, isNavigating, lastPath, lastAuthState]);
+   }, [isLoggedIn, loading, location.pathname, navigate, isNavigating]);
 
    // Show loading spinner while checking authentication
    if (loading) {
@@ -73,6 +90,7 @@ const AppRoutes = () => {
                <div className="flex justify-center items-center h-20">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9406E6] dark:border-purple-400"></div>
                </div>
+               <p className="text-center mt-4 text-gray-600 dark:text-gray-300">Loading...</p>
             </div>
          </div>
       );
@@ -88,13 +106,15 @@ const AppRoutes = () => {
 
          {!isLoggedIn ? (
             <>
+               {/* Authentication routes */}
                <Route path="/auth/login" element={<AuthPage />} />
                <Route path="/auth/register" element={<AuthPage />} />
-               {/* Redirect all other routes to home when not logged in */}
-               <Route path="*" element={<Navigate to="/" replace />} />
+               {/* Redirect all other routes to login when not logged in */}
+               <Route path="*" element={<Navigate to="/auth/login" replace />} />
             </>
          ) : (
             <>
+               {/* Protected routes */}
                <Route element={<Layout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/settings" element={<Settings />} />
