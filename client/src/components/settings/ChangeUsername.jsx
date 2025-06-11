@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../app/context/AuthContext';
 import { HiUser } from 'react-icons/hi';
 
@@ -12,7 +12,7 @@ function ChangeUsername() {
    const [loading, setLoading] = useState(false);
    const [error, setError] = useState(null);
    const [success, setSuccess] = useState(false);
-   const { token } = useAuth();
+   const { token, updateUser, refreshUserData } = useAuth();
 
    const handleSubmit = async (e) => {
       e.preventDefault();
@@ -33,6 +33,14 @@ function ChangeUsername() {
          if (!response.ok) {
             throw new Error('Failed to update username');
          }
+
+         const data = await response.json();
+
+         // Update the user context with new username
+         updateUser({ username: newUsername });
+
+         // Refresh user data from server
+         await refreshUserData();
 
          setSuccess(true);
          setNewUsername('');

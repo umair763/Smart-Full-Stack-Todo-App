@@ -23,9 +23,11 @@ function Dashboard() {
    const [error, setError] = useState(null);
    const [showDeleteModal, setShowDeleteModal] = useState(false);
    const [taskToDelete, setTaskToDelete] = useState(null);
-   const [sortOption, setSortOption] = useState('date');
+   const [sortOption, setSortOption] = useState('default');
+   const [sortDirection, setSortDirection] = useState('asc');
    const [filterOption, setFilterOption] = useState('all');
    const [viewOption, setViewOption] = useState('list');
+   const [searchTerm, setSearchTerm] = useState('');
    const { isLoggedIn, token, logout } = useAuth();
    const { createSuccessNotification, createErrorNotification } = useNotification();
    const { socket, isConnected } = useSocket();
@@ -277,24 +279,78 @@ function Dashboard() {
       [fetchTasks]
    );
 
+   // Handle sorting change
+   const handleSortChange = useCallback((sortType, direction = 'asc') => {
+      setSortOption(sortType);
+      setSortDirection(direction);
+   }, []);
+
+   // Handle search change
+   const handleSearchChange = useCallback((searchValue) => {
+      setSearchTerm(searchValue);
+   }, []);
+
+   // Function to check if task has dependencies
+   const hasTaskDependencies = useCallback(
+      (taskId) => {
+         return dependencies.some((dep) => dep.taskId === taskId || dep.dependsOnTaskId === taskId);
+      },
+      [dependencies]
+   );
+
    // Sort and filter tasks
    const sortedAndFilteredTasks = [...list]
       .filter((task) => {
-         if (filterOption === 'all') return true;
+         // Filter by completion status
          if (filterOption === 'completed') return task.completed;
          if (filterOption === 'active') return !task.completed;
+
+         // Filter by search term
+         if (searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            return (
+               task.task?.toLowerCase().includes(searchLower) ||
+               task.title?.toLowerCase().includes(searchLower) ||
+               task.description?.toLowerCase().includes(searchLower)
+            );
+         }
+
          return true;
       })
       .sort((a, b) => {
-         if (sortOption === 'date') {
-            const dateA = new Date(`${a.date} ${a.time}`);
-            const dateB = new Date(`${b.date} ${b.time}`);
-            return dateA - dateB;
-         } else if (sortOption === 'priority') {
-            const priorityOrder = { High: 1, Medium: 2, Low: 3 };
-            return (priorityOrder[a.priority] || 999) - (priorityOrder[b.priority] || 999);
+         // Always sort tasks with dependencies to the top first
+         const aHasDeps = hasTaskDependencies(a._id);
+         const bHasDeps = hasTaskDependencies(b._id);
+
+         if (aHasDeps && !bHasDeps) return -1;
+         if (!aHasDeps && bHasDeps) return 1;
+
+         // Then apply the selected sorting
+         switch (sortOption) {
+            case 'deadline':
+               const dateA = new Date(`${a.date} ${a.time}`);
+               const dateB = new Date(`${b.date} ${b.time}`);
+               return sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+
+            case 'priority':
+               const priorityOrder = { High: 3, Medium: 2, Low: 1 };
+               const priorityA = priorityOrder[a.priority] || 0;
+               const priorityB = priorityOrder[b.priority] || 0;
+               return sortDirection === 'asc' ? priorityB - priorityA : priorityA - priorityB;
+
+            case 'alphabetical':
+               const nameA = (a.task || a.title || '').toLowerCase();
+               const nameB = (b.task || b.title || '').toLowerCase();
+               return sortDirection === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+
+            case 'dependencies':
+               // Already handled above
+               return 0;
+
+            default:
+               // Default order (creation order)
+               return 0;
          }
-         return 0;
       });
 
    // Check if a task's deadline has passed
@@ -362,22 +418,31 @@ function Dashboard() {
 
    return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+         <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-white">Task Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-300">
+               Manage your tasks and track your progress
+               {!isConnected && (
+                  <span className="ml-2 text-blue-600 dark:text-blue-400 text-sm">
+                     (Real-time updates disabled in serverless mode)
+                  </span>
+               )}
+            </p>
+         </div>
 
          {/* Add Task Component */}
          <div className="mb-8">
-            <AddTask onAddTask={handleAddTask} />
+            <AddTask
+               onAddTask={handleAddTask}
+               tasks={list}
+               onDeleteTask={handleDeleteTask}
+               onSearchChange={handleSearchChange}
+            />
          </div>
 
          {/* Sort and Filter Options */}
          <div className="mb-6">
-            <ModernSortTabs
-               sortOption={sortOption}
-               filterOption={filterOption}
-               viewOption={viewOption}
-               onSortChange={setSortOption}
-               onFilterChange={setFilterOption}
-               onViewChange={setViewOption}
-            />
+            <ModernSortTabs onSortChange={handleSortChange} />
          </div>
 
          {/* Task List or Dependency View */}
@@ -416,7 +481,9 @@ function Dashboard() {
                      </div>
                      <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">No tasks found</h3>
                      <p className="text-gray-600 dark:text-gray-300">
-                        {filterOption !== 'all'
+                        {searchTerm
+                           ? `No tasks found matching "${searchTerm}"`
+                           : filterOption !== 'all'
                            ? `No ${filterOption} tasks available. Try changing the filter.`
                            : 'Add your first task to get started!'}
                      </p>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../app/context/AuthContext';
 import { HiCamera } from 'react-icons/hi';
 
@@ -13,7 +13,7 @@ function ChangeProfileImage() {
    const [loading, setLoading] = useState(false);
    const [error, setError] = useState(null);
    const [success, setSuccess] = useState(false);
-   const { token } = useAuth();
+   const { token, updateUser, refreshUserData } = useAuth();
 
    const handleFileChange = (e) => {
       const file = e.target.files[0];
@@ -46,6 +46,14 @@ function ChangeProfileImage() {
          if (!response.ok) {
             throw new Error('Failed to update profile image');
          }
+
+         const data = await response.json();
+
+         // Update the user context with new profile image
+         updateUser({ profileImage: data.profileImage });
+
+         // Refresh user data from server
+         await refreshUserData();
 
          setSuccess(true);
          setSelectedFile(null);
@@ -86,7 +94,11 @@ function ChangeProfileImage() {
 
             {previewUrl && (
                <div className="mt-2">
-                  <img src={previewUrl} alt="Preview" className="w-32 h-32 object-cover rounded-full" />
+                  <img
+                     src={previewUrl || '/placeholder.svg'}
+                     alt="Preview"
+                     className="w-32 h-32 object-cover rounded-full"
+                  />
                </div>
             )}
 

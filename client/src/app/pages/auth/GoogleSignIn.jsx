@@ -58,7 +58,6 @@ const GoogleSignIn = () => {
          window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
             theme: 'outline',
             size: 'large',
-            width: 320,
             text: 'continue_with',
             shape: 'rectangular',
             logo_alignment: 'left',

@@ -6,7 +6,7 @@ import { HiSparkles, HiViewGrid } from 'react-icons/hi';
 import AddTaskForm from './AddTaskForm';
 import DeleteTaskForm from './DeleteTaskForm';
 
-function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange, onAddTask, tasks, onDeleteTask }) {
+function AddTask({ onSearchChange, onAddTask, tasks = [], onDeleteTask }) {
    const [searchTask, setSearchTask] = useState('');
    const [isAddFormVisible, setIsAddFormVisible] = useState(false);
    const [isDeleteFormVisible, setIsDeleteFormVisible] = useState(false);
@@ -118,7 +118,12 @@ function AddTask({ SetisAddFormVisible, setisDeleteFormVisible, onSearchChange, 
                      {/* Delete Task Button */}
                      <button
                         onClick={handleDeleteTask}
-                        className="group relative overflow-hidden mt-2 h-9 sm:h-10 px-3 sm:px-4 lg:px-5 bg-gradient-to-r from-red-500 via-red-600 to-red-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0"
+                        disabled={!tasks || tasks.length === 0}
+                        className={`group relative overflow-hidden mt-2 h-9 sm:h-10 px-3 sm:px-4 lg:px-5 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg whitespace-nowrap min-w-fit flex-shrink-0 ${
+                           !tasks || tasks.length === 0
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-red-500 via-red-600 to-red-500'
+                        }`}
                      >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
                         <div className="relative flex items-center justify-center space-x-1 sm:space-x-2 lg:space-x-3">
