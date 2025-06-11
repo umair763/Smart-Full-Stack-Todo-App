@@ -106,7 +106,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
    return (
       <>
          {/* Mobile Layout (< 640px) - Card Style */}
-         <div className={`sm:hidden p-3 sm:p-4 rounded-lg border-l-4 ${getPriorityColorClass()}`}>
+         <div className={`mt-3 sm:hidden p-3 sm:p-4 rounded-lg border-l-4 ${getPriorityColorClass()}`}>
             {/* Header Section - Title & Priority */}
             <div className="flex items-start justify-between mb-3">
                <div className="flex items-start space-x-3 flex-1 min-w-0">
@@ -188,7 +188,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
          {/* Desktop Layout (>= 640px) - Grid Layout */}
          <div
-            className={`hidden sm:grid grid-cols-[24px,1fr,auto] w-full px-3 sm:px-4 py-3 sm:py-3.5 rounded-lg border-l-4 ${getPriorityColorClass()} items-center gap-3 sm:gap-4`}
+            className={`mt-3 hidden sm:grid grid-cols-[24px,1fr,auto] w-full px-3 sm:px-4 py-3 sm:py-3.5 rounded-lg border-l-4 ${getPriorityColorClass()} items-center gap-3 sm:gap-4`}
          >
             {/* Priority Radio Button */}
             <input

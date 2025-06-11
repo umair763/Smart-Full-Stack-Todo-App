@@ -4,7 +4,7 @@ const Footer = () => {
    return (
       <>
          {/* Footer */}
-         <footer className="bg-gray-900 text-white py-8">
+         <footer className="bg-gray-800 text-white py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                <div className="grid md:grid-cols-4 gap-8">
                   <div>
@@ -49,7 +49,7 @@ const Footer = () => {
                                     href="#"
                                     className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors"
                                  >
-                                    Version 2.0
+                                    Version 1.0
                                  </a>
                               </li>
                               <li>
@@ -57,7 +57,31 @@ const Footer = () => {
                                     href="#"
                                     className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors"
                                  >
-                                    Version 3.1 mega
+                                    Version 1.2
+                                 </a>
+                              </li>
+                              <li>
+                                 <a
+                                    href="#"
+                                    className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors"
+                                 >
+                                    Version 1.3
+                                 </a>
+                              </li>
+                              <li>
+                                 <a
+                                    href="#"
+                                    className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors"
+                                 >
+                                    Version 1.4
+                                 </a>
+                              </li>
+                              <li>
+                                 <a
+                                    href="#"
+                                    className="block px-4 py-2 hover:bg-purple-700 rounded-md transition-colors"
+                                 >
+                                    Version 1.5 mega
                                  </a>
                               </li>
                            </ul>

@@ -825,7 +825,7 @@ function TodoListParser({ searchTerm = '' }) {
                            : 'bg-purple-100 border-purple-200 text-purple-700'
                      }`}
                   >
-                     <span className="text-sm sm:text-base md:text-lg font-semibold">
+                     <span className="text-sm sm:text-base md:text-md font-semibold">
                         {filteredList.length} {filteredList.length === 1 ? 'Task' : 'Tasks'}
                      </span>
                   </div>
@@ -922,7 +922,7 @@ function TodoListParser({ searchTerm = '' }) {
                      }`}
                      title="Scroll to top"
                   >
-                     <HiChevronUp className="h-5 w-5 md:h-6 md:w-6 group-hover:scale-110 transition-transform duration-200" />
+                     <HiChevronUp className="h-4 w-4 md:h-5 md:w-5 group-hover:scale-100 transition-transform duration-200" />
                   </button>
 
                   {/* Scroll to bottom button */}
@@ -935,7 +935,7 @@ function TodoListParser({ searchTerm = '' }) {
                      }`}
                      title="Scroll to bottom"
                   >
-                     <HiChevronDown className="h-5 w-5 md:h-6 md:w-6 group-hover:scale-110 transition-transform duration-200" />
+                     <HiChevronDown className="h-4 w-4 md:h-5 md:w-5 group-hover:scale-100 transition-transform duration-200" />
                   </button>
 
                   {/* Current position indicator */}
@@ -981,7 +981,7 @@ function TodoListParser({ searchTerm = '' }) {
             )}
 
             {/* Task Progress Indicator - Right Side */}
-            {isScrolling && filteredList.length > minVisibleTasks && (
+            {/* {isScrolling && filteredList.length > minVisibleTasks && (
                <div
                   className={`absolute top-20 right-4 backdrop-blur-md text-white px-3 py-2 rounded-lg shadow-lg z-30 transition-all duration-500 ease-out ${
                      isDark
@@ -1002,7 +1002,7 @@ function TodoListParser({ searchTerm = '' }) {
                      </span>
                   </div>
                </div>
-            )}
+            )} */}
 
             {/* Scroll Progress Bar - Right Edge */}
             {filteredList.length > minVisibleTasks && (
