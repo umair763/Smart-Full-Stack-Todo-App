@@ -136,7 +136,7 @@ const GoogleSignIn = () => {
             )}
             <div
                id="google-signin-button"
-               className="w-full flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div]:!justify-center [&>div]:!h-[40px] [&>div]:!min-h-[40px] [&>div]:!max-h-[40px] [&>div]:!scale-[0.9] sm:[&>div]:!scale-100 [&>div]:!flex [&>div]:!items-center [&>div]:!justify-center [&>div]:!rounded-lg [&>div]:!shadow-sm [&>div]:!border [&>div]:!border-gray-300 [&>div]:!hover:shadow-md [&>div]:!transition-all [&>div]:!duration-200 [&>div]:!bg-white [&>div]:!hover:bg-gray-50 [&>div]:!active:scale-[0.98] [&>div]:!touch-manipulation"
+               className="w-full flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div]:!justify-center [&>div]:!h-[40px] [&>div]:!min-h-[40px] [&>div]:!max-h-[40px] [&>div]:!scale-[0.9] sm:[&>div]:!scale-100 [&>div]:!flex [&>div]:!items-center [&>div]:!justify-center [&>div]:!rounded-lg [&>div]:!shadow-sm [&>div]:!border [&>div]:!border-gray-300 [&>div]:!hover:shadow-md [&>div]:!transition-all [&>div]:!duration-200 [&>div]:!bg-white [&>div]:!hover:bg-gray-50 [&>div]:!active:scale-[0.98] [&>div]:!touch-manipulation [&>div]:!min-w-[240px] [&>div]:!max-w-[400px] [&>div]:!mx-auto [&>div]:!block [&>div]:!visible [&>div]:!opacity-100"
             ></div>
          </div>
       </div>

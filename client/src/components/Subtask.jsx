@@ -105,7 +105,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
 
    return (
       <div
-         className={`flex items-center justify-between p-2 border-l-4 ${getPriorityColorClass()} rounded-r-lg shadow-sm mb-1`}
+         className={`flex items-center justify-between p-1.5 border-l-4 ${getPriorityColorClass()} rounded-r-lg shadow-sm mb-0.5 hover:bg-gray-50/50 transition-colors duration-200`}
       >
          {/* Task Title - Leftmost */}
          <div className="flex-1 min-w-0 mr-2">
@@ -117,7 +117,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
          </div>
 
          {/* Right Section - Priority, Date, and Actions */}
-         <div className="flex items-center space-x-2 flex-shrink-0">
+         <div className="flex items-center space-x-1.5 flex-shrink-0">
             {/* Priority Badge */}
             <div className="flex-shrink-0">{renderPriorityBadge()}</div>
 
@@ -128,11 +128,11 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-1 flex-shrink-0">
+            <div className="flex items-center space-x-0.5 flex-shrink-0">
                {/* Edit Button */}
                <button
                   onClick={handleEdit}
-                  className="p-1 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-blue-50"
+                  className="p-1 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-blue-50/50"
                >
                   <HiPencilAlt className="w-4 h-4" />
                </button>
@@ -140,7 +140,7 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
                {/* Delete Button */}
                <button
                   onClick={handleDelete}
-                  className="p-1 text-gray-500 hover:text-red-600 transition-colors rounded-full hover:bg-red-50"
+                  className="p-1 text-gray-500 hover:text-red-600 transition-colors rounded-full hover:bg-red-50/50"
                >
                   <FiTrash2 className="w-4 h-4" />
                </button>
