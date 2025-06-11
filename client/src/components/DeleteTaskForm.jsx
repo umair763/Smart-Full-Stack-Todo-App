@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { FiTrash2, FiX, FiAlertTriangle } from 'react-icons/fi';
-import { HiExclamationTriangle } from 'react-icons/hi';
 
 function DeleteTaskForm({ setisDeleteFormVisible, tasks = [], onDeleteTask }) {
    const [selectedTasks, setSelectedTasks] = useState([]);
@@ -75,7 +74,7 @@ function DeleteTaskForm({ setisDeleteFormVisible, tasks = [], onDeleteTask }) {
             {safeTasks.length === 0 ? (
                <div className="text-center py-8">
                   <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                     <HiExclamationTriangle className="h-8 w-8 text-gray-400" />
+                     <FiAlertTriangle className="h-8 w-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Tasks Available</h3>
                   <p className="text-gray-600 dark:text-gray-300">There are no tasks to delete at the moment.</p>
