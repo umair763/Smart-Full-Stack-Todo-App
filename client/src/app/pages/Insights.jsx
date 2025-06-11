@@ -35,7 +35,7 @@ import {
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
 // Hardcoded backend URL
-const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
+const API_BASE_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 // Color palette for charts
 const COLORS = {
