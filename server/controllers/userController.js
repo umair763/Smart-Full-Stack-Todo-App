@@ -17,7 +17,7 @@ export const register = async (req, res) => {
     try {
         console.log("Registration request received:", req.body);
 
-        const { username, email, password } = req.body;
+        const { username, email, password, profileImage } = req.body;
 
         // Validate required fields
         if (!username || !email || !password) {
@@ -48,6 +48,7 @@ export const register = async (req, res) => {
             username,
             email,
             password,
+            profileImage: profileImage || null // Add profile image if provided
         });
 
         await user.save();

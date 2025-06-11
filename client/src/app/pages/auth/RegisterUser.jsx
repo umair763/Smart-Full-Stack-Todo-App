@@ -56,8 +56,13 @@ function RegisterUser() {
          return;
       }
 
-      setProfileImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+         setProfileImage(reader.result);
+         setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
       setError('');
    };
 
@@ -91,7 +96,8 @@ function RegisterUser() {
                username: formData.username.trim(),
                email: formData.email.trim(),
                password: formData.password,
-            }),
+               profileImage: profileImage // Send base64 image data
+            })
          });
 
          // Handle response

@@ -55,12 +55,21 @@ const GoogleSignIn = () => {
             cancel_on_tap_outside: true,
          });
 
-         window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
-            theme: 'outline',
-            size: 'large',
-            text: 'continue_with',
-            shape: 'rectangular',
-            logo_alignment: 'left',
+         // Create custom button
+         const buttonContainer = document.getElementById('google-signin-button');
+         buttonContainer.innerHTML = `
+            <button 
+               id="custom-google-button"
+               class="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 shadow-sm"
+            >
+               <img src="https://www.google.com/favicon.ico" alt="Google" class="w-5 h-5" />
+               <span class="text-gray-700 font-medium">Sign in with Google</span>
+            </button>
+         `;
+
+         // Add click handler
+         document.getElementById('custom-google-button').addEventListener('click', () => {
+            window.google.accounts.id.prompt();
          });
       } catch (error) {
          console.error('Error initializing Google Sign-In:', error);
@@ -125,10 +134,7 @@ const GoogleSignIn = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#9406E6]"></div>
                </div>
             )}
-            <div
-               id="google-signin-button"
-               className="w-full flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div]:!justify-center [&>div]:!h-[40px] [&>div]:!min-h-[40px] [&>div]:!max-h-[40px]"
-            ></div>
+            <div id="google-signin-button" className="w-full flex justify-center"></div>
          </div>
       </div>
    );
