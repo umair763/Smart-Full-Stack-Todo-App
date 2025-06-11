@@ -107,47 +107,58 @@ function Subtask({ subtask, onDelete, onUpdate, onStatusChange }) {
       <div
          className={`flex items-center justify-between p-2 border-l-4 ${getPriorityColorClass()} rounded-r-lg shadow-sm mb-1`}
       >
-         <div className="flex items-center space-x-2 flex-1 min-w-0">
-            <button
-               onClick={handleStatusChange}
-               disabled={isUpdating}
-               className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-500'
-               }`}
+         {/* Task Title - Leftmost */}
+         <div className="flex-1 min-w-0 mr-2">
+            <h3
+               className={`text-sm font-medium truncate ${completed ? 'line-through text-gray-500' : 'text-gray-900'}`}
             >
-               {completed && <HiCheck className="w-3 h-3" />}
-            </button>
-            <div className="flex-1 min-w-0">
-               <h3
-                  className={`text-sm font-medium truncate ${
-                     completed ? 'line-through text-gray-500' : 'text-gray-900'
+               {subtask.title}
+            </h3>
+         </div>
+
+         {/* Right Section - Priority, Date, and Actions */}
+         <div className="flex items-center space-x-2 flex-shrink-0">
+            {/* Priority Badge */}
+            <div className="flex-shrink-0">{renderPriorityBadge()}</div>
+
+            {/* Due Date */}
+            <div className="flex items-center text-xs text-gray-500 flex-shrink-0">
+               <HiCalendar className="w-3 h-3 mr-1" />
+               <span>{subtask.date}</span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-1 flex-shrink-0">
+               {/* Edit Button */}
+               <button
+                  onClick={handleEdit}
+                  className="p-1 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-blue-50"
+               >
+                  <HiPencilAlt className="w-4 h-4" />
+               </button>
+
+               {/* Delete Button */}
+               <button
+                  onClick={handleDelete}
+                  className="p-1 text-gray-500 hover:text-red-600 transition-colors rounded-full hover:bg-red-50"
+               >
+                  <FiTrash2 className="w-4 h-4" />
+               </button>
+
+               {/* Status Checkbox - Rightmost */}
+               <button
+                  onClick={handleStatusChange}
+                  disabled={isUpdating}
+                  className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                     completed ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-500'
                   }`}
                >
-                  {subtask.title}
-               </h3>
-               <div className="flex items-center space-x-2 text-xs text-gray-500">
-                  <div className="flex items-center">
-                     <HiCalendar className="w-3 h-3 mr-1" />
-                     <span>{subtask.date}</span>
-                  </div>
-                  {renderPriorityBadge()}
-               </div>
+                  {completed && <HiCheck className="w-3 h-3" />}
+               </button>
             </div>
          </div>
-         <div className="flex items-center space-x-1 ml-2">
-            <button
-               onClick={handleEdit}
-               className="p-1 text-gray-500 hover:text-blue-600 transition-colors rounded-full hover:bg-blue-50"
-            >
-               <HiPencilAlt className="w-4 h-4" />
-            </button>
-            <button
-               onClick={handleDelete}
-               className="p-1 text-gray-500 hover:text-red-600 transition-colors rounded-full hover:bg-red-50"
-            >
-               <FiTrash2 className="w-4 h-4" />
-            </button>
-         </div>
+
+         {/* Delete Confirmation Modal */}
          <DeleteSubtaskModal
             isOpen={showDeleteModal}
             onClose={handleCancelDelete}

@@ -1322,9 +1322,9 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
          {/* Enhanced Subtasks Section - Modern Tree Structure */}
          {showSubtasks && list.subtaskCount > 0 && (
-            <div className="w-full mb-3">
+            <div className="w-full mb-2 mt-3">
                {/* Mobile Subtasks Layout (< 640px) */}
-               <div className="sm:hidden bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-xl p-2 ml-4 border-l-4 border-gradient-to-b from-purple-500 to-indigo-600 shadow-sm">
+               <div className="sm:hidden bg-gradient-to-br  via-indigo-50 from-purple-50 to-blue-50 rounded-xl p-2 ml-4 border-l-4 border-gradient-to-b from-purple-500 to-indigo-600 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                      <h4 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center">
                         <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center mr-2 shadow-sm">

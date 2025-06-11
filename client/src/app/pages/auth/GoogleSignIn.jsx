@@ -55,15 +55,24 @@ const GoogleSignIn = () => {
             cancel_on_tap_outside: true,
          });
 
+         // Render the button with responsive settings
          window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
             theme: 'outline',
             size: 'large',
             text: 'continue_with',
             shape: 'rectangular',
             logo_alignment: 'left',
+            width: '100%',
+            height: '40px',
+            locale: 'en',
+            type: 'standard',
+            context: 'signin',
+            ux_mode: 'popup',
+            itp_support: true,
          });
       } catch (error) {
          console.error('Error initializing Google Sign-In:', error);
+         toast.error('Failed to initialize Google Sign-In');
       }
    }, [isScriptLoaded]);
 
@@ -118,8 +127,8 @@ const GoogleSignIn = () => {
    };
 
    return (
-      <div className="w-full flex justify-center items-center py-4">
-         <div className="relative w-full max-w-sm">
+      <div className="w-full flex justify-center items-center py-4 px-4">
+         <div className="relative w-full max-w-sm mx-auto">
             {isLoading && (
                <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 rounded-lg">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#9406E6]"></div>
@@ -127,7 +136,7 @@ const GoogleSignIn = () => {
             )}
             <div
                id="google-signin-button"
-               className="w-full flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div]:!justify-center [&>div]:!h-[40px] [&>div]:!min-h-[40px] [&>div]:!max-h-[40px] [&>div]:!scale-[0.9] sm:[&>div]:!scale-100"
+               className="w-full flex justify-center [&>div]:!w-full [&>div]:!max-w-none [&>div]:!justify-center [&>div]:!h-[40px] [&>div]:!min-h-[40px] [&>div]:!max-h-[40px] [&>div]:!scale-[0.9] sm:[&>div]:!scale-100 [&>div]:!flex [&>div]:!items-center [&>div]:!justify-center [&>div]:!rounded-lg [&>div]:!shadow-sm [&>div]:!border [&>div]:!border-gray-300 [&>div]:!hover:shadow-md [&>div]:!transition-all [&>div]:!duration-200 [&>div]:!bg-white [&>div]:!hover:bg-gray-50 [&>div]:!active:scale-[0.98] [&>div]:!touch-manipulation"
             ></div>
          </div>
       </div>
