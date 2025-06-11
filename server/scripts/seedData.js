@@ -14,7 +14,9 @@ import Note from "../models/Note.js";
 // Connect to MongoDB
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/SmartTodoApp");
+        await mongoose.connect(
+            "mongodb+srv://MuhammadUmair:umair%4011167@cluster0.jjtx3.mongodb.net/SmartTodoApp?retryWrites=true&w=majority&appName=Cluster0"
+        );
         console.log("✅ MongoDB connected successfully");
     } catch (error) {
         console.error("❌ MongoDB connection error:", error);
@@ -260,7 +262,7 @@ const clearDatabase = async () => {
 // Get specific user by ID or Google ID
 const getSpecificUser = async () => {
     try {
-        const targetUserId = "6835e33b4606f2769a593e79";
+        const targetUserId = "683ef352a928fc6c5e04e674";
         const targetGoogleId = "111573823086976239495";
 
         // Try to find user by MongoDB ObjectId first

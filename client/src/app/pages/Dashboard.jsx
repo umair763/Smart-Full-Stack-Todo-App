@@ -418,7 +418,7 @@ function Dashboard() {
 
    return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-         <div className="mb-8">
+         {/* <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-white">Task Dashboard</h1>
             <p className="text-gray-600 dark:text-gray-300">
                Manage your tasks and track your progress
@@ -428,7 +428,7 @@ function Dashboard() {
                   </span>
                )}
             </p>
-         </div>
+         </div> */}
 
          {/* Add Task Component */}
          <div className="mb-8">
