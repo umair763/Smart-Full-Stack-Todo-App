@@ -1,16 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-   FiTrash2,
-   FiMoreVertical,
-   FiChevronDown,
-   FiChevronRight,
-   FiPlus,
-   FiEye,
-   FiDownload,
-   FiLink,
-} from 'react-icons/fi';
+import { FiTrash2, FiMoreVertical, FiPlus, FiEye, FiDownload, FiLink } from 'react-icons/fi';
 import {
    HiCalendar,
    HiClock,
@@ -801,7 +792,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      <div className="flex-1 min-w-0">
                         {/* Task Name */}
                         <h3
-                           className={`text-sm sm:text-base font-semibold truncate transition-colors duration-200 font-proza ${
+                           className={`text-sm sm:text-base md:text-lg font-semibold truncate transition-colors duration-200 font-proza ${
                               list.completed ? 'line-through text-gray-500' : 'text-gray-800'
                            }`}
                            title={list.task}
@@ -812,7 +803,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         {/* Priority Badge */}
                         {list.priority && (
                            <span
-                              className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                              className={`inline-flex items-center px-2 py-1 text-xs md:text-sm font-medium rounded-full ${
                                  list.priority.toLowerCase() === 'high'
                                     ? 'bg-red-100 text-red-800 border border-red-200'
                                     : list.priority.toLowerCase() === 'medium'
@@ -829,7 +820,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                   {/* Completion Status */}
                   <button
                      onClick={handleTaskStatusToggle}
-                     className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                     className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
                         completed
                            ? 'bg-[#9406E6] text-white shadow-md'
                            : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/10'
@@ -837,7 +828,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      disabled={isUpdating}
                      title={completed ? 'Mark as incomplete' : 'Mark as complete'}
                   >
-                     {completed && <HiCheck className="h-4 w-4" />}
+                     {completed && <HiCheck className="h-4 w-4 md:h-5 md:w-5" />}
                   </button>
                </div>
 
@@ -870,11 +861,15 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                            <p
                               className={`${
                                  completed ? 'line-through text-gray-500' : 'text-gray-900'
-                              } font-medium text-sm`}
+                              } font-medium text-sm md:text-base`}
                            >
                               {list.date}
                            </p>
-                           <p className={`${completed ? 'line-through text-gray-500' : 'text-gray-600'} text-sm`}>
+                           <p
+                              className={`${
+                                 completed ? 'line-through text-gray-500' : 'text-gray-600'
+                              } text-sm md:text-base`}
+                           >
                               {list.time}
                            </p>
                         </div>
@@ -925,12 +920,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      )}
 
                      {/* Connection Status Indicator */}
-                     {/* {!isConnected && (
+                     {!isConnected && (
                         <div className="flex items-center space-x-1 px-2 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                            <span className="hidden xs:inline">Offline</span>
                         </div>
-                     )} */}
+                     )}
                   </div>
 
                   {/* Right Actions */}
@@ -941,7 +936,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
                         title="Edit task"
                      >
-                        <HiPencilAlt className="h-3 w-3" />
+                        <HiPencilAlt className="h-3 w-3 md:h-4 md:w-4" />
                      </button>
 
                      {/* Delete */}
@@ -950,7 +945,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         className="p-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
                         title="Delete task"
                      >
-                        <FiTrash2 className="h-3 w-3" />
+                        <FiTrash2 className="h-3 w-3 md:h-4 md:w-4" />
                      </button>
 
                      {/* Notes */}
@@ -1099,7 +1094,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      <p
                         className={`${
                            completed ? 'line-through text-gray-600' : ''
-                        } font-bold text-left text-sm md:text-base lg:text-lg transition-all truncate flex-1 min-w-0`}
+                        } font-bold text-left text-sm md:text-base lg:text-lg xl:text-xl transition-all truncate flex-1 min-w-0`}
                      >
                         {list.task}
                      </p>
@@ -1131,12 +1126,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                      )}
 
                      {/* Connection Status Indicator */}
-                     {/* {!isConnected && (
+                     {!isConnected && (
                         <div className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">
                            <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                            <span>Offline</span>
                         </div>
-                     )} */}
+                     )}
                   </div>
 
                   {/* Subtask progress indicator */}
@@ -1190,7 +1185,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         className="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors"
                         title="Edit task"
                      >
-                        <HiPencilAlt className="h-4 w-4 md:h-5 md:w-5" />
+                        <HiPencilAlt className="h-4 w-4 md:h-5 md:w-5 lg:h-6 lg:w-6" />
                      </button>
 
                      {/* Delete button */}
@@ -1199,19 +1194,19 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         className="text-red-600 hover:text-red-800 p-1 rounded transition-colors"
                         title="Delete task"
                      >
-                        <FiTrash2 className="h-4 w-4 md:h-5 md:w-5" />
+                        <FiTrash2 className="h-4 w-4 md:h-5 md:w-5 lg:h-6 lg:w-6" />
                      </button>
 
                      {/* Completion checkbox */}
                      <button
                         onClick={handleTaskStatusToggle}
-                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
+                        className={`w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
                            completed ? 'bg-[#9406E6] text-white' : 'border-2 border-[#9406E6] hover:bg-[#9406E6]/20'
                         }`}
                         disabled={isUpdating}
                         title={completed ? 'Mark as incomplete' : 'Mark as complete'}
                      >
-                        {completed && <HiCheck className="h-4 w-4" />}
+                        {completed && <HiCheck className="h-4 w-4 md:h-5 md:w-5" />}
                      </button>
 
                      {/* View notes button */}

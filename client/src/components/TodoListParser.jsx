@@ -85,15 +85,17 @@ function TodoListParser({ searchTerm = '' }) {
       if (filteredList.length === 0 || !containerHeight) return { visible: 0, total: 0 };
 
       const visibleStartIndex = Math.max(0, Math.floor(scrollTop / itemHeight));
-      const visibleEndIndex = Math.min(filteredList.length - 1, Math.ceil((scrollTop + containerHeight) / itemHeight));
+      const visibleEndIndex = Math.min(filteredList.length - 1, Math.floor((scrollTop + containerHeight) / itemHeight));
 
-      const visibleCount = Math.max(0, visibleEndIndex - visibleStartIndex + 1);
+      // Ensure we don't go beyond array bounds
+      const actualStartIndex = Math.min(visibleStartIndex, filteredList.length - 1);
+      const actualEndIndex = Math.min(visibleEndIndex, filteredList.length - 1);
 
       return {
-         visible: Math.min(visibleCount, filteredList.length),
+         visible: Math.max(0, actualEndIndex - actualStartIndex + 1),
          total: filteredList.length,
-         startIndex: visibleStartIndex + 1, // 1-based for display
-         endIndex: Math.min(visibleEndIndex + 1, filteredList.length), // 1-based for display
+         startIndex: actualStartIndex + 1, // 1-based for display
+         endIndex: actualEndIndex + 1, // 1-based for display
       };
    };
 
@@ -183,39 +185,59 @@ function TodoListParser({ searchTerm = '' }) {
    useEffect(() => {
       const style = document.createElement('style');
       style.textContent = `
-         .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-         }
-         .custom-scrollbar::-webkit-scrollbar-track {
-            background: ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
-            border-radius: 4px;
-         }
-         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #9406E6, #7D05C3);
-            border-radius: 4px;
-            transition: background 0.2s ease;
-         }
-         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, #7D05C3, #6B04A8);
-         }
-         .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #9406E6 ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
-         }
-         .animate-fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-         }
-         @keyframes fadeIn {
-            from {
-               opacity: 0;
-               transform: translateY(-10px) translateX(10px);
-            }
-            to {
-               opacity: 1;
-               transform: translateY(0) translateX(0);
-            }
-         }
-      `;
+  .custom-scrollbar::-webkit-scrollbar {
+     width: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+     background: ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
+     border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+     background: linear-gradient(180deg, #9406E6, #7D05C3);
+     border-radius: 4px;
+     transition: background 0.2s ease;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+     background: linear-gradient(180deg, #7D05C3, #6B04A8);
+  }
+  .custom-scrollbar {
+     scrollbar-width: thin;
+     scrollbar-color: #9406E6 ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
+  }
+  .animate-fade-in {
+     animation: fadeIn 0.3s ease-in-out;
+  }
+  @keyframes fadeIn {
+     from {
+        opacity: 0;
+        transform: translateY(-10px) translateX(10px);
+     }
+     to {
+        opacity: 1;
+        transform: translateY(0) translateX(0);
+     }
+  }
+  
+  /* Enhanced typography for better readability */
+  @media screen and (min-width: 768px) {
+    .desktop-enhanced-text {
+      font-size: 1.125rem; /* Increased from 1rem */
+      line-height: 1.6;
+    }
+    .desktop-enhanced-heading {
+      font-size: 1.25rem; /* Increased from 1.125rem */
+      line-height: 1.5;
+    }
+    .desktop-enhanced-icon {
+      width: 1.375rem; /* Increased from 1.25rem */
+      height: 1.375rem;
+    }
+    .desktop-enhanced-icon-lg {
+      width: 1.5rem; /* Increased from 1.375rem */
+      height: 1.5rem;
+    }
+  }
+`;
       style.textContent += `
   @keyframes slideInRight {
     from {
@@ -803,7 +825,7 @@ function TodoListParser({ searchTerm = '' }) {
                            : 'bg-purple-100 border-purple-200 text-purple-700'
                      }`}
                   >
-                     <span className="text-xs sm:text-sm font-semibold">
+                     <span className="text-sm sm:text-base md:text-lg font-semibold">
                         {filteredList.length} {filteredList.length === 1 ? 'Task' : 'Tasks'}
                      </span>
                   </div>
@@ -834,13 +856,13 @@ function TodoListParser({ searchTerm = '' }) {
                         </div>
                         <div>
                            <h3
-                              className={`text-lg font-semibold mb-2 font-proza ${
+                              className={`text-lg md:text-xl font-semibold mb-2 font-proza ${
                                  isDark ? 'text-gray-200' : 'text-gray-700'
                               }`}
                            >
                               {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
                            </h3>
-                           <p className={`max-w-md ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                           <p className={`max-w-md text-sm md:text-base ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                               {searchTerm
                                  ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
                                  : 'Create your first task to get started with organizing your work!'}
@@ -900,7 +922,7 @@ function TodoListParser({ searchTerm = '' }) {
                      }`}
                      title="Scroll to top"
                   >
-                     <HiChevronUp className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+                     <HiChevronUp className="h-5 w-5 md:h-6 md:w-6 group-hover:scale-110 transition-transform duration-200" />
                   </button>
 
                   {/* Scroll to bottom button */}
@@ -913,7 +935,7 @@ function TodoListParser({ searchTerm = '' }) {
                      }`}
                      title="Scroll to bottom"
                   >
-                     <HiChevronDown className="h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
+                     <HiChevronDown className="h-5 w-5 md:h-6 md:w-6 group-hover:scale-110 transition-transform duration-200" />
                   </button>
 
                   {/* Current position indicator */}
@@ -949,8 +971,8 @@ function TodoListParser({ searchTerm = '' }) {
                         <HiCalendar className="h-4 w-4" />
                      </div>
                      <div>
-                        <div className="text-xs font-medium opacity-80 mb-1">Date Range</div>
-                        <div className="text-sm font-bold">{getCurrentDateRange()}</div>
+                        <div className="text-xs md:text-sm font-medium opacity-80 mb-1">Date Range</div>
+                        <div className="text-sm md:text-base font-bold">{getCurrentDateRange()}</div>
                      </div>
                   </div>
                   {/* Animated border */}
@@ -972,7 +994,7 @@ function TodoListParser({ searchTerm = '' }) {
                >
                   <div className="flex items-center gap-2">
                      <HiClipboardList className="h-3 w-3" />
-                     <span className="text-xs font-medium">
+                     <span className="text-xs md:text-sm font-medium">
                         {(() => {
                            const { visible, total } = getVisibleTaskCount();
                            return `${visible}/${total} tasks`;
