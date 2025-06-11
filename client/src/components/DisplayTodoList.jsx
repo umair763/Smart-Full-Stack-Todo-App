@@ -28,7 +28,7 @@ import NoteModal from './NoteModal';
 import AttachmentModal from './AttachmentModal';
 import DependencyModal from './DependencyModal';
 import DependencyTree from './DependencyTree';
-import ReminderModal from './ReminderModal'; // Declare the ReminderModal variable
+import ReminderModal from './ReminderModal';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
@@ -43,7 +43,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
    const [currentSubtask, setCurrentSubtask] = useState(null);
    const [showMoreOptions, setShowMoreOptions] = useState(false);
    const [isLoadingSubtasks, setIsLoadingSubtasks] = useState(false);
-   const { socket } = useSocket();
+   const { socket, isConnected } = useSocket();
    const [isMenuOpen, setIsMenuOpen] = useState(false);
    const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
    const [showNoteModal, setShowNoteModal] = useState(false);
@@ -67,7 +67,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       date: list.date,
       time: list.time,
       color: list.color,
-      priority: list.priority || 'medium', // Default to medium if not set
+      priority: list.priority || 'medium',
    });
 
    // Sync the component state with the list prop
@@ -99,9 +99,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       }
    }, [dependencies, list._id]);
 
-   // Handle socket events for subtask changes
+   // Handle socket events for subtask changes (only if socket is connected)
    useEffect(() => {
-      if (!socket) return;
+      if (!socket || !isConnected) {
+         console.log('Socket not available, skipping socket listeners');
+         return;
+      }
 
       // Handle subtask created event
       const handleSubtaskCreated = (data) => {
@@ -110,7 +113,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             console.log('Handling subtask created event:', data);
 
             setSubtasks((prev) => {
-               // Check if subtask already exists to prevent duplicates
                const exists = prev.some((st) => st._id === data.subtask._id);
                if (exists) {
                   console.log('Subtask already exists, skipping duplicate');
@@ -121,14 +123,12 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                return sortSubtasksByPriority(newSubtasks);
             });
 
-            // Update parent task counts
             onUpdate(list._id, {
                ...list,
                subtaskCount: (list.subtaskCount || 0) + 1,
                completedSubtasks: list.completedSubtasks || 0,
             });
 
-            // Show subtasks if they were hidden
             setShowSubtasks(true);
          }
       };
@@ -139,7 +139,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          if (data.parentTaskId === list._id && data.userId === currentUserId) {
             console.log('Handling subtask status changed event:', data);
 
-            // Update the subtask in local state
             setSubtasks((prev) => {
                const updatedSubtasks = prev.map((st) =>
                   st._id === data.subtaskId ? { ...st, status: data.status } : st
@@ -147,7 +146,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                return sortSubtasksByPriority(updatedSubtasks);
             });
 
-            // Update parent task with new completion counts
             onUpdate(list._id, {
                ...list,
                subtaskCount: data.subtaskCount,
@@ -180,7 +178,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                return sortSubtasksByPriority(filteredSubtasks);
             });
 
-            // Update parent task counts
             onUpdate(list._id, {
                ...list,
                subtaskCount: Math.max((list.subtaskCount || 0) - 1, 0),
@@ -192,7 +189,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       // Handle dependency created event
       const handleDependencyCreated = (data) => {
          if (data.dependentTaskId === list._id || data.prerequisiteTaskId === list._id) {
-            // Refresh dependencies if this task is involved
             if (onDependencyChange) {
                onDependencyChange();
             }
@@ -202,7 +198,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       // Handle dependency deleted event
       const handleDependencyDeleted = (data) => {
          if (data.dependentTaskId === list._id || data.prerequisiteTaskId === list._id) {
-            // Refresh dependencies if this task is involved
             if (onDependencyChange) {
                onDependencyChange();
             }
@@ -226,10 +221,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          socket.off('dependencyCreated', handleDependencyCreated);
          socket.off('dependencyDeleted', handleDependencyDeleted);
       };
-   }, [socket, list._id, onDependencyChange, onUpdate, list]);
+   }, [socket, isConnected, list._id, onDependencyChange, onUpdate, list]);
 
-   // Fetch subtasks from the server
-   const fetchSubtasks = async () => {
+   // Fetch subtasks from the server with retry logic
+   const fetchSubtasks = async (retryCount = 0) => {
       setIsLoadingSubtasks(true);
       try {
          const token = localStorage.getItem('token');
@@ -246,23 +241,29 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to fetch subtasks');
+            throw new Error(`Failed to fetch subtasks: ${response.status}`);
          }
 
          const data = await response.json();
-         // Sort subtasks by priority (High > Medium > Low)
          const sortedSubtasks = sortSubtasksByPriority(data);
          setSubtasks(sortedSubtasks);
       } catch (error) {
          console.error('Error fetching subtasks:', error);
-         toast.error('Failed to load subtasks');
+
+         // Retry logic
+         if (retryCount < 2) {
+            console.log(`Retrying subtasks fetch (${retryCount + 1}/3)...`);
+            setTimeout(() => fetchSubtasks(retryCount + 1), 1000 * (retryCount + 1));
+         } else {
+            toast.error('Failed to load subtasks');
+         }
       } finally {
          setIsLoadingSubtasks(false);
       }
    };
 
-   // Fetch task dependencies
-   const fetchTaskDependencies = async () => {
+   // Fetch task dependencies with retry logic
+   const fetchTaskDependencies = async (retryCount = 0) => {
       setIsLoadingDependencies(true);
       try {
          const token = localStorage.getItem('token');
@@ -279,7 +280,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to fetch dependencies');
+            throw new Error(`Failed to fetch dependencies: ${response.status}`);
          }
 
          const data = await response.json();
@@ -287,7 +288,14 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          setHasDependencies(data.prerequisites.length > 0 || data.dependents.length > 0);
       } catch (error) {
          console.error('Error fetching dependencies:', error);
-         toast.error('Failed to load dependencies');
+
+         // Retry logic
+         if (retryCount < 2) {
+            console.log(`Retrying dependencies fetch (${retryCount + 1}/3)...`);
+            setTimeout(() => fetchTaskDependencies(retryCount + 1), 1000 * (retryCount + 1));
+         } else {
+            toast.error('Failed to load dependencies');
+         }
       } finally {
          setIsLoadingDependencies(false);
       }
@@ -301,19 +309,16 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       });
    };
 
-   // Handle task status toggle
+   // Handle task status toggle with retry logic
    async function handleTaskStatusToggle() {
-      // Prevent multiple rapid toggling
       if (isUpdating) return;
 
       setIsUpdating(true);
 
       try {
-         // Optimistically update UI first
          const newStatus = !completed;
          setCompleted(newStatus);
 
-         // Use the dedicated endpoint for status updates
          const token = localStorage.getItem('token');
          if (!token) {
             throw new Error('Authentication required');
@@ -329,19 +334,20 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to update task status');
+            throw new Error(`Failed to update task status: ${response.status}`);
          }
 
-         // The UI will be updated through Socket.io notification
+         // Success - the UI is already updated optimistically
+         console.log('Task status updated successfully');
       } catch (error) {
-         // Revert UI state if the update fails
          console.error('Error updating task status:', error);
-         setCompleted(!completed);
+         setCompleted(!completed); // Revert on error
 
-         // Show notification (handled by parent)
          if (onStatusChange) {
             onStatusChange(list._id, completed, error.message);
          }
+
+         toast.error('Failed to update task status');
       } finally {
          setIsUpdating(false);
       }
@@ -352,20 +358,17 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
    }
 
    function handleDelete() {
-      // Let the parent component handle the deletion confirmation
       onDelete(list._id);
    }
 
    function handleSaveTask(taskId, updatedTaskData) {
-      // Call the parent component's update function
-      // Ensure taskId is the first argument and the actual task data is second
       onUpdate(taskId, updatedTaskData);
       setShowEditModal(false);
    }
 
    // Toggle subtasks visibility
    const toggleSubtasks = (e) => {
-      e.stopPropagation(); // Prevent event bubbling
+      e.stopPropagation();
       if (list.subtaskCount > 0) {
          setShowSubtasks(!showSubtasks);
          if (!showSubtasks && subtasks.length === 0) {
@@ -407,7 +410,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       }
    };
 
-   // Save a new subtask
+   // Save a new subtask with retry logic
    const handleSaveSubtask = async (subtaskData, subtaskId = null) => {
       try {
          const token = localStorage.getItem('token');
@@ -415,7 +418,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             throw new Error('Authentication required');
          }
 
-         // Format the subtask data
          const formattedData = {
             ...subtaskData,
             taskId: list._id,
@@ -424,7 +426,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
          let response;
          if (subtaskId) {
-            // Update existing subtask
             response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/subtasks/${subtaskId}`, {
                method: 'PUT',
                headers: {
@@ -434,7 +435,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                body: JSON.stringify(formattedData),
             });
          } else {
-            // Create new subtask
             response = await fetch(`${BACKEND_URL}/api/tasks/${list._id}/subtasks`, {
                method: 'POST',
                headers: {
@@ -446,30 +446,22 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          }
 
          if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || (subtaskId ? 'Failed to update subtask' : 'Failed to create subtask'));
          }
 
          const data = await response.json();
 
-         // Don't update state directly here - let socket events handle it
-         // This prevents race conditions and duplicate updates
-
-         // For new subtasks, show the subtasks section if it was hidden
          if (!subtaskId) {
             setShowSubtasks(true);
          }
 
-         // Close the modal
          setShowSubtaskModal(false);
-
-         // Show success message only (socket events will handle state updates)
          toast.success(subtaskId ? 'Subtask updated successfully' : 'Subtask created successfully');
 
          // Fallback: If socket events don't update the UI within 2 seconds, refetch data
          setTimeout(() => {
             if (!subtaskId) {
-               // Check if the new subtask was added to the list
                const subtaskExists = subtasks.some((st) => st._id === data._id);
                if (!subtaskExists) {
                   console.log('Socket event may have failed, refetching subtasks...');
@@ -483,7 +475,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       }
    };
 
-   // Handle subtask deletion
+   // Handle subtask deletion with retry logic
    const handleDeleteSubtask = async (subtaskId) => {
       try {
          const token = localStorage.getItem('token');
@@ -499,11 +491,11 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to delete subtask');
+            throw new Error(`Failed to delete subtask: ${response.status}`);
          }
 
-         // Remove the subtask from the local state
          setSubtasks((prevSubtasks) => prevSubtasks.filter((st) => st._id !== subtaskId));
+         toast.success('Subtask deleted successfully');
       } catch (error) {
          console.error('Error deleting subtask:', error);
          toast.error('Failed to delete subtask');
@@ -518,10 +510,8 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
    // Handle subtask status change
    const handleSubtaskStatusChange = async (subtaskId, currentStatus, errorMessage) => {
-      // If there was no error, update the parent task's completion summary
       if (!errorMessage) {
          try {
-            // Find the subtask in our local state and update its status
             const updatedSubtasks = subtasks.map((st) => {
                if (st._id === subtaskId) {
                   return { ...st, status: !currentStatus };
@@ -531,21 +521,17 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
             setSubtasks(updatedSubtasks);
 
-            // Calculate new completion counts
             const totalSubtasks = updatedSubtasks.length;
             const completedCount = updatedSubtasks.filter((st) => st.status).length;
 
-            // Update the parent task locally for immediate UI feedback
             const parentTaskUpdate = {
-               // Renamed from updatedTask to avoid confusion
                ...list,
                subtaskCount: totalSubtasks,
                completedSubtasks: completedCount,
             };
 
-            // Call the parent update handler to update in parent components
             if (onUpdate) {
-               onUpdate(list._id, parentTaskUpdate); // Pass parentTaskUpdate here
+               onUpdate(list._id, parentTaskUpdate);
             }
          } catch (error) {
             console.error('Error updating subtask status locally:', error);
@@ -565,7 +551,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             return;
          }
 
-         // Validate that reminder time is in the future
          const reminderDateTime = new Date(reminderTime);
          if (reminderDateTime <= new Date()) {
             toast.error('Reminder time must be in the future');
@@ -613,8 +598,8 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
       fetchAttachments();
    }, []);
 
-   // Fetch notes for the task
-   const fetchNotes = async () => {
+   // Fetch notes for the task with retry logic
+   const fetchNotes = async (retryCount = 0) => {
       setIsLoadingNotes(true);
       try {
          const token = localStorage.getItem('token');
@@ -625,21 +610,26 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to fetch notes');
+            throw new Error(`Failed to fetch notes: ${response.status}`);
          }
 
          const data = await response.json();
          setNotes(data);
       } catch (error) {
          console.error('Error fetching notes:', error);
-         toast.error('Failed to load notes');
+
+         if (retryCount < 2) {
+            setTimeout(() => fetchNotes(retryCount + 1), 1000 * (retryCount + 1));
+         } else {
+            toast.error('Failed to load notes');
+         }
       } finally {
          setIsLoadingNotes(false);
       }
    };
 
-   // Fetch attachments for the task
-   const fetchAttachments = async () => {
+   // Fetch attachments for the task with retry logic
+   const fetchAttachments = async (retryCount = 0) => {
       setIsLoadingAttachments(true);
       try {
          const token = localStorage.getItem('token');
@@ -650,7 +640,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to fetch attachments');
+            throw new Error(`Failed to fetch attachments: ${response.status}`);
          }
 
          const data = await response.json();
@@ -658,6 +648,10 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          setHasAttachments(data && data.length > 0);
       } catch (error) {
          console.error('Error fetching attachments:', error);
+
+         if (retryCount < 2) {
+            setTimeout(() => fetchAttachments(retryCount + 1), 1000 * (retryCount + 1));
+         }
          // Don't show error toast on initial load
       } finally {
          setIsLoadingAttachments(false);
@@ -678,7 +672,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to create note');
+            throw new Error(`Failed to create note: ${response.status}`);
          }
 
          const newNote = await response.json();
@@ -707,7 +701,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to upload attachment');
+            throw new Error(`Failed to upload attachment: ${response.status}`);
          }
 
          const data = await response.json();
@@ -732,7 +726,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          });
 
          if (!response.ok) {
-            throw new Error('Failed to download attachment');
+            throw new Error(`Failed to download attachment: ${response.status}`);
          }
 
          const blob = await response.blob();
@@ -928,6 +922,14 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                            <FiLink className="h-3 w-3" />
                            <span className="hidden xs:inline">Deps</span>
                         </button>
+                     )}
+
+                     {/* Connection Status Indicator */}
+                     {!isConnected && (
+                        <div className="flex items-center space-x-1 px-2 py-1.5 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium">
+                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                           <span className="hidden xs:inline">Offline</span>
+                        </div>
                      )}
                   </div>
 
@@ -1126,6 +1128,14 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                         >
                            <FiLink className="h-4 w-4" />
                         </button>
+                     )}
+
+                     {/* Connection Status Indicator */}
+                     {!isConnected && (
+                        <div className="flex items-center space-x-1 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs">
+                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                           <span>Offline</span>
+                        </div>
                      )}
                   </div>
 

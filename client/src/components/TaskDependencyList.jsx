@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../app/context/AuthContext';
-import { FiLink, FiUnlink, FiChevronRight, FiChevronDown } from 'react-icons/fi';
+import { FiLink, FiX, FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { HiTrash, HiPlus } from 'react-icons/hi';
 
@@ -141,7 +141,7 @@ function TaskDependencyList({ taskId }) {
                                     className="text-red-400 hover:text-red-300 p-1"
                                     title="Remove dependency"
                                  >
-                                    <FiUnlink />
+                                    <FiX />
                                  </button>
                               </div>
                            </li>
@@ -185,7 +185,7 @@ function TaskDependencyList({ taskId }) {
                                     className="text-red-400 hover:text-red-300 p-1"
                                     title="Remove dependency"
                                  >
-                                    <FiUnlink />
+                                    <FiX />
                                  </button>
                               </div>
                            </li>
