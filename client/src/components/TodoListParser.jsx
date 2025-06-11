@@ -1,31 +1,29 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import DisplayTodoList from './DisplayTodoList';
 import { useSocket } from '../app/context/SocketContext';
 import { useNotification } from '../app/context/NotificationContext';
 import { useTheme } from '../app/context/ThemeContext';
 import ModernSortTabs from './ModernSortTabs';
 import DeleteTaskModal from './DeleteTaskModal';
-import {
-   HiSortAscending,
-   HiClipboardList,
-   HiChevronUp,
-   HiChevronDown,
-   HiCalendar,
-   HiCheck,
-   HiX,
-   HiClock,
-   HiExclamationCircle,
-} from 'react-icons/hi';
+import { HiClipboardList, HiChevronUp, HiChevronDown, HiCalendar } from 'react-icons/hi';
 import { useAuth } from '../app/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
-function TodoListParser({ searchTerm = '' }) {
+function TodoListParser({
+   searchTerm = '',
+   tasks: propTasks,
+   dependencies: propDependencies,
+   onDependencyChange,
+   onDeleteTask,
+   onUpdateTask,
+   onStatusChange,
+   isDeadlineExceeded,
+}) {
    const [todoList, setTodoList] = useState([]);
    const [filteredList, setFilteredList] = useState([]);
    const [isLoading, setIsLoading] = useState(true);
@@ -155,10 +153,10 @@ function TodoListParser({ searchTerm = '' }) {
          clearTimeout(scrollTimeout);
       }
 
-      // Hide scrolling indicator after 1.5 seconds of no scrolling
+      // Hide scrolling indicator after 2 seconds of no scrolling (increased from 1.5s)
       const timeout = setTimeout(() => {
          setIsScrolling(false);
-      }, 1500);
+      }, 2000);
 
       setScrollTimeout(timeout);
    };
@@ -184,39 +182,44 @@ function TodoListParser({ searchTerm = '' }) {
    useEffect(() => {
       const style = document.createElement('style');
       style.textContent = `
-         .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-         }
-         .custom-scrollbar::-webkit-scrollbar-track {
-            background: ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
-            border-radius: 4px;
-         }
-         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #9406E6, #7D05C3);
-            border-radius: 4px;
-            transition: background 0.2s ease;
-         }
-         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, #7D05C3, #6B04A8);
-         }
-         .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #9406E6 ${isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.3)'};
-         }
-         .animate-fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-         }
-         @keyframes fadeIn {
-            from {
-               opacity: 0;
-               transform: translateY(-10px) translateX(10px);
-            }
-            to {
-               opacity: 1;
-               transform: translateY(0) translateX(0);
-            }
-         }
-      `;
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: ${isDark ? 'rgba(55, 65, 81, 0.2)' : 'rgba(229, 231, 235, 0.2)'};
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #9406E6, #7D05C3);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #7D05C3, #6B04A8);
+  }
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #9406E6 ${isDark ? 'rgba(55, 65, 81, 0.2)' : 'rgba(229, 231, 235, 0.2)'};
+  }
+  .animate-fadeIn {
+    animation: fadeInUp 0.4s ease-out forwards;
+  }
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (max-width: 300px) {
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+  }
+`;
       document.head.appendChild(style);
 
       return () => {
@@ -235,14 +238,20 @@ function TodoListParser({ searchTerm = '' }) {
 
    // Fetch tasks when component mounts
    useEffect(() => {
-      if (!token) {
+      if (propTasks) {
+         // Use tasks from props (from Dashboard)
+         setTodoList(propTasks);
+         if (propDependencies) {
+            setDependencies(propDependencies);
+         }
+      } else if (token) {
+         // Fallback to fetching if no props provided
+         fetchTasks();
+         fetchDependencies();
+      } else {
          navigate('/login');
-         return;
       }
-
-      fetchTasks();
-      fetchDependencies();
-   }, [token, searchTerm]);
+   }, [token, searchTerm, propTasks, propDependencies]);
 
    // Listen for socket events
    useEffect(() => {
@@ -346,16 +355,19 @@ function TodoListParser({ searchTerm = '' }) {
 
    // Handle task deletion
    const handleDeleteTask = async (taskId) => {
-      // Find the task to get its name for the modal
-      const taskToDelete = todoList.find((task) => task._id === taskId);
-
-      // Show confirmation modal first
-      setDeleteModal({
-         isOpen: true,
-         taskId: taskId,
-         taskName: taskToDelete?.task || 'Unknown Task',
-         isDeleting: false,
-      });
+      if (onDeleteTask) {
+         // Use the prop function from Dashboard
+         onDeleteTask(taskId);
+      } else {
+         // Fallback to original logic
+         const taskToDelete = todoList.find((task) => task._id === taskId);
+         setDeleteModal({
+            isOpen: true,
+            taskId: taskId,
+            taskName: taskToDelete?.task || 'Unknown Task',
+            isDeleting: false,
+         });
+      }
    };
 
    // Handle simple delete confirmation
@@ -421,29 +433,33 @@ function TodoListParser({ searchTerm = '' }) {
 
    // Handle task update
    const handleUpdateTask = async (taskId, updatedTask) => {
-      try {
-         const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}`, {
-            method: 'PUT',
-            headers: {
-               Authorization: `Bearer ${token}`,
-               'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(updatedTask),
-         });
+      if (onUpdateTask) {
+         // Use the prop function from Dashboard
+         onUpdateTask(taskId, updatedTask);
+      } else {
+         // Fallback to original logic
+         try {
+            const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}`, {
+               method: 'PUT',
+               headers: {
+                  Authorization: `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+               },
+               body: JSON.stringify(updatedTask),
+            });
 
-         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update task');
+            if (!response.ok) {
+               const errorData = await response.json();
+               throw new Error(errorData.message || 'Failed to update task');
+            }
+
+            const data = await response.json();
+            setTodoList((prevList) => prevList.map((task) => (task._id === taskId ? data : task)));
+         } catch (error) {
+            console.error('Error updating task:', error);
+            createErrorNotification(error.message || 'Failed to update task');
+            throw error;
          }
-
-         const data = await response.json();
-
-         // Update the task in the local state
-         setTodoList((prevList) => prevList.map((task) => (task._id === taskId ? data : task)));
-      } catch (error) {
-         console.error('Error updating task:', error);
-         createErrorNotification(error.message || 'Failed to update task');
-         throw error; // Re-throw the error to be handled by the caller
       }
    };
 
@@ -491,7 +507,7 @@ function TodoListParser({ searchTerm = '' }) {
                const period = timeParts[1];
 
                const [hours, minutes] = time.split(':');
-               let hour24 = parseInt(hours, 10);
+               let hour24 = Number.parseInt(hours, 10);
 
                if (period === 'AM' && hour24 === 12) {
                   hour24 = 0;
@@ -641,7 +657,7 @@ function TodoListParser({ searchTerm = '' }) {
    };
 
    // Check if a task's deadline has passed
-   const isDeadlineExceeded = (task) => {
+   const isDeadlineExceededLocal = (task) => {
       if (task.completed) return false;
 
       try {
@@ -670,7 +686,7 @@ function TodoListParser({ searchTerm = '' }) {
             const period = timeParts[1];
 
             const [hours, minutes] = time.split(':');
-            let hour24 = parseInt(hours, 10);
+            let hour24 = Number.parseInt(hours, 10);
 
             if (period === 'AM' && hour24 === 12) {
                hour24 = 0;
@@ -763,125 +779,131 @@ function TodoListParser({ searchTerm = '' }) {
             </div>
          </div>
 
-         {/* Task list with enhanced styling and scrollable container */}
+         {/* Enhanced Task Display Container */}
          <div className="relative">
-            {/* Scrollable container with fixed height */}
+            {/* Main Task Container with Fixed Height and Better Sizing */}
             <div
-               className="h-[70vh] overflow-y-auto pr-2 custom-scrollbar scroll-smooth"
-               id="task-list-container"
-               onScroll={handleScroll}
+               className={`relative rounded-2xl border shadow-lg overflow-hidden ${
+                  isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+               }`}
+               style={{ height: 'clamp(400px, 65vh, 700px)' }}
             >
-               {filteredList.length === 0 ? (
-                  <div
-                     className={`text-center p-8 sm:p-12 rounded-2xl border shadow-lg ${
-                        isDark
-                           ? 'bg-gradient-to-r from-gray-800 to-gray-700 border-gray-600'
-                           : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'
-                     }`}
-                  >
-                     <div className="flex flex-col items-center space-y-4">
-                        <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-full">
-                           <HiClipboardList className="h-8 w-8 text-white" />
-                        </div>
-                        <div>
-                           <h3
-                              className={`text-lg font-semibold mb-2 font-proza ${
-                                 isDark ? 'text-gray-200' : 'text-gray-700'
-                              }`}
-                           >
-                              {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
-                           </h3>
-                           <p className={`max-w-md ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                              {searchTerm
-                                 ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
-                                 : 'Create your first task to get started with organizing your work!'}
-                           </p>
-                        </div>
-                     </div>
-                  </div>
-               ) : (
-                  <div
-                     style={{
-                        height: filteredList.length * itemHeight,
-                        position: 'relative',
-                     }}
-                  >
-                     {/* Virtual scrolling spacer for items before visible area */}
-                     <div style={{ height: startIndex * itemHeight }} />
-
-                     {/* Visible items */}
-                     <div>
-                        {visibleItems.map((task, index) => (
-                           <div
-                              key={task._id}
-                              style={{
-                                 minHeight: itemHeight,
-                                 position: 'relative',
-                              }}
-                           >
-                              <DisplayTodoList
-                                 list={task}
-                                 isexceeded={isDeadlineExceeded(task)}
-                                 onDelete={handleDeleteTask}
-                                 onUpdate={handleUpdateTask}
-                                 onStatusChange={handleTaskStatusChange}
-                                 dependencies={dependencies}
-                                 onDependencyChange={fetchDependencies}
-                              />
-                           </div>
-                        ))}
-                     </div>
-
-                     {/* Virtual scrolling spacer for items after visible area */}
-                     <div style={{ height: (filteredList.length - endIndex - 1) * itemHeight }} />
-                  </div>
-               )}
-            </div>
-
-            {/* Scroll indicators and controls */}
-            {filteredList.length > 5 && (
-               <>
-                  {/* Top fade indicator */}
-                  <div
-                     className={`absolute top-0 left-0 right-0 h-6 pointer-events-none z-10 rounded-t-xl ${
-                        isDark
-                           ? 'bg-gradient-to-b from-gray-800/30 via-gray-800/10 to-transparent'
-                           : 'bg-gradient-to-b from-white/30 via-white/10 to-transparent'
-                     }`}
-                  ></div>
-
-                  {/* Bottom fade indicator */}
-                  <div
-                     className={`absolute bottom-0 left-0 right-0 h-6 pointer-events-none z-10 rounded-b-xl ${
-                        isDark
-                           ? 'bg-gradient-to-t from-gray-800/30 via-gray-800/10 to-transparent'
-                           : 'bg-gradient-to-t from-white/30 via-white/10 to-transparent'
-                     }`}
-                  ></div>
-
-                  {/* Date indicator - shows while scrolling */}
-                  {isScrolling && getCurrentDateRange() && (
+               {/* Scrollable Task List */}
+               <div
+                  className="h-full overflow-y-auto px-2 sm:px-4 py-3 custom-scrollbar scroll-smooth"
+                  id="task-list-container"
+                  onScroll={handleScroll}
+               >
+                  {filteredList.length === 0 ? (
                      <div
-                        className={`absolute top-1/2 right-4 transform -translate-y-1/2 backdrop-blur-sm text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg z-30 animate-fade-in ${
+                        className={`text-center p-6 sm:p-8 rounded-xl ${
                            isDark
-                              ? 'bg-gradient-to-r from-purple-800 to-purple-900 border border-purple-600/20'
-                              : 'bg-gradient-to-r from-purple-800 to-purple-900 border border-white/20'
+                              ? 'bg-gradient-to-r from-gray-700 to-gray-600'
+                              : 'bg-gradient-to-r from-gray-50 to-gray-100'
                         }`}
                      >
-                        <div className="flex items-center gap-2">
-                           <HiCalendar className="h-3 w-3" />
-                           <span>{getCurrentDateRange()}</span>
+                        <div className="flex flex-col items-center space-y-4">
+                           <div className="bg-gradient-to-r from-purple-500 to-blue-500 p-4 rounded-full">
+                              <HiClipboardList className="h-8 w-8 text-white" />
+                           </div>
+                           <div>
+                              <h3
+                                 className={`text-lg font-semibold mb-2 font-proza ${
+                                    isDark ? 'text-gray-200' : 'text-gray-700'
+                                 }`}
+                              >
+                                 {searchTerm ? 'No matching tasks found' : 'No tasks yet'}
+                              </h3>
+                              <p className={`max-w-md text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                 {searchTerm
+                                    ? `No tasks found for "${searchTerm}". Try adjusting your search term.`
+                                    : 'Create your first task to get started with organizing your work!'}
+                              </p>
+                           </div>
                         </div>
                      </div>
-                  )}
-
-                  {/* Task count indicator - shows while scrolling */}
-                  {isScrolling && filteredList.length > 10 && (
+                  ) : (
                      <div
-                        className={`absolute top-16 right-4 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg z-30 animate-fade-in ${
+                        style={{
+                           height: filteredList.length * itemHeight,
+                           position: 'relative',
+                        }}
+                     >
+                        {/* Virtual scrolling spacer for items before visible area */}
+                        <div style={{ height: startIndex * itemHeight }} />
+
+                        {/* Visible items */}
+                        <div className="space-y-2">
+                           {visibleItems.map((task, index) => (
+                              <div
+                                 key={task._id}
+                                 style={{
+                                    minHeight: itemHeight - 8, // Account for spacing
+                                    position: 'relative',
+                                    animationDelay: `${index * 50}ms`,
+                                 }}
+                                 className="animate-fadeIn"
+                              >
+                                 <DisplayTodoList
+                                    list={task}
+                                    isexceeded={
+                                       isDeadlineExceeded ? isDeadlineExceeded(task) : isDeadlineExceededLocal(task)
+                                    }
+                                    onDelete={handleDeleteTask}
+                                    onUpdate={handleUpdateTask}
+                                    onStatusChange={handleTaskStatusChange}
+                                    dependencies={dependencies}
+                                    onDependencyChange={fetchDependencies}
+                                 />
+                              </div>
+                           ))}
+                        </div>
+
+                        {/* Virtual scrolling spacer for items after visible area */}
+                        <div style={{ height: (filteredList.length - endIndex - 1) * itemHeight }} />
+                     </div>
+                  )}
+               </div>
+
+               {/* Enhanced Date Range Indicator - Right Side */}
+               {isScrolling && getCurrentDateRange() && filteredList.length > 4 && (
+                  <div
+                     className={`absolute top-4 right-4 transform transition-all duration-500 ease-out z-30 ${
+                        isScrolling ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+                     }`}
+                  >
+                     <div
+                        className={`backdrop-blur-md text-white text-sm font-medium px-4 py-3 rounded-xl shadow-xl border ${
                            isDark
-                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 border border-purple-500/20'
-                              : 'bg-gradient-to-r from-purple-600 to-purple-700 border border-white/20'
+                              ? 'bg-gradient-to-br from-purple-800/90 to-purple-900/90 border-purple-600/30'
+                              : 'bg-gradient-to-br from-purple-800/90 to-purple-900/90 border-white/30'
+                        }`}
+                     >
+                        <div className="flex items-center gap-3">
+                           <div className="p-1.5 bg-white/20 rounded-lg">
+                              <HiCalendar className="h-4 w-4" />
+                           </div>
+                           <div>
+                              <div className="text-xs opacity-80 mb-0.5">Date Range</div>
+                              <div className="font-semibold">{getCurrentDateRange()}</div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               )}
+
+               {/* Enhanced Task Position Indicator - Right Side */}
+               {isScrolling && filteredList.length > 8 && (
+                  <div
+                     className={`absolute top-20 right-4 transform transition-all duration-500 ease-out z-30 ${
+                        isScrolling ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+                     }`}
+                  >
+                     <div
+                        className={`backdrop-blur-md text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg border ${
+                           isDark
+                              ? 'bg-gradient-to-br from-indigo-700/90 to-indigo-800/90 border-indigo-600/30'
+                              : 'bg-gradient-to-br from-indigo-700/90 to-indigo-800/90 border-white/30'
                         }`}
                      >
                         <div className="flex items-center gap-2">
@@ -894,38 +916,73 @@ function TodoListParser({ searchTerm = '' }) {
                            </span>
                         </div>
                      </div>
-                  )}
+                  </div>
+               )}
 
-                  {/* Navigation buttons container - bottom left */}
-                  <div className="absolute bottom-3 left-6 flex flex-col gap-2 z-20">
-                     {/* Scroll to top button */}
+               {/* Enhanced Navigation Controls - Left Bottom Corner */}
+               {filteredList.length > 4 && (
+                  <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-30">
+                     {/* Scroll to Top Button */}
                      <button
                         onClick={scrollToTop}
-                        className={`backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105 ${
+                        className={`group p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
                            isDark
-                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/20'
-                              : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/20'
+                              ? 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
+                              : 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/30'
                         }`}
                         title="Scroll to top"
                      >
-                        <HiChevronUp className="h-4 w-4" />
+                        <HiChevronUp className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                        <div className="absolute inset-0 rounded-full bg-purple-400 animate-ping opacity-20 group-hover:opacity-30"></div>
                      </button>
 
-                     {/* Scroll to bottom button */}
+                     {/* Scroll to Bottom Button */}
                      <button
                         onClick={scrollToBottom}
-                        className={`backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-200 hover:scale-105 ${
+                        className={`group p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${
                            isDark
-                              ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/20'
-                              : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/20'
+                              ? 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
+                              : 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 border border-white/30'
                         }`}
                         title="Scroll to bottom"
                      >
-                        <HiChevronDown className="h-4 w-4" />
+                        <HiChevronDown className="h-5 w-5 text-white group-hover:scale-110 transition-transform" />
+                        <div className="absolute inset-0 rounded-full bg-purple-400 animate-ping opacity-20 group-hover:opacity-30"></div>
                      </button>
+
+                     {/* Task Count Badge */}
+                     <div
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold text-center shadow-lg backdrop-blur-sm ${
+                           isDark
+                              ? 'bg-gray-800/80 text-gray-200 border border-gray-600/50'
+                              : 'bg-white/80 text-gray-700 border border-gray-300/50'
+                        }`}
+                     >
+                        {filteredList.length}
+                     </div>
                   </div>
-               </>
-            )}
+               )}
+
+               {/* Subtle Top/Bottom Fade Overlays */}
+               {filteredList.length > 4 && (
+                  <>
+                     <div
+                        className={`absolute top-0 left-0 right-0 h-8 pointer-events-none z-20 ${
+                           isDark
+                              ? 'bg-gradient-to-b from-gray-800 via-gray-800/60 to-transparent'
+                              : 'bg-gradient-to-b from-white via-white/60 to-transparent'
+                        }`}
+                     />
+                     <div
+                        className={`absolute bottom-0 left-0 right-0 h-8 pointer-events-none z-20 ${
+                           isDark
+                              ? 'bg-gradient-to-t from-gray-800 via-gray-800/60 to-transparent'
+                              : 'bg-gradient-to-t from-white via-white/60 to-transparent'
+                        }`}
+                     />
+                  </>
+               )}
+            </div>
          </div>
 
          {/* Simple Delete Task Modal */}
