@@ -233,12 +233,16 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
             },
          });
 
+         console.log('Subtasks fetch response.ok:', response.ok);
+
          if (!response.ok) {
             throw new Error(`Failed to fetch subtasks: ${response.status}`);
          }
 
          const data = await response.json();
+         console.log('Subtasks raw data:', data);
          const sortedSubtasks = sortSubtasksByPriority(data);
+         console.log('Subtasks sorted data:', sortedSubtasks);
          setSubtasks(sortedSubtasks);
       } catch (error) {
          console.error('Error fetching subtasks:', error);
