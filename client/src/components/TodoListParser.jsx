@@ -915,7 +915,7 @@ function TodoListParser({ searchTerm = '' }) {
                   {/* Scroll to top button */}
                   <button
                      onClick={scrollToTop}
-                     className={`group backdrop-blur-sm text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl ${
+                     className={`group backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-300  hover:shadow-xl ${
                         isDark
                            ? 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
                            : 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-white/30'
@@ -928,7 +928,7 @@ function TodoListParser({ searchTerm = '' }) {
                   {/* Scroll to bottom button */}
                   <button
                      onClick={scrollToBottom}
-                     className={`group backdrop-blur-sm text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl ${
+                     className={`group backdrop-blur-sm text-white p-2 rounded-full shadow-lg transition-all duration-300  hover:shadow-xl ${
                         isDark
                            ? 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-purple-500/30'
                            : 'bg-gradient-to-r from-purple-600/90 to-purple-700/90 hover:from-purple-700 hover:to-purple-800 border border-white/30'
