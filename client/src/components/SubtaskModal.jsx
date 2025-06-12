@@ -6,7 +6,6 @@ import { HiX, HiPlus, HiPencilAlt } from 'react-icons/hi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { useAuth } from '../app/context/AuthContext';
 import { useNotification } from '../app/context/NotificationContext';
-import { useTheme } from '../app/context/ThemeContext';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
@@ -25,7 +24,6 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
    const { token } = useAuth();
    const { createSuccessNotification, createErrorNotification } = useNotification();
    const isSubmitting = useRef(false);
-   const { isDark } = useTheme();
 
    // Check if we're editing an existing subtask
    const isEditing = Boolean(subtask);
@@ -156,24 +154,16 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
          onClick={handleBackdropClick}
       >
          <div
-            className={`rounded-xl shadow-2xl w-full max-w-sm mx-3 transform transition-all duration-300 ease-out ${
-               isDark
-                  ? 'bg-gray-800/95 border border-gray-700'
-                  : 'bg-gradient-to-br from-indigo-600/95 to-purple-600/95'
-            } backdrop-blur-lg`}
+            className="bg-gradient-to-br from-indigo-600/95 to-purple-600/95 backdrop-blur-lg rounded-xl shadow-2xl w-full max-w-sm mx-3 transform transition-all duration-300 ease-out"
             style={{
                animation: 'modalSlideIn 0.4s ease-out forwards',
             }}
             onClick={(e) => e.stopPropagation()}
          >
             {/* Header */}
-            <div
-               className={`flex items-center justify-between p-4 border-b ${
-                  isDark ? 'border-gray-700' : 'border-white/20'
-               }`}
-            >
+            <div className="flex items-center justify-between p-4 border-b border-white/20">
                <div className="flex items-center space-x-2">
-                  <div className={`p-1.5 rounded-full ${isDark ? 'bg-gray-700' : 'bg-white/20'}`}>
+                  <div className="bg-white/20 p-1.5 rounded-full">
                      {isEditing ? (
                         <HiPencilAlt className="h-4 w-4 text-white" />
                      ) : (
@@ -181,10 +171,10 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                      )}
                   </div>
                   <div>
-                     <h2 className={`text-lg font-bold ${isDark ? 'text-gray-100' : 'text-white'} font-proza`}>
+                     <h2 className="text-lg font-bold text-white font-proza">
                         {isEditing ? 'Edit Subtask' : 'Add Subtask'}
                      </h2>
-                     <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-white/80'} truncate max-w-[180px]`}>
+                     <p className="text-xs text-white/80 truncate max-w-[180px]">
                         {parentTask?.title || 'Parent Task'}
                      </p>
                   </div>
@@ -192,9 +182,7 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                {!isLoading && (
                   <button
                      onClick={handleClose}
-                     className={`${
-                        isDark ? 'text-gray-400 hover:text-gray-300' : 'text-white/80 hover:text-white'
-                     } transition-colors p-1 rounded-full hover:bg-white/20 touch-manipulation`}
+                     className="text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-white/20 touch-manipulation"
                   >
                      <HiX className="h-5 w-5" />
                   </button>
@@ -203,160 +191,134 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
 
             {/* Content */}
             <div className="p-4">
-               <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Title Input */}
+               {/* Error Message */}
+               {error && (
+                  <div className="mb-3 p-2 bg-red-500/20 border border-red-500/30 rounded-lg">
+                     <p className="text-red-200 text-xs">{error}</p>
+                  </div>
+               )}
+
+               {/* Form */}
+               <form onSubmit={handleSubmit} className="space-y-3">
+                  {/* Title */}
                   <div>
-                     <label
-                        htmlFor="title"
-                        className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-white'}`}
-                     >
-                        Title
-                     </label>
+                     <label className="block text-white text-xs font-medium mb-1">Subtask Title *</label>
                      <input
                         type="text"
-                        id="title"
                         name="title"
                         value={formData.title}
                         onChange={handleChange}
-                        className={`w-full px-3 py-2 rounded-lg border ${
-                           isDark
-                              ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
-                              : 'bg-white/10 border-white/20 text-white placeholder-white/50'
-                        } focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
+                        className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white placeholder-white/70 rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-sm touch-manipulation"
                         placeholder="Enter subtask title"
                         required
+                        disabled={isLoading}
+                        autoFocus
                      />
                   </div>
 
-                  {/* Description Input */}
+                  {/* Description */}
                   <div>
-                     <label
-                        htmlFor="description"
-                        className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-white'}`}
-                     >
-                        Description
-                     </label>
+                     <label className="block text-white text-xs font-medium mb-1">Description</label>
                      <textarea
-                        id="description"
                         name="description"
                         value={formData.description}
                         onChange={handleChange}
-                        rows={3}
-                        className={`w-full px-3 py-2 rounded-lg border ${
-                           isDark
-                              ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
-                              : 'bg-white/10 border-white/20 text-white placeholder-white/50'
-                        } focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                        placeholder="Enter subtask description (optional)"
+                        rows="2"
+                        className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white placeholder-white/70 rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent resize-none text-sm touch-manipulation"
+                        placeholder="Enter description (optional)"
+                        disabled={isLoading}
                      />
                   </div>
 
-                  {/* Priority Selection */}
-                  <div>
-                     <label
-                        htmlFor="priority"
-                        className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-white'}`}
-                     >
-                        Priority
-                     </label>
-                     <select
-                        id="priority"
-                        name="priority"
-                        value={formData.priority}
-                        onChange={handleChange}
-                        className={`w-full px-3 py-2 rounded-lg border ${
-                           isDark
-                              ? 'bg-gray-700 border-gray-600 text-gray-100'
-                              : 'bg-white/10 border-white/20 text-white'
-                        } focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
-                     >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                     </select>
-                  </div>
-
-                  {/* Date and Time Inputs */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Date and Time - Compact Grid */}
+                  <div className="grid grid-cols-2 gap-2">
                      <div>
-                        <label
-                           htmlFor="date"
-                           className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-white'}`}
-                        >
-                           Date
-                        </label>
+                        <label className="block text-white text-xs font-medium mb-1">Date</label>
                         <input
                            type="date"
-                           id="date"
                            name="date"
                            value={formData.date}
                            onChange={handleChange}
-                           className={`w-full px-3 py-2 rounded-lg border ${
-                              isDark
-                                 ? 'bg-gray-700 border-gray-600 text-gray-100'
-                                 : 'bg-white/10 border-white/20 text-white'
-                           } focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
+                           className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-sm touch-manipulation"
+                           disabled={isLoading}
                         />
                      </div>
                      <div>
-                        <label
-                           htmlFor="time"
-                           className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-white'}`}
-                        >
-                           Time
-                        </label>
+                        <label className="block text-white text-xs font-medium mb-1">Time</label>
                         <input
                            type="time"
-                           id="time"
                            name="time"
                            value={formData.time}
                            onChange={handleChange}
-                           className={`w-full px-3 py-2 rounded-lg border ${
-                              isDark
-                                 ? 'bg-gray-700 border-gray-600 text-gray-100'
-                                 : 'bg-white/10 border-white/20 text-white'
-                           } focus:outline-none focus:ring-2 focus:ring-purple-500/50`}
+                           className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-sm touch-manipulation"
+                           disabled={isLoading}
                         />
                      </div>
                   </div>
 
-                  {/* Error Message */}
-                  {error && (
-                     <div className="text-red-500 text-sm mt-2 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
-                        {error}
-                     </div>
-                  )}
+                  {/* Priority */}
+                  <div>
+                     <label className="block text-white text-xs font-medium mb-1">Priority</label>
+                     <select
+                        name="priority"
+                        value={formData.priority}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 bg-white/20 backdrop-blur-sm text-white rounded-lg border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent text-sm touch-manipulation"
+                        disabled={isLoading}
+                     >
+                        <option value="Low" className="text-gray-900">
+                           Low
+                        </option>
+                        <option value="Medium" className="text-gray-900">
+                           Medium
+                        </option>
+                        <option value="High" className="text-gray-900">
+                           High
+                        </option>
+                     </select>
+                  </div>
+               </form>
+            </div>
 
-                  {/* Submit Button */}
+            {/* Footer - Action Buttons */}
+            <div className="p-4 border-t border-white/20 bg-white/5">
+               <div className="flex flex-col space-y-2">
                   <button
-                     type="submit"
-                     disabled={isLoading}
-                     className={`w-full py-2 px-4 rounded-lg font-medium transition-all duration-300 ${
-                        isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'
-                     } ${
-                        isDark
-                           ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                           : 'bg-white text-purple-600 hover:bg-white/90'
+                     onClick={handleSubmit}
+                     disabled={isLoading || !formData.title.trim() || isSubmitting.current}
+                     className={`w-full py-2.5 px-4 rounded-lg font-semibold transition-all duration-200 text-sm touch-manipulation ${
+                        !isLoading && formData.title.trim() && !isSubmitting.current
+                           ? 'bg-white text-indigo-600 hover:bg-white/90 shadow-lg hover:shadow-white/25 active:scale-[0.98]'
+                           : 'bg-white/30 text-white/50 cursor-not-allowed'
                      }`}
                   >
                      {isLoading ? (
-                        <div className="flex items-center justify-center">
-                           <AiOutlineLoading3Quarters className="animate-spin h-5 w-5 mr-2" />
+                        <span className="flex items-center justify-center">
+                           <AiOutlineLoading3Quarters className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" />
                            {isEditing ? 'Updating...' : 'Creating...'}
-                        </div>
-                     ) : isEditing ? (
-                        'Update Subtask'
+                        </span>
                      ) : (
-                        'Create Subtask'
+                        <>{isEditing ? 'Update Subtask' : 'Create Subtask'}</>
                      )}
                   </button>
-               </form>
+                  <button
+                     type="button"
+                     onClick={handleClose}
+                     disabled={isLoading}
+                     className={`w-full py-2.5 px-4 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-lg transition-all duration-200 active:scale-[0.98] text-sm touch-manipulation ${
+                        isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                     }`}
+                  >
+                     Cancel
+                  </button>
+               </div>
             </div>
          </div>
       </div>
    );
 
-   return isOpen ? createPortal(modalContent, document.body) : null;
+   // Use React Portal to render the modal at the document body level
+   return createPortal(modalContent, document.body);
 }
 
 export default SubtaskModal;

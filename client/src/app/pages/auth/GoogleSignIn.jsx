@@ -50,83 +50,52 @@ const GoogleSignIn = () => {
       /* Tablet and mobile specific styles */
       @media (max-width: 1024px) {
         #google-signin-button {
-          width: 44px !important;
-          height: 44px !important;
-          min-width: 44px !important;
+          width: 100% !important;
           min-height: 44px !important;
-          border-radius: 50% !important;
-          overflow: hidden !important;
-          background: white !important;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-          transition: transform 0.2s ease !important;
-        }
-        
-        #google-signin-button:hover {
-          transform: scale(1.05) !important;
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          visibility: visible !important;
+          opacity: 1 !important;
         }
         
         #google-signin-button > div {
-          width: 44px !important;
-          height: 44px !important;
-          min-width: 44px !important;
-          min-height: 44px !important;
-          border-radius: 50% !important;
-          overflow: hidden !important;
+          width: 100% !important;
+          max-width: 280px !important;
+          min-width: 200px !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          display: block !important;
         }
         
         #google-signin-button iframe {
-          width: 44px !important;
-          height: 44px !important;
-          min-width: 44px !important;
-          min-height: 44px !important;
-          border-radius: 50% !important;
-          overflow: hidden !important;
+          width: 100% !important;
+          min-width: 200px !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          display: block !important;
         }
       }
       
       @media (max-width: 768px) {
-        #google-signin-button {
-          width: 40px !important;
-          height: 40px !important;
-          min-width: 40px !important;
-          min-height: 40px !important;
-        }
-        
         #google-signin-button > div {
-          width: 40px !important;
-          height: 40px !important;
-          min-width: 40px !important;
-          min-height: 40px !important;
+          max-width: 260px !important;
+          min-width: 180px !important;
         }
         
         #google-signin-button iframe {
-          width: 40px !important;
-          height: 40px !important;
-          min-width: 40px !important;
-          min-height: 40px !important;
+          min-width: 180px !important;
         }
       }
       
       @media (max-width: 480px) {
-        #google-signin-button {
-          width: 36px !important;
-          height: 36px !important;
-          min-width: 36px !important;
-          min-height: 36px !important;
-        }
-        
         #google-signin-button > div {
-          width: 36px !important;
-          height: 36px !important;
-          min-width: 36px !important;
-          min-height: 36px !important;
+          max-width: 240px !important;
+          min-width: 160px !important;
         }
         
         #google-signin-button iframe {
-          width: 36px !important;
-          height: 36px !important;
-          min-width: 36px !important;
-          min-height: 36px !important;
+          min-width: 160px !important;
         }
       }
     `;
@@ -190,16 +159,13 @@ const GoogleSignIn = () => {
             // Clear any existing content
             buttonContainer.innerHTML = '';
 
-            // Get the current window width
-            const width = window.innerWidth;
-
             window.google.accounts.id.renderButton(buttonContainer, {
                theme: 'outline',
                size: 'large',
-               width: width <= 1024 ? '44' : '100%',
-               text: width <= 1024 ? 'icon' : 'continue_with',
-               shape: width <= 1024 ? 'circle' : 'rectangular',
-               logo_alignment: 'center',
+               width: '100%',
+               text: 'continue_with',
+               shape: 'rectangular',
+               logo_alignment: 'left',
             });
 
             console.log('Google Sign-In button rendered successfully');
@@ -209,31 +175,6 @@ const GoogleSignIn = () => {
       } catch (error) {
          console.error('Error initializing Google Sign-In:', error);
       }
-   }, [isScriptLoaded]);
-
-   // Add window resize listener to update button
-   useEffect(() => {
-      const handleResize = () => {
-         if (!isScriptLoaded || !window.google) return;
-
-         const buttonContainer = document.getElementById('google-signin-button');
-         if (buttonContainer) {
-            buttonContainer.innerHTML = '';
-            const width = window.innerWidth;
-
-            window.google.accounts.id.renderButton(buttonContainer, {
-               theme: 'outline',
-               size: 'large',
-               width: width <= 1024 ? '44' : '100%',
-               text: width <= 1024 ? 'icon' : 'continue_with',
-               shape: width <= 1024 ? 'circle' : 'rectangular',
-               logo_alignment: 'center',
-            });
-         }
-      };
-
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
    }, [isScriptLoaded]);
 
    const handleGoogleResponse = async (response) => {
