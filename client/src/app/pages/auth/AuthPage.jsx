@@ -406,8 +406,10 @@ function AuthPage() {
                                  </div>
                               </div>
 
-                              <div className="flex justify-center">
-                                 <GoogleSignIn />
+                              <div className="flex justify-center w-full">
+                                 <div className="w-full max-w-sm">
+                                    <GoogleSignIn />
+                                 </div>
                               </div>
                            </form>
                         </div>
@@ -667,8 +669,10 @@ function AuthPage() {
                                     </div>
                                  </div>
 
-                                 <div className="flex justify-center">
-                                    <GoogleSignIn />
+                                 <div className="flex justify-center w-full">
+                                    <div className="w-full max-w-sm">
+                                       <GoogleSignIn />
+                                    </div>
                                  </div>
                               </div>
                            </form>
@@ -758,8 +762,10 @@ function AuthPage() {
                               </div>
                            </div>
 
-                           <div className="flex justify-center">
-                              <GoogleSignIn />
+                           <div className="flex justify-center w-full">
+                              <div className="w-full max-w-sm">
+                                 <GoogleSignIn />
+                              </div>
                            </div>
 
                            <div className="text-center">
@@ -938,8 +944,10 @@ function AuthPage() {
                                  </div>
                               </div>
 
-                              <div className="flex justify-center mb-3">
-                                 <GoogleSignIn />
+                              <div className="flex justify-center w-full mb-3">
+                                 <div className="w-full max-w-sm">
+                                    <GoogleSignIn />
+                                 </div>
                               </div>
 
                               <div className="text-center">
