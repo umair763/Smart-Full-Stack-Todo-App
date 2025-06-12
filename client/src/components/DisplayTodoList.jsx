@@ -51,6 +51,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
    const [isLoadingDependencies, setIsLoadingDependencies] = useState(false);
    const [hasDependencies, setHasDependencies] = useState(false);
    const [hasAttachments, setHasAttachments] = useState(false);
+   const [socketUpdateReceived, setSocketUpdateReceived] = useState(false);
 
    // Initialize editedTask with the list props
    const [editedTask, setEditedTask] = useState({
@@ -102,6 +103,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
          const currentUserId = localStorage.getItem('userId');
          if (data.parentTaskId === list._id && data.userId === currentUserId) {
             console.log('Handling subtask created event:', data);
+            setSocketUpdateReceived(true);
 
             setSubtasks((prev) => {
                const exists = prev.some((st) => st._id === data.subtask._id);
@@ -404,6 +406,7 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
    // Save a new subtask with retry logic
    const handleSaveSubtask = async (subtaskData, subtaskId = null) => {
       try {
+         setSocketUpdateReceived(false);
          const token = localStorage.getItem('token');
          if (!token) {
             throw new Error('Authentication required');
@@ -452,12 +455,9 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
 
          // Fallback: If socket events don't update the UI within 2 seconds, refetch data
          setTimeout(() => {
-            if (!subtaskId) {
-               const subtaskExists = subtasks.some((st) => st._id === data._id);
-               if (!subtaskExists) {
-                  console.log('Socket event may have failed, refetching subtasks...');
-                  fetchSubtasks();
-               }
+            if (!subtaskId && !socketUpdateReceived) {
+               console.log('Socket event may have failed, refetching subtasks...');
+               fetchSubtasks();
             }
          }, 2000);
       } catch (error) {
@@ -918,7 +918,6 @@ function DisplayTodoList({ list, isexceeded, onDelete, onUpdate, onStatusChange,
                            <span className="hidden xs:inline">Deps</span>
                         </button>
                      )}
-
                   </div>
 
                   {/* Right Actions */}

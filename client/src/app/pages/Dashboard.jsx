@@ -171,16 +171,27 @@ function Dashboard() {
             const data = await response.json();
             console.log('Task added successfully:', data);
 
-            // Update local state
-            setTasks((prev) => [...prev, data]);
-            setList((prev) => [...prev, data]);
+            // Update local state immediately with the server response
+            setTasks((prev) => {
+               // Check if task already exists to prevent duplicates
+               const exists = prev.some((task) => task._id === data._id);
+               if (exists) return prev;
+               return [...prev, data];
+            });
+
+            setList((prev) => {
+               // Check if task already exists to prevent duplicates
+               const exists = prev.some((task) => task._id === data._id);
+               if (exists) return prev;
+               return [...prev, data];
+            });
 
             toast.success('Task added successfully');
 
-            // Refresh tasks to ensure consistency
+            // Refresh tasks after a short delay to ensure consistency
             setTimeout(() => {
                fetchTasks();
-            }, 1000);
+            }, 500);
          } catch (err) {
             console.error('Error adding task:', err);
             toast.error(err.message || 'Failed to add task');

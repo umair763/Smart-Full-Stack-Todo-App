@@ -53,6 +53,7 @@ const GoogleSignIn = () => {
             text: 'continue_with',
             shape: 'rectangular',
             logo_alignment: 'left',
+            width: '100%',
          });
       } catch (error) {
          console.error('Error initializing Google Sign-In:', error);
@@ -95,15 +96,67 @@ const GoogleSignIn = () => {
    };
 
    return (
-      <div className="w-full flex justify-center items-center py-6 px-4">
+      <div className="w-full max-w-md mx-auto">
+         {/* Loading Overlay */}
          {isLoading && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+               <div className="flex flex-col items-center space-y-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
+                  <p className="text-sm font-medium text-gray-600">Signing you in...</p>
+               </div>
             </div>
          )}
 
-         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
-            <div id="google-signin-button" className="w-full h-[40px] flex items-center justify-center"></div>
+         {/* Sign-in Container */}
+         <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-6">
+            {/* Header */}
+            <div className="text-center mb-6">
+               <h3 className="text-lg font-semibold text-gray-900 mb-2">Welcome back</h3>
+               <p className="text-sm text-gray-600">Sign in to continue to your account</p>
+            </div>
+
+            {/* Google Sign-in Button Container */}
+            <div className="space-y-4">
+               <div
+                  id="google-signin-button"
+                  className="w-full flex justify-center [&>div]:w-full [&>div>iframe]:w-full"
+                  style={{ minHeight: '44px' }}
+               ></div>
+
+               {/* Loading State for Button */}
+               {!isScriptLoaded && (
+                  <div className="w-full h-11 bg-gray-100 rounded border border-gray-300 flex items-center justify-center animate-pulse">
+                     <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-gray-300 rounded"></div>
+                        <div className="h-4 bg-gray-300 rounded w-32"></div>
+                     </div>
+                  </div>
+               )}
+            </div>
+
+            {/* Security Notice */}
+            <div className="mt-6 pt-4 border-t border-gray-100">
+               <p className="text-xs text-gray-500 text-center leading-relaxed">
+                  By continuing, you agree to our{' '}
+                  <a href="#" className="text-blue-600 hover:text-blue-700 underline">
+                     Terms of Service
+                  </a>{' '}
+                  and{' '}
+                  <a href="#" className="text-blue-600 hover:text-blue-700 underline">
+                     Privacy Policy
+                  </a>
+               </p>
+            </div>
+         </div>
+
+         {/* Additional Help */}
+         <div className="mt-4 text-center">
+            <p className="text-sm text-gray-500">
+               Need help?{' '}
+               <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
+                  Contact Support
+               </a>
+            </p>
          </div>
       </div>
    );

@@ -37,6 +37,18 @@ export const createTask = async (req, res) => {
     try {
         const { task, date, time, priority } = req.body;
 
+        // Check for duplicate task
+        const existingTask = await Task.findOne({
+            userId: req.user._id,
+            task,
+            date,
+            time,
+        });
+
+        if (existingTask) {
+            return res.status(400).json({ message: "A task with the same title, date, and time already exists" });
+        }
+
         // Validate priority
         const validPriorities = ["High", "Medium", "Low"];
         const taskPriority = validPriorities.includes(priority) ? priority : "Medium";
