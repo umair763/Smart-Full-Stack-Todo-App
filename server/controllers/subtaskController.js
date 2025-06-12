@@ -43,12 +43,12 @@ export const createSubtask = async (req, res) => {
             createdAt: { $gt: new Date(Date.now() - 60000) },
         });
 
-        // if (existingSubtask) {
-        //     return res.status(409).json({
-        //         message: "A subtask with this title was just created. Please wait a moment before creating another one.",
-        //         subtask: existingSubtask,
-        //     });
-        // }
+        if (existingSubtask) {
+            return res.status(409).json({
+                message: "A subtask with this title was just created. Please wait a moment before creating another one.",
+                subtask: existingSubtask,
+            });
+        }
 
         const newSubtask = new Subtask({
             taskId: actualTaskId,
