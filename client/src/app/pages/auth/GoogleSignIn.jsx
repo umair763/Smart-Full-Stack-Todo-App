@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
+// Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
 
 const GoogleSignIn = () => {
@@ -14,7 +15,38 @@ const GoogleSignIn = () => {
    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
    useEffect(() => {
+      // Add CSS to ensure Google button is visible on all devices
+      const style = document.createElement('style');
+      style.textContent = `
+    #google-signin-button {
+      width: 100% !important;
+      min-height: 40px !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+    #google-signin-button > div {
+      width: 100% !important;
+      max-width: 320px !important;
+    }
+    @media (max-width: 768px) {
+      #google-signin-button > div {
+        width: 100% !important;
+        max-width: 280px !important;
+      }
+    }
+  `;
+      document.head.appendChild(style);
+
+      return () => {
+         document.head.removeChild(style);
+      };
+   }, []);
+
+   useEffect(() => {
+      // Load Google Sign-In script
       const loadGoogleScript = () => {
+         // Check if script is already loaded
          if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
             setIsScriptLoaded(true);
             return;
@@ -24,16 +56,21 @@ const GoogleSignIn = () => {
          script.src = 'https://accounts.google.com/gsi/client';
          script.async = true;
          script.defer = true;
-         script.onload = () => setIsScriptLoaded(true);
-         script.onerror = () => {
-            toast.error('Failed to load Google Sign-In');
-            console.error('Failed to load Google Sign-In script');
+         script.onload = () => {
+            setIsScriptLoaded(true);
          };
-
+         script.onerror = () => {
+            console.error('Failed to load Google Sign-In script');
+            toast.error('Failed to load Google Sign-In');
+         };
          document.body.appendChild(script);
       };
 
       loadGoogleScript();
+
+      return () => {
+         // Cleanup if needed
+      };
    }, []);
 
    useEffect(() => {
@@ -47,21 +84,28 @@ const GoogleSignIn = () => {
             cancel_on_tap_outside: true,
          });
 
-         window.google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
-            theme: 'outline',
-            size: 'large',
-            text: 'continue_with',
-            shape: 'rectangular',
-            logo_alignment: 'left',
-            width: '100%',
-         });
+         // Ensure the button container exists before rendering
+         const buttonContainer = document.getElementById('google-signin-button');
+         if (buttonContainer) {
+            window.google.accounts.id.renderButton(buttonContainer, {
+               theme: 'outline',
+               size: 'large',
+               width: '100%', // Use 100% width instead of fixed width
+               text: 'continue_with',
+               shape: 'rectangular',
+               logo_alignment: 'left',
+            });
+         }
       } catch (error) {
          console.error('Error initializing Google Sign-In:', error);
       }
    }, [isScriptLoaded]);
 
    const handleGoogleResponse = async (response) => {
-      if (!response?.credential) {
+      console.log('Google login success response: ', response);
+
+      if (!response || !response.credential) {
+         console.error('Invalid Google response');
          toast.error('Google sign-in failed');
          return;
       }
@@ -69,26 +113,38 @@ const GoogleSignIn = () => {
       setIsLoading(true);
 
       try {
+         console.log('Sending credential to backend...');
+
+         // Use the correct endpoint that matches your backend
          const backendResponse = await fetch(`${BACKEND_URL}/api/users/google-signin`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+               'Content-Type': 'application/json',
+            },
             body: JSON.stringify({ token: response.credential }),
          });
 
          const data = await backendResponse.json();
+         console.log('Backend response: ', data);
 
          if (!backendResponse.ok) {
             throw new Error(data.message || 'Google sign-in failed');
          }
 
+         console.log('Google sign-in successful, calling onSuccess');
+
+         // Handle successful login
          if (data.token) {
+            console.log('Google sign-in response received: ', data);
             login(data.token, data.user);
             toast.success('Signed in with Google successfully!');
             navigate('/dashboard');
          } else {
+            console.error('Google sign-in backend response: ', data);
             throw new Error('Invalid response from server');
          }
       } catch (error) {
+         console.error('Google sign-in failed:', error.message);
          toast.error(`Google sign-in failed: ${error.message}`);
       } finally {
          setIsLoading(false);
@@ -96,67 +152,18 @@ const GoogleSignIn = () => {
    };
 
    return (
-      <div className="w-full max-w-md mx-auto">
-         {/* Loading Overlay */}
-         {isLoading && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
-               <div className="flex flex-col items-center space-y-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
-                  <p className="text-sm font-medium text-gray-600">Signing you in...</p>
+      <div className="w-full flex justify-center items-center py-4">
+         <div className="relative w-full max-w-sm">
+            {isLoading && (
+               <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 rounded-lg">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#9406E6]"></div>
                </div>
-            </div>
-         )}
-
-         {/* Sign-in Container */}
-         <div className="relative bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-6">
-            {/* Header */}
-            <div className="text-center mb-6">
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">Welcome back</h3>
-               <p className="text-sm text-gray-600">Sign in to continue to your account</p>
-            </div>
-
-            {/* Google Sign-in Button Container */}
-            <div className="space-y-4">
-               <div
-                  id="google-signin-button"
-                  className="w-full flex justify-center [&>div]:w-full [&>div>iframe]:w-full"
-                  style={{ minHeight: '44px' }}
-               ></div>
-
-               {/* Loading State for Button */}
-               {!isScriptLoaded && (
-                  <div className="w-full h-11 bg-gray-100 rounded border border-gray-300 flex items-center justify-center animate-pulse">
-                     <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-gray-300 rounded"></div>
-                        <div className="h-4 bg-gray-300 rounded w-32"></div>
-                     </div>
-                  </div>
-               )}
-            </div>
-
-            {/* Security Notice */}
-            <div className="mt-6 pt-4 border-t border-gray-100">
-               <p className="text-xs text-gray-500 text-center leading-relaxed">
-                  By continuing, you agree to our{' '}
-                  <a href="#" className="text-blue-600 hover:text-blue-700 underline">
-                     Terms of Service
-                  </a>{' '}
-                  and{' '}
-                  <a href="#" className="text-blue-600 hover:text-blue-700 underline">
-                     Privacy Policy
-                  </a>
-               </p>
-            </div>
-         </div>
-
-         {/* Additional Help */}
-         <div className="mt-4 text-center">
-            <p className="text-sm text-gray-500">
-               Need help?{' '}
-               <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-                  Contact Support
-               </a>
-            </p>
+            )}
+            <div
+               id="google-signin-button"
+               className="w-full flex justify-center items-center min-h-[40px] bg-transparent"
+               style={{ minWidth: '200px' }}
+            ></div>
          </div>
       </div>
    );

@@ -2,7 +2,7 @@
 
 import { createPortal } from 'react-dom';
 import { useState, useEffect } from 'react';
-import { HiX, HiCalendar, HiClock, HiPlus, HiPencilAlt } from 'react-icons/hi';
+import { HiX, HiPlus, HiPencilAlt } from 'react-icons/hi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { useAuth } from '../app/context/AuthContext';
 
@@ -55,7 +55,7 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
          return;
       }
 
-      // Prevent double submission
+      // Prevent duplicate submissions
       if (isLoading) {
          return;
       }

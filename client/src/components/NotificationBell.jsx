@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { FiBell, FiX, FiAlertCircle, FiCheckCircle, FiInfo, FiTrash2, FiCheck } from 'react-icons/fi';
 import { useNotification } from '../app/context/NotificationContext';
@@ -18,6 +18,8 @@ function NotificationBell() {
       markAllAsRead,
       markAsRead,
       fetchNotifications,
+      setPersistentNotifications,
+      setUnreadCount,
    } = useNotification();
    const { socket } = useSocket();
 
@@ -53,18 +55,55 @@ function NotificationBell() {
          fetchNotifications();
       };
 
+      // Handle specific notification updates
+      const handleNotificationUpdate = (data) => {
+         console.log('NotificationBell received update:', data);
+         if (data.type === 'delete') {
+            setPersistentNotifications((prev) => {
+               const filtered = prev.filter((n) => n._id !== data.notificationId);
+               const newUnreadCount = filtered.filter((n) => !n.read).length;
+               setUnreadCount(newUnreadCount);
+               return filtered;
+            });
+         } else if (data.type === 'markAllRead') {
+            setPersistentNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+            setUnreadCount(0);
+         } else if (data.type === 'clearAll') {
+            setPersistentNotifications([]);
+            setUnreadCount(0);
+         }
+      };
+
+      // Handle new notification
+      const handleNewNotification = (notification) => {
+         console.log('NotificationBell received new notification:', notification);
+         setPersistentNotifications((prev) => {
+            // Avoid duplicates
+            const exists = prev.some((n) => n._id === notification._id);
+            if (exists) return prev;
+            return [notification, ...prev];
+         });
+
+         // Increment unread count if notification is unread
+         if (!notification.read) {
+            setUnreadCount((prev) => prev + 1);
+         }
+      };
+
       // Set up socket event listeners
-      socket.on('notification', handleRefreshNotifications);
-      socket.on('notificationCreated', handleRefreshNotifications);
-      socket.on('notificationUpdate', handleRefreshNotifications);
+      socket.on('notification', handleNewNotification);
+      socket.on('notificationCreated', handleNewNotification);
+      socket.on('notificationUpdate', handleNotificationUpdate);
+      socket.on('notificationRefresh', handleRefreshNotifications);
 
       // Clean up socket listeners
       return () => {
-         socket.off('notification', handleRefreshNotifications);
-         socket.off('notificationCreated', handleRefreshNotifications);
-         socket.off('notificationUpdate', handleRefreshNotifications);
+         socket.off('notification', handleNewNotification);
+         socket.off('notificationCreated', handleNewNotification);
+         socket.off('notificationUpdate', handleNotificationUpdate);
+         socket.off('notificationRefresh', handleRefreshNotifications);
       };
-   }, [socket, fetchNotifications]);
+   }, [socket, fetchNotifications, setPersistentNotifications, setUnreadCount]);
 
    // Format timestamp
    const formatTime = (timestamp) => {
@@ -142,13 +181,17 @@ function NotificationBell() {
       const isPastDeadline =
          isReminder && notification.data?.deadline && new Date(notification.data.deadline) < new Date();
 
+      // Don't render past deadline reminders
       if (isReminder && isPastDeadline) {
-         return null; // Don't render past deadline reminders
+         return null;
       }
+
+      // Use createdAt if available, otherwise fall back to timestamp
+      const notificationTime = notification.createdAt || notification.timestamp;
 
       return (
          <div
-            key={notification._id}
+            key={notification._id || notification.id}
             className={`px-3 sm:px-4 lg:px-6 py-3 sm:py-4 transition-all duration-200 hover:bg-gray-50 cursor-pointer ${
                notification.read ? '' : 'bg-blue-50/50 border-l-4 border-l-blue-500'
             }`}
@@ -184,7 +227,7 @@ function NotificationBell() {
                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                            />
                         </svg>
-                        <span className="truncate">{formatTime(notification.createdAt || notification.timestamp)}</span>
+                        <span className="truncate">{formatTime(notificationTime)}</span>
                      </p>
                      {!notification.read && <span className="bg-blue-500 h-2 w-2 rounded-full flex-shrink-0"></span>}
                   </div>
