@@ -45,7 +45,6 @@ export const createSubtask = async (req, res) => {
 
         if (existingSubtask) {
             return res.status(409).json({
-                message: "A subtask with this title was just created. Please wait a moment before creating another one.",
                 subtask: existingSubtask,
             });
         }
