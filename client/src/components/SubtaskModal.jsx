@@ -1,10 +1,11 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HiX, HiPlus, HiPencilAlt } from 'react-icons/hi';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { useAuth } from '../app/context/AuthContext';
+import { useNotification } from '../app/context/NotificationContext';
 
 // Hardcoded backend URL
 const BACKEND_URL = 'https://smart-todo-task-management-backend.vercel.app';
@@ -21,6 +22,8 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
    const [isLoading, setIsLoading] = useState(false);
    const [error, setError] = useState('');
    const { token } = useAuth();
+   const { createSuccessNotification, createErrorNotification } = useNotification();
+   const isSubmitting = useRef(false);
 
    // Check if we're editing an existing subtask
    const isEditing = Boolean(subtask);
@@ -46,6 +49,7 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
          });
       }
       setError('');
+      isSubmitting.current = false;
    }, [subtask, isOpen]);
 
    const handleSubmit = async (e) => {
@@ -55,11 +59,14 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
          return;
       }
 
-      // Prevent duplicate submissions
-      if (isLoading) {
+      // Prevent duplicate submissions using ref
+      if (isSubmitting.current || isLoading) {
+         console.log('Preventing duplicate submission');
          return;
       }
 
+      // Set submission flag
+      isSubmitting.current = true;
       setIsLoading(true);
       setError('');
 
@@ -70,6 +77,8 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
 
          const method = isEditing ? 'PUT' : 'POST';
 
+         console.log(`Submitting subtask form: ${method} ${url}`);
+
          const response = await fetch(url, {
             method,
             headers: {
@@ -79,16 +88,21 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
             body: JSON.stringify(formData),
          });
 
+         const data = await response.json();
+
          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} subtask`);
+            throw new Error(data.message || `Failed to ${isEditing ? 'update' : 'create'} subtask`);
          }
 
-         const result = await response.json();
+         // Show success notification
+         createSuccessNotification(
+            `Subtask ${isEditing ? 'updated' : 'created'} successfully: ${formData.title}`,
+            true
+         );
 
          // Call the onSave callback if provided
          if (onSave) {
-            onSave(result.subtask || result);
+            onSave(data.subtask || data);
          }
 
          // Close the modal
@@ -96,6 +110,10 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
       } catch (error) {
          console.error(`Error ${isEditing ? 'updating' : 'creating'} subtask:`, error);
          setError(error.message || `Failed to ${isEditing ? 'update' : 'create'} subtask`);
+         createErrorNotification(`Failed to ${isEditing ? 'update' : 'create'} subtask: ${error.message}`, true);
+
+         // Reset submission flag on error
+         isSubmitting.current = false;
       } finally {
          setIsLoading(false);
       }
@@ -113,12 +131,14 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
 
    const handleClose = () => {
       if (!isLoading) {
+         isSubmitting.current = false;
          onClose();
       }
    };
 
    const handleBackdropClick = (e) => {
       if (e.target === e.currentTarget && !isLoading) {
+         isSubmitting.current = false;
          onClose();
       }
    };
@@ -265,9 +285,9 @@ function SubtaskModal({ isOpen, onClose, onSave, parentTaskId, parentTask, subta
                <div className="flex flex-col space-y-2">
                   <button
                      onClick={handleSubmit}
-                     disabled={isLoading || !formData.title.trim()}
+                     disabled={isLoading || !formData.title.trim() || isSubmitting.current}
                      className={`w-full py-2.5 px-4 rounded-lg font-semibold transition-all duration-200 text-sm touch-manipulation ${
-                        !isLoading && formData.title.trim()
+                        !isLoading && formData.title.trim() && !isSubmitting.current
                            ? 'bg-white text-indigo-600 hover:bg-white/90 shadow-lg hover:shadow-white/25 active:scale-[0.98]'
                            : 'bg-white/30 text-white/50 cursor-not-allowed'
                      }`}

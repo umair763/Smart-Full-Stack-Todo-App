@@ -8,6 +8,7 @@ import { useSocket } from '../app/context/SocketContext';
 
 function NotificationBell() {
    const [isOpen, setIsOpen] = useState(false);
+   const [isProcessing, setIsProcessing] = useState(false);
    const dropdownRef = useRef(null);
    const {
       persistentNotifications,
@@ -18,8 +19,6 @@ function NotificationBell() {
       markAllAsRead,
       markAsRead,
       fetchNotifications,
-      setPersistentNotifications,
-      setUnreadCount,
    } = useNotification();
    const { socket } = useSocket();
 
@@ -55,55 +54,20 @@ function NotificationBell() {
          fetchNotifications();
       };
 
-      // Handle specific notification updates
-      const handleNotificationUpdate = (data) => {
-         console.log('NotificationBell received update:', data);
-         if (data.type === 'delete') {
-            setPersistentNotifications((prev) => {
-               const filtered = prev.filter((n) => n._id !== data.notificationId);
-               const newUnreadCount = filtered.filter((n) => !n.read).length;
-               setUnreadCount(newUnreadCount);
-               return filtered;
-            });
-         } else if (data.type === 'markAllRead') {
-            setPersistentNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-            setUnreadCount(0);
-         } else if (data.type === 'clearAll') {
-            setPersistentNotifications([]);
-            setUnreadCount(0);
-         }
-      };
-
-      // Handle new notification
-      const handleNewNotification = (notification) => {
-         console.log('NotificationBell received new notification:', notification);
-         setPersistentNotifications((prev) => {
-            // Avoid duplicates
-            const exists = prev.some((n) => n._id === notification._id);
-            if (exists) return prev;
-            return [notification, ...prev];
-         });
-
-         // Increment unread count if notification is unread
-         if (!notification.read) {
-            setUnreadCount((prev) => prev + 1);
-         }
-      };
-
       // Set up socket event listeners
-      socket.on('notification', handleNewNotification);
-      socket.on('notificationCreated', handleNewNotification);
-      socket.on('notificationUpdate', handleNotificationUpdate);
+      socket.on('notification', handleRefreshNotifications);
+      socket.on('notificationCreated', handleRefreshNotifications);
+      socket.on('notificationUpdate', handleRefreshNotifications);
       socket.on('notificationRefresh', handleRefreshNotifications);
 
       // Clean up socket listeners
       return () => {
-         socket.off('notification', handleNewNotification);
-         socket.off('notificationCreated', handleNewNotification);
-         socket.off('notificationUpdate', handleNotificationUpdate);
+         socket.off('notification', handleRefreshNotifications);
+         socket.off('notificationCreated', handleRefreshNotifications);
+         socket.off('notificationUpdate', handleRefreshNotifications);
          socket.off('notificationRefresh', handleRefreshNotifications);
       };
-   }, [socket, fetchNotifications, setPersistentNotifications, setUnreadCount]);
+   }, [socket, fetchNotifications]);
 
    // Format timestamp
    const formatTime = (timestamp) => {
@@ -120,7 +84,7 @@ function NotificationBell() {
    const toggleDropdown = () => {
       setIsOpen(!isOpen);
       if (!isOpen && unreadCount > 0) {
-         markAllAsRead();
+         handleMarkAllAsRead();
       }
    };
 
@@ -143,36 +107,41 @@ function NotificationBell() {
    };
 
    const handleRemoveNotification = async (notification) => {
-      if (notification.type === 'reminder') {
-         await removeReminderNotification(notification.reminderId);
-      } else {
-         await removeNotification(notification._id);
+      if (isProcessing) return;
+
+      setIsProcessing(true);
+      try {
+         if (notification.type === 'reminder') {
+            await removeReminderNotification(notification.reminderId);
+         } else {
+            await removeNotification(notification._id);
+         }
+      } finally {
+         setIsProcessing(false);
       }
    };
 
    // Handle delete all notifications
    const handleDeleteAll = async () => {
+      if (isProcessing) return;
+
+      setIsProcessing(true);
       try {
          await clearNotifications();
-         // Emit socket event for real-time update
-         if (socket) {
-            socket.emit('notificationUpdate', { type: 'clearAll' });
-         }
-      } catch (error) {
-         console.error('Error deleting all notifications:', error);
+      } finally {
+         setIsProcessing(false);
       }
    };
 
    // Handle mark all as read
    const handleMarkAllAsRead = async () => {
+      if (isProcessing) return;
+
+      setIsProcessing(true);
       try {
          await markAllAsRead();
-         // Emit socket event for real-time update
-         if (socket) {
-            socket.emit('notificationUpdate', { type: 'markAllRead' });
-         }
-      } catch (error) {
-         console.error('Error marking all notifications as read:', error);
+      } finally {
+         setIsProcessing(false);
       }
    };
 
@@ -239,7 +208,10 @@ function NotificationBell() {
                      e.stopPropagation();
                      handleRemoveNotification(notification);
                   }}
-                  className="flex-shrink-0 p-1 sm:p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 group"
+                  disabled={isProcessing}
+                  className={`flex-shrink-0 p-1 sm:p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 group ${
+                     isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                   title="Remove notification"
                >
                   <FiX className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform duration-200" />
@@ -295,14 +267,20 @@ function NotificationBell() {
                            <div className="flex items-center space-x-2">
                               <button
                                  onClick={handleMarkAllAsRead}
-                                 className="p-1.5 rounded-lg hover:bg-white/20 transition-colors duration-200"
+                                 disabled={isProcessing}
+                                 className={`p-1.5 rounded-lg hover:bg-white/20 transition-colors duration-200 ${
+                                    isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                                 }`}
                                  title="Mark all as read"
                               >
                                  <FiCheck className="h-4 w-4" />
                               </button>
                               <button
                                  onClick={handleDeleteAll}
-                                 className="p-1.5 rounded-lg hover:bg-white/20 transition-colors duration-200"
+                                 disabled={isProcessing}
+                                 className={`p-1.5 rounded-lg hover:bg-white/20 transition-colors duration-200 ${
+                                    isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                                 }`}
                                  title="Delete all notifications"
                               >
                                  <FiTrash2 className="h-4 w-4" />

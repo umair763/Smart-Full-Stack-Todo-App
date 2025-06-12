@@ -1,7 +1,5 @@
 import Subtask from "../models/Subtask.js";
 import Task from "../models/Task.js";
-import { dbEvents } from "../index.js";
-import Notification from "../models/Notification.js";
 
 // Get all subtasks for a task
 export const getSubtasks = async (req, res) => {
@@ -21,8 +19,8 @@ export const createSubtask = async (req, res) => {
         const { taskId } = req.params;
         const { title, description, date, time, priority, parentTask } = req.body;
 
-        if (!title || !date || !time) {
-            return res.status(400).json({ message: "Title, date, and time are required" });
+        if (!title) {
+            return res.status(400).json({ message: "Title is required" });
         }
 
         // Use either taskId from params or parentTask from body
@@ -37,12 +35,27 @@ export const createSubtask = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
+        // Check if a subtask with the same title already exists for this task
+        const existingSubtask = await Subtask.findOne({
+            taskId: actualTaskId,
+            title: title,
+            // Only check for duplicates created in the last minute
+            createdAt: { $gt: new Date(Date.now() - 60000) },
+        });
+
+        if (existingSubtask) {
+            return res.status(409).json({
+                message: "A subtask with this title was just created. Please wait a moment before creating another one.",
+                subtask: existingSubtask,
+            });
+        }
+
         const newSubtask = new Subtask({
             taskId: actualTaskId,
             title,
             description: description || "",
-            date,
-            time,
+            date: date || "",
+            time: time || "",
             priority: priority || "Medium",
             status: false,
         });

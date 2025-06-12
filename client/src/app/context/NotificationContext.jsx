@@ -284,6 +284,10 @@ export function NotificationProvider({ children }) {
    // Mark individual notification as read
    const markAsRead = async (id) => {
       try {
+         // Optimistic UI update
+         setPersistentNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
+         setUnreadCount((prev) => Math.max(0, prev - 1));
+
          const response = await fetch(`${BACKEND_URL}/api/notifications/${id}/read`, {
             method: 'PUT',
             headers: {
@@ -291,9 +295,9 @@ export function NotificationProvider({ children }) {
             },
          });
 
-         if (response.ok) {
-            setPersistentNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
-            setUnreadCount((prev) => Math.max(0, prev - 1));
+         if (!response.ok) {
+            // If backend fails, revert optimistic update
+            fetchNotifications();
          }
       } catch (error) {
          console.error('Error marking notification as read:', error);
@@ -409,6 +413,14 @@ export function NotificationProvider({ children }) {
    // Remove a reminder notification
    const removeReminderNotification = async (reminderId) => {
       try {
+         // Optimistic UI update
+         setPersistentNotifications((prev) => {
+            const filtered = prev.filter((n) => n.reminderId !== reminderId);
+            const newUnreadCount = filtered.filter((n) => !n.read).length;
+            setUnreadCount(newUnreadCount);
+            return filtered;
+         });
+
          const response = await fetch(`${BACKEND_URL}/api/reminders/${reminderId}`, {
             method: 'DELETE',
             headers: {
@@ -430,7 +442,9 @@ export function NotificationProvider({ children }) {
    const contextValue = {
       tempNotifications,
       persistentNotifications,
+      setPersistentNotifications,
       unreadCount,
+      setUnreadCount,
       removeTempNotification,
       removeNotification,
       clearNotifications,
