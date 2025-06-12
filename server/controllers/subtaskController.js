@@ -1,13 +1,13 @@
-const Subtask = require("../models/Subtask");
-const Task = require("../models/Task");
-const User = require("../models/User");
+import Subtask from "../models/Subtask.js";
+import Task from "../models/Task.js";
+import User from "../models/User.js";
 
 // Create a new subtask
-const createSubtask = async (req, res) => {
+export const createSubtask = async (req, res) => {
     try {
         const { taskId } = req.params;
         const { title, description, date, time, priority } = req.body;
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         console.log("Creating subtask:", { taskId, title, description, date, time, priority, userId });
 
@@ -47,8 +47,9 @@ const createSubtask = async (req, res) => {
         });
 
         // Emit socket event for real-time updates
-        if (req.io) {
-            req.io.emit("subtaskCreated", {
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("subtaskCreated", {
                 subtask: savedSubtask,
                 parentTaskId: taskId,
                 userId,
@@ -70,10 +71,10 @@ const createSubtask = async (req, res) => {
 };
 
 // Get all subtasks for a task
-const getSubtasks = async (req, res) => {
+export const getSubtasks = async (req, res) => {
     try {
         const { taskId } = req.params;
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         // Check if the parent task exists and belongs to the user
         const parentTask = await Task.findOne({ _id: taskId, userId });
@@ -91,11 +92,11 @@ const getSubtasks = async (req, res) => {
 };
 
 // Update a subtask
-const updateSubtask = async (req, res) => {
+export const updateSubtask = async (req, res) => {
     try {
         const { taskId, subtaskId } = req.params;
         const { title, description, date, time, priority } = req.body;
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         // Validate required fields
         if (!title || !title.trim()) {
@@ -120,8 +121,9 @@ const updateSubtask = async (req, res) => {
         }
 
         // Emit socket event for real-time updates
-        if (req.io) {
-            req.io.emit("subtaskUpdated", {
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("subtaskUpdated", {
                 subtask,
                 parentTaskId: taskId,
                 userId,
@@ -139,11 +141,11 @@ const updateSubtask = async (req, res) => {
 };
 
 // Update subtask status
-const updateSubtaskStatus = async (req, res) => {
+export const updateSubtaskStatus = async (req, res) => {
     try {
         const { taskId, subtaskId } = req.params;
         const { completed } = req.body;
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         // Find and update the subtask status
         const subtask = await Subtask.findOneAndUpdate({ _id: subtaskId, taskId, userId }, { status: completed }, { new: true });
@@ -162,8 +164,9 @@ const updateSubtaskStatus = async (req, res) => {
         });
 
         // Emit socket event for real-time updates
-        if (req.io) {
-            req.io.emit("subtaskStatusChanged", {
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("subtaskStatusChanged", {
                 subtaskId,
                 status: completed,
                 parentTaskId: taskId,
@@ -186,10 +189,10 @@ const updateSubtaskStatus = async (req, res) => {
 };
 
 // Delete a subtask
-const deleteSubtask = async (req, res) => {
+export const deleteSubtask = async (req, res) => {
     try {
         const { taskId, subtaskId } = req.params;
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         // Find and delete the subtask
         const subtask = await Subtask.findOneAndDelete({ _id: subtaskId, taskId, userId });
@@ -208,8 +211,9 @@ const deleteSubtask = async (req, res) => {
         });
 
         // Emit socket event for real-time updates
-        if (req.io) {
-            req.io.emit("subtaskDeleted", {
+        const io = req.app.get("io");
+        if (io) {
+            io.emit("subtaskDeleted", {
                 subtaskId,
                 parentTaskId: taskId,
                 userId,
@@ -227,12 +231,4 @@ const deleteSubtask = async (req, res) => {
         console.error("Error deleting subtask:", error);
         res.status(500).json({ message: "Failed to delete subtask", error: error.message });
     }
-};
-
-module.exports = {
-    createSubtask,
-    getSubtasks,
-    updateSubtask,
-    updateSubtaskStatus,
-    deleteSubtask,
 };
