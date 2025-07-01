@@ -308,10 +308,11 @@ function AuthPage() {
          </div>
 
          {/* Back to Home link */}
-         <div className="absolute top-6 left-6 z-20">
+         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center px-2 sm:top-6 sm:left-6 sm:transform-none sm:justify-start">
             <Link
                to="/"
-               className="text-white hover:text-purple-200 transition-colors flex items-center space-x-2 bg-slate-400 backdrop-blur-sm px-4 py-2 rounded-lg border"
+               className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-5 py-2 rounded-lg shadow-md transition-all duration-200 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-400 active:scale-95 text-base sm:text-lg"
+               style={{ minWidth: '120px', touchAction: 'manipulation' }}
             >
                <span>← Back to Home</span>
             </Link>
@@ -407,7 +408,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center w-full">
-                                 <div className="w-full min-w-[200px] sm:px-2">
+                                 <div className="w-full px-2 flex justify-center">
                                     <GoogleSignIn />
                                  </div>
                               </div>
@@ -670,7 +671,7 @@ function AuthPage() {
                                  </div>
 
                                  <div className="flex justify-center w-full mb-3">
-                                    <div className="w-full min-w-[200px] sm:px-2">
+                                    <div className="w-full px-2 flex justify-center">
                                        <GoogleSignIn />
                                     </div>
                                  </div>
@@ -773,7 +774,7 @@ function AuthPage() {
                            </div>
 
                            <div className="flex justify-center w-full">
-                              <div className="w-full min-w-[200px] sm:px-2">
+                              <div className="w-full px-2 flex justify-center">
                                  <GoogleSignIn />
                               </div>
                            </div>
@@ -955,7 +956,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center w-full mb-3">
-                                 <div className="w-full min-w-[200px] sm:px-2">
+                                 <div className="w-full px-2 flex justify-center">
                                     <GoogleSignIn />
                                  </div>
                               </div>
