@@ -307,21 +307,28 @@ function AuthPage() {
             <ThemeToggle variant="floating" size="medium" />
          </div>
 
-         {/* Back to Home link - Improved */}
+         {/* Back to Home link - Animated Arrow Only */}
          <div className="absolute top-4 left-4 z-20">
             <Link
                to="/"
-               className="group flex items-center space-x-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white hover:text-purple-100 transition-all duration-300 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border border-white/20 hover:border-white/30 shadow-lg hover:shadow-xl transform hover:scale-105"
+               className="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white hover:text-purple-100 transition-all duration-300 rounded-full border border-white/20 hover:border-white/30 shadow-lg hover:shadow-xl transform hover:scale-110"
             >
-               <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:-translate-x-1"
+               <motion.svg
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  whileHover={{
+                     x: [-2, -6, -2],
+                     transition: {
+                        duration: 0.6,
+                        ease: 'easeInOut',
+                        times: [0, 0.5, 1],
+                     },
+                  }}
                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-               </svg>
-               <span className="font-medium text-sm sm:text-base">Back to Home</span>
+               </motion.svg>
             </Link>
          </div>
 
@@ -414,9 +421,7 @@ function AuthPage() {
                                  </div>
                               </div>
 
-                              <div className="w-full">
-                                 <GoogleSignIn />
-                              </div>
+                              <GoogleSignIn />
                            </form>
                         </div>
                      </motion.div>
@@ -675,11 +680,9 @@ function AuthPage() {
                                     </div>
                                  </div>
 
-                                 <div className="w-full">
-                                    <GoogleSignIn />
-                                 </div>
+                                 <GoogleSignIn />
 
-                                 <div className="text-center">
+                                 <div className="text-center mt-3">
                                     <button
                                        type="button"
                                        onClick={switchMode}
@@ -776,9 +779,7 @@ function AuthPage() {
                               </div>
                            </div>
 
-                           <div className="w-full">
-                              <GoogleSignIn />
-                           </div>
+                           <GoogleSignIn />
 
                            <div className="text-center">
                               <button
@@ -956,11 +957,9 @@ function AuthPage() {
                                  </div>
                               </div>
 
-                              <div className="w-full">
-                                 <GoogleSignIn />
-                              </div>
+                              <GoogleSignIn />
 
-                              <div className="text-center">
+                              <div className="text-center mt-3">
                                  <button
                                     type="button"
                                     onClick={switchMode}
