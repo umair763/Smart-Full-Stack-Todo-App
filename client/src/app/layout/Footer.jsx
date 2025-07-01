@@ -2,6 +2,7 @@
 
 import { HiCheckCircle } from 'react-icons/hi';
 import { useTheme } from '../context/ThemeContext';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
    const { isDarkMode } = useTheme();
@@ -124,30 +125,14 @@ const Footer = () => {
                      © 2024 Smart Todo. All rights reserved.
                   </p>
                   <div className="flex space-x-6 mt-4 md:mt-0">
-                     <a
-                        href="#"
+                     <Link
+                        to="/privacy"
                         className={`text-sm transition-colors ${
                            isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-white'
                         }`}
                      >
                         Privacy Policy
-                     </a>
-                     <a
-                        href="#"
-                        className={`text-sm transition-colors ${
-                           isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-white'
-                        }`}
-                     >
-                        Terms of Service
-                     </a>
-                     <a
-                        href="#"
-                        className={`text-sm transition-colors ${
-                           isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-400 hover:text-white'
-                        }`}
-                     >
-                        Cookie Policy
-                     </a>
+                     </Link>
                   </div>
                </div>
             </div>

@@ -5,6 +5,7 @@ import AuthPage from '../pages/auth/AuthPage';
 import Layout from '../layout/Layout';
 import LandingPageLayout from '../layout/LandingPageLayout';
 import LandingPage from '../pages/LandingPage';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
 import Dashboard from '../pages/Dashboard';
 import Settings from '../pages/Settings';
 import Insights from '../pages/Insights';
@@ -129,6 +130,9 @@ const AppRoutes = () => {
             <Route path="settings" element={isLoggedIn ? <Settings /> : <Navigate to="/auth/login" replace />} />
             <Route path="insights" element={isLoggedIn ? <Insights /> : <Navigate to="/auth/login" replace />} />
          </Route>
+
+         {/* Public route for Privacy Policy */}
+         <Route path="/privacy" element={<PrivacyPolicy />} />
 
          {/* Fallback routes */}
          <Route path="*" element={<Navigate to="/" replace />} />

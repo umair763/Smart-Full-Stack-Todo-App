@@ -425,6 +425,10 @@ function AuthPage() {
                               <div className="w-full">
                                  <GoogleSignIn />
                               </div>
+
+                              <div className="w-full flex justify-center mt-2">
+                                 <Link to="/privacy" className="text-xs text-blue-600 underline hover:text-blue-800 transition-colors">Privacy Policy</Link>
+                              </div>
                            </form>
                         </div>
                      </motion.div>
@@ -697,6 +701,10 @@ function AuthPage() {
                                        Already have an account? <span className="underline">Sign in</span>
                                     </button>
                                  </div>
+                              </div>
+
+                              <div className="w-full flex justify-center mt-2">
+                                 <Link to="/privacy" className="text-xs text-blue-600 underline hover:text-blue-800 transition-colors">Privacy Policy</Link>
                               </div>
                            </form>
                         </div>

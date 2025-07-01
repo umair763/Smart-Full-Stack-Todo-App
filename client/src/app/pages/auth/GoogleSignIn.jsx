@@ -195,12 +195,8 @@ const GoogleSignIn = () => {
             {/* Terms & Privacy */}
             <div className="px-2">
                <p className="text-xs text-gray-500 text-center leading-relaxed">
-                  By continuing, you agree to our{' '}
-                  <a href="#" className="text-blue-600 hover:text-blue-700 underline">
-                     Terms of Service
-                  </a>{' '}
-                  and{' '}
-                  <a href="#" className="text-blue-600 hover:text-blue-700 underline">
+                  By continuing, you agree to our
+                  <a href="/privacy" className="text-blue-600 hover:text-blue-700 underline">
                      Privacy Policy
                   </a>
                </p>
