@@ -307,13 +307,21 @@ function AuthPage() {
             <ThemeToggle variant="floating" size="medium" />
          </div>
 
-         {/* Back to Home link */}
-         <div className="absolute top-6 left-6 z-20">
+         {/* Back to Home link - Improved */}
+         <div className="absolute top-4 left-4 z-20">
             <Link
                to="/"
-               className="text-white hover:text-purple-200 transition-colors flex items-center space-x-2 bg-slate-400 backdrop-blur-sm px-4 py-2 rounded-lg border"
+               className="group flex items-center space-x-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white hover:text-purple-100 transition-all duration-300 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border border-white/20 hover:border-white/30 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-               <span>← Back to Home</span>
+               <svg
+                  className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:-translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+               >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+               </svg>
+               <span className="font-medium text-sm sm:text-base">Back to Home</span>
             </Link>
          </div>
 
@@ -406,10 +414,8 @@ function AuthPage() {
                                  </div>
                               </div>
 
-                              <div className="flex justify-center w-full">
-                                 <div className="w-full min-w-[200px] sm:px-2">
-                                    <GoogleSignIn />
-                                 </div>
+                              <div className="w-full">
+                                 <GoogleSignIn />
                               </div>
                            </form>
                         </div>
@@ -669,10 +675,8 @@ function AuthPage() {
                                     </div>
                                  </div>
 
-                                 <div className="flex justify-center w-full mb-3">
-                                    <div className="w-full min-w-[200px] sm:px-2">
-                                       <GoogleSignIn />
-                                    </div>
+                                 <div className="w-full">
+                                    <GoogleSignIn />
                                  </div>
 
                                  <div className="text-center">
@@ -772,10 +776,8 @@ function AuthPage() {
                               </div>
                            </div>
 
-                           <div className="flex justify-center w-full">
-                              <div className="w-full min-w-[200px] sm:px-2">
-                                 <GoogleSignIn />
-                              </div>
+                           <div className="w-full">
+                              <GoogleSignIn />
                            </div>
 
                            <div className="text-center">
@@ -954,10 +956,8 @@ function AuthPage() {
                                  </div>
                               </div>
 
-                              <div className="flex justify-center w-full mb-3">
-                                 <div className="w-full min-w-[200px] sm:px-2">
-                                    <GoogleSignIn />
-                                 </div>
+                              <div className="w-full">
+                                 <GoogleSignIn />
                               </div>
 
                               <div className="text-center">

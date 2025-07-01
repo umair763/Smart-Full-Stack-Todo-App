@@ -96,50 +96,61 @@ const GoogleSignIn = () => {
    };
 
    return (
-      <div className="flex flex-col items-center space-y-4">
+      <div className="relative w-full">
          {/* Loading Overlay */}
          {isLoading && (
-            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
-               <div className="flex flex-col items-center space-y-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
-                  <p className="text-sm font-medium text-gray-600">Signing you in...</p>
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+               <div className="flex flex-col items-center space-y-2">
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
+                  <p className="text-xs font-medium text-gray-600">Signing you in...</p>
                </div>
             </div>
          )}
 
-         {/* Google Sign-in Button */}
-         <div className="w-full px-2 flex justify-center">
-            <div id="google-signin-button" className="flex justify-center w-full" style={{ minHeight: '44px' }}></div>
-            {/* Loading State for Button */}
-            {!isScriptLoaded && (
-               <div className="w-60 h-11 bg-gray-100 rounded border border-gray-300 flex items-center justify-center animate-pulse">
-                  <div className="flex items-center space-x-2">
-                     <div className="w-4 h-4 bg-gray-300 rounded"></div>
-                     <div className="h-4 bg-gray-300 rounded w-32"></div>
+         {/* Google Sign-in Button Container */}
+         <div className="w-full flex flex-col items-center space-y-3">
+            <div className="w-full max-w-sm mx-auto">
+               <div
+                  id="google-signin-button"
+                  className="w-full flex justify-center min-h-[44px]"
+                  style={{ minHeight: '44px' }}
+               ></div>
+
+               {/* Loading State for Button - Responsive */}
+               {!isScriptLoaded && (
+                  <div className="w-full h-11 bg-gray-100 rounded border border-gray-300 flex items-center justify-center animate-pulse">
+                     <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-gray-300 rounded flex-shrink-0"></div>
+                        <div className="h-4 bg-gray-300 rounded flex-1 max-w-[120px]"></div>
+                     </div>
                   </div>
-               </div>
-            )}
+               )}
+            </div>
+
+            {/* Terms & Privacy - Responsive */}
+            <div className="w-full max-w-sm mx-auto px-2">
+               <p className="text-xs text-gray-500 text-center leading-relaxed">
+                  By continuing, you agree to our{' '}
+                  <a href="#" className="text-blue-600 hover:text-blue-700 underline">
+                     Terms of Service
+                  </a>{' '}
+                  and{' '}
+                  <a href="#" className="text-blue-600 hover:text-blue-700 underline">
+                     Privacy Policy
+                  </a>
+               </p>
+            </div>
+
+            {/* Contact Support - Responsive */}
+            <div className="w-full max-w-sm mx-auto px-2">
+               <p className="text-sm text-gray-500 text-center">
+                  Need help?{' '}
+                  <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
+                     Contact Support
+                  </a>
+               </p>
+            </div>
          </div>
-
-         {/* Terms & Privacy */}
-         <p className="text-xs text-gray-500 text-center leading-relaxed max-w-xs">
-            By continuing, you agree to our{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-700 underline">
-               Terms of Service
-            </a>{' '}
-            and{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-700 underline">
-               Privacy Policy
-            </a>
-         </p>
-
-         {/* Contact Support */}
-         <p className="text-sm text-gray-500">
-            Need help?{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-               Contact Support
-            </a>
-         </p>
       </div>
    );
 };
