@@ -308,13 +308,17 @@ function AuthPage() {
          </div>
 
          {/* Back to Home link */}
-         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 w-full flex justify-center px-2 sm:top-6 sm:left-6 sm:transform-none sm:justify-start">
+         <div className="absolute top-4 left-4 z-20">
             <Link
                to="/"
-               className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-5 py-2 rounded-lg shadow-md transition-all duration-200 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-400 active:scale-95 text-base sm:text-lg"
-               style={{ minWidth: '120px', touchAction: 'manipulation' }}
+               className="flex items-center justify-center bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold p-2 rounded-full shadow-md transition-all duration-200 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-400 active:scale-95"
+               style={{ width: '40px', height: '40px', touchAction: 'manipulation' }}
+               aria-label="Back to Home"
             >
-               <span>← Back to Home</span>
+               {/* Modern left arrow SVG icon */}
+               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+               </svg>
             </Link>
          </div>
 
