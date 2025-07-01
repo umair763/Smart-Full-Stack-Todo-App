@@ -407,7 +407,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center w-full">
-                                 <div className="w-full sm:px-2">
+                                 <div className="w-full min-w-[200px] sm:px-2">
                                     <GoogleSignIn />
                                  </div>
                               </div>
@@ -670,7 +670,7 @@ function AuthPage() {
                                  </div>
 
                                  <div className="flex justify-center w-full mb-3">
-                                    <div className="w-full sm:px-2">
+                                    <div className="w-full min-w-[200px] sm:px-2">
                                        <GoogleSignIn />
                                     </div>
                                  </div>
@@ -773,7 +773,7 @@ function AuthPage() {
                            </div>
 
                            <div className="flex justify-center w-full">
-                              <div className="w-full sm:px-2">
+                              <div className="w-full min-w-[200px] sm:px-2">
                                  <GoogleSignIn />
                               </div>
                            </div>
@@ -955,7 +955,7 @@ function AuthPage() {
                               </div>
 
                               <div className="flex justify-center w-full mb-3">
-                                 <div className="w-full sm:px-2">
+                                 <div className="w-full min-w-[200px] sm:px-2">
                                     <GoogleSignIn />
                                  </div>
                               </div>

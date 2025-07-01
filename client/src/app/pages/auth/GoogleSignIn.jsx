@@ -164,4 +164,4 @@ export default GoogleSignIn;
   }
 }
 `}
-</style>;
+</style>
