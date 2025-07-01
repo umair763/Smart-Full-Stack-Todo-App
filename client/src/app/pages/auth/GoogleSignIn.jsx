@@ -108,8 +108,8 @@ const GoogleSignIn = () => {
          )}
 
          {/* Google Sign-in Button */}
-         <div className="w-full flex justify-center items-center px-2 py-2">
-            <div id="google-signin-button" className="w-full flex justify-center items-center" style={{ minHeight: '44px' }}></div>
+         <div className="w-full px-2 flex justify-center">
+            <div id="google-signin-button" className="flex justify-center w-full" style={{ minHeight: '44px' }}></div>
             {/* Loading State for Button */}
             {!isScriptLoaded && (
                <div className="w-60 h-11 bg-gray-100 rounded border border-gray-300 flex items-center justify-center animate-pulse">
