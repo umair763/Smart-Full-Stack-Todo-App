@@ -307,11 +307,11 @@ function AuthPage() {
             <ThemeToggle variant="floating" size="medium" />
          </div>
 
-         {/* Back to Home link - Animated Arrow Only */}
+         {/* Back to Home link - Fixed visibility with subtle background */}
          <div className="absolute top-4 left-4 z-20">
             <Link
                to="/"
-               className="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white hover:text-purple-100 transition-all duration-300 rounded-full border border-white/20 hover:border-white/30 shadow-lg hover:shadow-xl transform hover:scale-110"
+               className="group flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-slate-800/80 hover:bg-slate-700/90 backdrop-blur-md text-white hover:text-purple-200 transition-all duration-300 rounded-full border border-slate-600/50 hover:border-slate-500/70 shadow-lg hover:shadow-xl transform hover:scale-110"
             >
                <motion.svg
                   className="w-5 h-5 sm:w-6 sm:h-6"
@@ -421,7 +421,10 @@ function AuthPage() {
                                  </div>
                               </div>
 
-                              <GoogleSignIn />
+                              {/* Dedicated Google Sign-In Container */}
+                              <div className="w-full">
+                                 <GoogleSignIn />
+                              </div>
                            </form>
                         </div>
                      </motion.div>
@@ -680,7 +683,10 @@ function AuthPage() {
                                     </div>
                                  </div>
 
-                                 <GoogleSignIn />
+                                 {/* Dedicated Google Sign-In Container */}
+                                 <div className="w-full">
+                                    <GoogleSignIn />
+                                 </div>
 
                                  <div className="text-center mt-3">
                                     <button
@@ -779,7 +785,10 @@ function AuthPage() {
                               </div>
                            </div>
 
-                           <GoogleSignIn />
+                           {/* Dedicated Google Sign-In Container for Mobile */}
+                           <div className="w-full">
+                              <GoogleSignIn />
+                           </div>
 
                            <div className="text-center">
                               <button
@@ -957,7 +966,10 @@ function AuthPage() {
                                  </div>
                               </div>
 
-                              <GoogleSignIn />
+                              {/* Dedicated Google Sign-In Container for Mobile */}
+                              <div className="w-full">
+                                 <GoogleSignIn />
+                              </div>
 
                               <div className="text-center mt-3">
                                  <button
